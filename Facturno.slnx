@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/API/">
+    <Project Path="src/API/Facturno.API/Facturno.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Core/">
+    <Project Path="src/Core/Facturno.Shared/Facturno.Shared.csproj" />
+  </Folder>
+  <Folder Name="/src/Infraestructura/">
+    <Project Path="src/Infraestructura/Facturno.Infrastructure/Facturno.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/UI/" />
+  <Folder Name="/src/UI/Facturno.Blazor/">
+    <Project Path="src/UI/Facturno.Blazor/facturno.Blazor.csproj" />
+  </Folder>
+</Solution>
