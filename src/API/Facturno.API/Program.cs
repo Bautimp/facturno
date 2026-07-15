@@ -1,7 +1,27 @@
+using Facturno.Shared.Interfaces;
+using Facturno.Infrastructure.Supabase;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// 1. CONFIGURAR SUPABASE
+var supabaseUrl = builder.Configuration["Supabase:Url"];
+var supabaseKey = builder.Configuration["Supabase:Key"];
+// Opcional: configurar opciones adicionales del cliente
+var options = new Supabase.SupabaseOptions { AutoConnectRealtime = true }; 
+
+// Inyectamos el cliente de Supabase como Singleton (una única conexión para toda la API)
+builder.Services.AddSingleton(provider => new Supabase.Client(supabaseUrl!, supabaseKey!, options));
+
+// 2. REGISTRAR LOS REPOSITORIOS
+builder.Services.AddScoped<ITurnoRepository, TurnoRepository>();
+builder.Services.AddScoped<IPacienteRepository, PacienteRepository>();
+builder.Services.AddScoped<IProfesionalRepository, ProfesionalRepository>();
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+
+// Habilitar soporte para Controladores
+builder.Services.AddControllers();
+
+// Configuración de OpenAPI (Swagger) que viene por defecto
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -14,28 +34,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.UseAuthorization();
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+// Mapear las rutas de los controladores
+app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
