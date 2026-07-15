@@ -3,27 +3,26 @@ using Postgrest.Models;
 
 namespace Facturno.Infrastructure.Supabase.Entities;
 
-[Table("turnos")]
-public class TurnoEntity : BaseModel
+[Table("pacientes")]
+public class PacienteEntity : BaseModel
 {
-    [PrimaryKey("id_turno", false)] // false indica que la BD autogenera el ID (serial)
-    public int IdTurno { get; set; }
+    // Como es una Foreign Key que también actúa como Primary Key (TPT), 
+    // el id no es autogenerado en esta tabla, viene de la tabla usuarios.
+    [PrimaryKey("id_usuario", false)] 
+    public int IdUsuario { get; set; }
 
-    [Column("fecha")]
-    public DateTime Fecha { get; set; }
+    [Column("num_dni_cuil")]
+    public string NumDniCuil { get; set; } = string.Empty;
 
-    [Column("hora")]
-    public TimeSpan Hora { get; set; }
+    [Column("telefono")]
+    public string Telefono { get; set; } = string.Empty;
 
-    [Column("estado")]
-    public string Estado { get; set; } = string.Empty;
+    [Column("obra_social")]
+    public string ObraSocial { get; set; } = string.Empty;
 
-    [Column("observaciones")]
-    public string Observaciones { get; set; } = string.Empty;
+    [Column("num_obra_social")]
+    public string NumObraSocial { get; set; } = string.Empty;
 
-    [Column("id_paciente")]
-    public int IdPaciente { get; set; }
-
-    [Column("id_profesional")]
-    public int IdProfesional { get; set; }
+    [Column("tipo_dni_cuil")]
+    public string TipoDniCuil { get; set; } = string.Empty;
 }
