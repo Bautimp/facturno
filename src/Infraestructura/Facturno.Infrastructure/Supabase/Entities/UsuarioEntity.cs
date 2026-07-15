@@ -21,6 +21,6 @@ public class UsuarioEntity : BaseModel
     [Column("contrasena")]
     public string Contrasena { get; set; } = string.Empty;
 
-    [Column("rol")] // Debe coincidir con la mayúscula de tu SQL
-    public string rol { get; set; } = string.Empty;
+    [Column("rol")] // Esto mapea a la BD en minúscula (o mayúscula si tu SQL dice "Rol")
+    public string Rol { get; set; } = string.Empty; // En C# siempre PascalCase
 }
