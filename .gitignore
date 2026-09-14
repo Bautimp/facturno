@@ -1,3 +1,6 @@
+# Documentacion
+documentacion/
+
 # .NET & IDE files
 bin/
 obj/
@@ -7,8 +10,7 @@ obj/
 
 # Environment and Secret configuration files
 .env
-.env.local
-.env.development
+.env.*
 appsettings.Development.json
 appsettings.Local.json
 *.user
@@ -16,6 +18,3 @@ appsettings.Local.json
 # Operating System files
 .DS_Store
 Thumbs.db
-
-# Documentacion
-documentacion/
