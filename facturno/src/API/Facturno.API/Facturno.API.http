@@ -1,0 +1,6 @@
+@Facturno.API_HostAddress = http://localhost:5082
+
+GET {{Facturno.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
