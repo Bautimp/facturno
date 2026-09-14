@@ -16,3 +16,6 @@ appsettings.Local.json
 # Operating System files
 .DS_Store
 Thumbs.db
+
+# Documentacion
+documentacion/**/*.md
