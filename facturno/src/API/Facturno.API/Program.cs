@@ -2,6 +2,9 @@ using Facturno.Shared.Interfaces;
 using Facturno.API.Services;
 using Facturno.Infrastructure.Supabase.Repositories;
 using Supabase;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,7 +41,19 @@ builder.Services.AddScoped<ITurnoService, TurnoService>();
 builder.Services.AddScoped<IFacturaPdfService, Facturno.Infrastructure.Services.FacturaPdfService>();
 
 // 5. Configurar Autenticación y Autorización
-builder.Services.AddAuthentication();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = false,
+            ValidateIssuer = false,
+            ValidateAudience = false
+        };
+    });
+
 builder.Services.AddAuthorization();
 
 // 6. Configurar CORS para Blazor WebAssembly
