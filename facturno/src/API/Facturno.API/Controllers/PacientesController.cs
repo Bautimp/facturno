@@ -39,24 +39,64 @@ public class PacientesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ApiResponse<Paciente>>> CrearPaciente([FromBody] PacienteCreateDto dto)
     {
-        var persona = new Persona
+        try
         {
-            Nombre = dto.Nombre,
-            Apellido = dto.Apellido,
-            Correo = dto.Correo,
-            Telefono = dto.Telefono
-        };
+            var persona = new Persona
+            {
+                Nombre = dto.Nombre,
+                Apellido = dto.Apellido,
+                Correo = dto.Correo,
+                Telefono = dto.Telefono
+            };
 
-        var paciente = new Paciente
+            var paciente = new Paciente
+            {
+                NumDocumento = dto.NumDocumento,
+                TipoDocumento = dto.TipoDocumento,
+                IdObraSocial = dto.IdObraSocial,
+                NumObraSocial = dto.NumObraSocial,
+                PorcentajeIva = dto.PorcentajeIva
+            };
+
+            var pacienteCreado = await _pacienteRepository.CrearAsync(paciente, persona);
+            return CreatedAtAction(nameof(ObtenerPorId), new { idPaciente = pacienteCreado.IdPaciente }, ApiResponse<Paciente>.Ok(pacienteCreado, "Paciente creado con éxito."));
+        }
+        catch (Exception ex)
         {
-            NumDocumento = dto.NumDocumento,
-            TipoDocumento = dto.TipoDocumento,
-            IdObraSocial = dto.IdObraSocial,
-            NumObraSocial = dto.NumObraSocial,
-            PorcentajeIva = dto.PorcentajeIva
-        };
+            return BadRequest(ApiResponse<Paciente>.Error($"Error al guardar paciente: {ex.Message}"));
+        }
+    }
 
-        var pacienteCreado = await _pacienteRepository.CrearAsync(paciente, persona);
-        return CreatedAtAction(nameof(ObtenerPorId), new { idPaciente = pacienteCreado.IdPaciente }, ApiResponse<Paciente>.Ok(pacienteCreado, "Paciente creado con éxito."));
+    [HttpPut]
+    public async Task<ActionResult<ApiResponse<Paciente>>> ActualizarPaciente([FromBody] PacienteUpdateDto dto)
+    {
+        try
+        {
+            var persona = new Persona
+            {
+                IdPersona = dto.IdPaciente,
+                Nombre = dto.Nombre,
+                Apellido = dto.Apellido,
+                Correo = dto.Correo,
+                Telefono = dto.Telefono
+            };
+
+            var paciente = new Paciente
+            {
+                IdPaciente = dto.IdPaciente,
+                NumDocumento = dto.NumDocumento,
+                TipoDocumento = dto.TipoDocumento,
+                IdObraSocial = dto.IdObraSocial,
+                NumObraSocial = dto.NumObraSocial,
+                PorcentajeIva = dto.PorcentajeIva
+            };
+
+            var pacienteActualizado = await _pacienteRepository.ActualizarAsync(paciente, persona);
+            return Ok(ApiResponse<Paciente>.Ok(pacienteActualizado, "Paciente actualizado con éxito."));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ApiResponse<Paciente>.Error($"Error al actualizar paciente: {ex.Message}"));
+        }
     }
 }

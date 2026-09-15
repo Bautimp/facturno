@@ -1,16 +1,42 @@
-﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+@inherits LayoutComponentBase
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+<div class="app-container">
+    <AuthorizeView>
+        <Authorized>
+            <div class="sidebar">
+                <div class="sidebar-brand">
+                    <span>⚡ Facturno</span>
+                </div>
+                <NavMenu />
+            </div>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+            <div class="main-content">
+                <header class="header-nav">
+                    <div>
+                        <h5 class="m-0 font-semibold text-gray-700">Centro Médico Facturno</h5>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="text-end">
+                            <span class="d-block font-semibold">@context.User.Identity?.Name</span>
+                            <span class="badge bg-primary">@GetUserRole(context.User)</span>
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm" @onclick="Logout">
+                            Cerrar Sesión
+                        </button>
+                    </div>
+                </header>
+
+                <main class="page-content">
+                    @Body
+                </main>
+            </div>
+        </Authorized>
+
+        <NotAuthorized>
+            <div class="w-100">
+                @Body
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
 </div>

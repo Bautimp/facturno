@@ -27,13 +27,17 @@ public class TurnoRepository : ITurnoRepository
 
     public async Task<List<Turno>> ObtenerPorProfesionalYFechaAsync(Guid idProfesional, DateOnly fecha)
     {
-        var fechaDateTime = fecha.ToDateTime(TimeOnly.MinValue);
+        var profIdStr = idProfesional.ToString();
         var response = await _supabaseClient.From<TurnoEntity>()
-            .Where(x => x.IdProfesional == idProfesional.ToString())
-            .Where(x => x.Fecha == fechaDateTime)
+            .Where(x => x.IdProfesional == profIdStr)
             .Get();
 
-        return response.Models.Select(MapearATurno).ToList();
+        var targetDate = fecha.ToDateTime(TimeOnly.MinValue).Date;
+
+        return response.Models
+            .Where(x => x.Fecha.Date == targetDate)
+            .Select(MapearATurno)
+            .ToList();
     }
 
     public async Task<List<Turno>> ObtenerPorPacienteAsync(long idPaciente)

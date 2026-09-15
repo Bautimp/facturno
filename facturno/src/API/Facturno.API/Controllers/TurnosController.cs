@@ -21,65 +21,100 @@ public class TurnosController : ControllerBase
     [HttpGet("profesional/{idProfesional:guid}")]
     public async Task<ActionResult<ApiResponse<List<Turno>>>> ObtenerPorProfesionalYFecha(Guid idProfesional, [FromQuery] string fecha)
     {
-        if (!DateOnly.TryParse(fecha, out var dateOnly))
+        try
         {
-            return BadRequest(ApiResponse<List<Turno>>.Error("Formato de fecha inválido. Usar YYYY-MM-DD."));
-        }
+            if (!DateOnly.TryParse(fecha, out var dateOnly))
+            {
+                return BadRequest(ApiResponse<List<Turno>>.Error("Formato de fecha inválido. Usar YYYY-MM-DD."));
+            }
 
-        var respuesta = await _turnoService.ListarPorProfesionalYFechaAsync(idProfesional, dateOnly);
-        return Ok(respuesta);
+            var respuesta = await _turnoService.ListarPorProfesionalYFechaAsync(idProfesional, dateOnly);
+            return Ok(respuesta);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<List<Turno>>.Error($"Error al obtener turnos: {ex.Message}"));
+        }
     }
 
     [HttpPost]
     public async Task<ActionResult<ApiResponse<Turno>>> AgendarTurno([FromBody] TurnoCreateDto dto)
     {
-        if (!ModelState.IsValid)
+        try
         {
-            return BadRequest(ApiResponse<Turno>.Error("Datos de solicitud inválidos."));
-        }
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ApiResponse<Turno>.Error("Datos de solicitud inválidos."));
+            }
 
-        var respuesta = await _turnoService.AgendarTurnoAsync(dto);
-        if (!respuesta.Exito)
+            var respuesta = await _turnoService.AgendarTurnoAsync(dto);
+            if (!respuesta.Exito)
+            {
+                return BadRequest(respuesta);
+            }
+
+            return CreatedAtAction(nameof(ObtenerPorProfesionalYFecha), new { idProfesional = respuesta.Datos!.IdProfesional, fecha = respuesta.Datos.Fecha.ToString("yyyy-MM-dd") }, respuesta);
+        }
+        catch (Exception ex)
         {
-            return BadRequest(respuesta);
+            return StatusCode(500, ApiResponse<Turno>.Error($"Error al agendar turno: {ex.Message}"));
         }
-
-        return CreatedAtAction(nameof(ObtenerPorProfesionalYFecha), new { idProfesional = respuesta.Datos!.IdProfesional, fecha = respuesta.Datos.Fecha.ToString("yyyy-MM-dd") }, respuesta);
     }
 
     [HttpPost("recurrentes")]
     public async Task<ActionResult<ApiResponse<List<Turno>>>> AgendarTurnosRecurrentes([FromBody] TurnoRecurrenteCreateDto dto)
     {
-        if (!ModelState.IsValid)
+        try
         {
-            return BadRequest(ApiResponse<List<Turno>>.Error("Datos de solicitud inválidos."));
-        }
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ApiResponse<List<Turno>>.Error("Datos de solicitud inválidos."));
+            }
 
-        var respuesta = await _turnoService.AgendarTurnosRecurrentesAsync(dto);
-        return Ok(respuesta);
+            var respuesta = await _turnoService.AgendarTurnosRecurrentesAsync(dto);
+            return Ok(respuesta);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<List<Turno>>.Error($"Error al agendar turnos recurrentes: {ex.Message}"));
+        }
     }
 
     [HttpPut]
     public async Task<ActionResult<ApiResponse<Turno>>> ActualizarTurno([FromBody] TurnoUpdateDto dto)
     {
-        var respuesta = await _turnoService.ActualizarTurnoAsync(dto);
-        if (!respuesta.Exito)
+        try
         {
-            return BadRequest(respuesta);
-        }
+            var respuesta = await _turnoService.ActualizarTurnoAsync(dto);
+            if (!respuesta.Exito)
+            {
+                return BadRequest(respuesta);
+            }
 
-        return Ok(respuesta);
+            return Ok(respuesta);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<Turno>.Error($"Error al actualizar turno: {ex.Message}"));
+        }
     }
 
     [HttpDelete("{idTurno:long}")]
     public async Task<ActionResult<ApiResponse<bool>>> CancelarTurno(long idTurno)
     {
-        var respuesta = await _turnoService.CancelarTurnoAsync(idTurno);
-        if (!respuesta.Exito)
+        try
         {
-            return NotFound(respuesta);
-        }
+            var respuesta = await _turnoService.CancelarTurnoAsync(idTurno);
+            if (!respuesta.Exito)
+            {
+                return NotFound(respuesta);
+            }
 
-        return Ok(respuesta);
+            return Ok(respuesta);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<bool>.Error($"Error al cancelar turno: {ex.Message}"));
+        }
     }
 }

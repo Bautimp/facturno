@@ -16,14 +16,15 @@ public class ProfesionalRepository : IProfesionalRepository
 
     public async Task<Profesional?> ObtenerPorIdAsync(Guid idProfesional)
     {
+        var profIdStr = idProfesional.ToString();
         var profRes = await _supabaseClient.From<ProfesionalEntity>()
-            .Where(x => x.IdProfesional == idProfesional.ToString())
+            .Where(x => x.IdProfesional == profIdStr)
             .Single();
 
         if (profRes == null) return null;
 
         var userRes = await _supabaseClient.From<UsuarioEntity>()
-            .Where(x => x.IdUsuario == idProfesional.ToString())
+            .Where(x => x.IdUsuario == profIdStr)
             .Single();
 
         PersonaEntity? personaRes = null;
@@ -56,40 +57,32 @@ public class ProfesionalRepository : IProfesionalRepository
 
     public async Task<Profesional> CrearAsync(Profesional profesional, Usuario usuario, Persona persona)
     {
-        // 1. Crear Persona
-        var personaEntity = new PersonaEntity
+        var rpcParams = new Dictionary<string, object>
         {
-            Nombre = persona.Nombre,
-            Apellido = persona.Apellido,
-            Correo = persona.Correo,
-            Telefono = persona.Telefono
+            { "p_nombre", persona.Nombre ?? string.Empty },
+            { "p_apellido", persona.Apellido ?? string.Empty },
+            { "p_correo", persona.Correo ?? string.Empty },
+            { "p_telefono", persona.Telefono ?? 0 },
+            { "p_especialidad", profesional.Especialidad?.ToString() ?? string.Empty },
+            { "p_matricula", profesional.Matricula ?? string.Empty },
+            { "p_cuit", profesional.Cuit ?? string.Empty },
+            { "p_precio_consulta", profesional.PrecioConsulta ?? 0 },
+            { "p_tipo_comprobante", profesional.TipoComprobante?.ToString() ?? string.Empty },
+            { "p_condicion_iva", profesional.CondicionIva?.ToString() ?? string.Empty }
         };
-        var personaCreated = (await _supabaseClient.From<PersonaEntity>().Insert(personaEntity)).Models.First();
 
-        // 2. Crear Usuario
-        var usuarioEntity = new UsuarioEntity
+        var response = await _supabaseClient.Postgrest.Rpc("crear_profesional", rpcParams);
+        if (response != null && !string.IsNullOrWhiteSpace(response.Content))
         {
-            IdUsuario = usuario.IdUsuario.ToString(),
-            IdPersona = personaCreated.IdPersona,
-            Rol = usuario.Rol.ToString(),
-            Activo = usuario.Activo
-        };
-        var usuarioCreated = (await _supabaseClient.From<UsuarioEntity>().Insert(usuarioEntity)).Models.First();
+            var createdIdString = response.Content.Trim('"');
+            if (Guid.TryParse(createdIdString, out var createdGuid))
+            {
+                var result = await ObtenerPorIdAsync(createdGuid);
+                if (result != null) return result;
+            }
+        }
 
-        // 3. Crear Profesional
-        var profesionalEntity = new ProfesionalEntity
-        {
-            IdProfesional = usuario.IdUsuario.ToString(),
-            Especialidad = profesional.Especialidad?.ToString(),
-            Matricula = profesional.Matricula,
-            Cuit = profesional.Cuit,
-            PrecioConsulta = profesional.PrecioConsulta,
-            TipoComprobante = profesional.TipoComprobante?.ToString(),
-            CondicionIva = profesional.CondicionIva?.ToString()
-        };
-        var profesionalCreated = (await _supabaseClient.From<ProfesionalEntity>().Insert(profesionalEntity)).Models.First();
-
-        return MapearAProfesional(profesionalCreated, usuarioCreated, personaCreated);
+        throw new Exception("No se pudo obtener el ID del profesional creado desde la función RPC 'crear_profesional'.");
     }
 
     public async Task<Profesional> ActualizarAsync(Profesional profesional, Persona persona)

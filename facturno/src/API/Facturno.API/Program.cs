@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Facturno.Shared.Interfaces;
 using Facturno.API.Services;
 using Facturno.Infrastructure.Supabase.Repositories;
@@ -40,19 +41,64 @@ builder.Services.AddScoped<IObraSocialRepository, ObraSocialRepository>();
 builder.Services.AddScoped<ITurnoService, TurnoService>();
 builder.Services.AddScoped<IFacturaPdfService, Facturno.Infrastructure.Services.FacturaPdfService>();
 
-// 5. Configurar Autenticación y Autorización
+builder.Services.AddMemoryCache();
+
+// 5. Configurar Autenticación y Autorización (Supabase JWKS / ES256)
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.Authority = $"{supabaseUrl}/auth/v1";
         options.RequireHttpsMetadata = false;
         options.SaveToken = true;
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuerSigningKey = false,
-            ValidateIssuer = false,
-            ValidateAudience = false
+            ValidateIssuer = true,
+            ValidIssuer = $"{supabaseUrl}/auth/v1",
+            ValidateAudience = true,
+            ValidAudience = "authenticated",
+            ValidateIssuerSigningKey = true
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var email = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value 
+                         ?? context.Principal?.FindFirst("email")?.Value;
+
+                if (!string.IsNullOrEmpty(email))
+                {
+                    var cache = context.HttpContext.RequestServices.GetRequiredService<IMemoryCache>();
+                    var cacheKey = $"user_role_{email}";
+
+                    if (!cache.TryGetValue(cacheKey, out object? cachedObj) || cachedObj is not string rolString)
+                    {
+                        var repo = context.HttpContext.RequestServices.GetRequiredService<IUsuarioRepository>();
+                        var usuario = await repo.ObtenerPorCorreoAsync(email);
+                        if (usuario != null && usuario.Activo)
+                        {
+                            rolString = usuario.Rol.ToString();
+                            cache.Set(cacheKey, rolString, TimeSpan.FromMinutes(5));
+                        }
+                        else
+                        {
+                            rolString = string.Empty;
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(rolString))
+                    {
+                        var identity = (System.Security.Claims.ClaimsIdentity?)context.Principal?.Identity;
+                        if (identity != null)
+                        {
+                            identity.AddClaim(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, rolString));
+                        }
+                    }
+                }
+            }
         };
     });
+
 
 builder.Services.AddAuthorization();
 

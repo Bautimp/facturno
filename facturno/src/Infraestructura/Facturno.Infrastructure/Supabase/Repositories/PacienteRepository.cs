@@ -43,38 +43,106 @@ public class PacienteRepository : IPacienteRepository
 
     public async Task<Paciente> CrearAsync(Paciente paciente, Persona persona)
     {
-        var personaEntity = new PersonaEntity
+        var idOs = paciente.IdObraSocial > 0 ? paciente.IdObraSocial : 1;
+        await AsegurarObraSocialExisteAsync(idOs);
+        paciente.IdObraSocial = idOs;
+
+        var correoNormalizado = string.IsNullOrWhiteSpace(persona.Correo) ? null : persona.Correo.Trim();
+        var numObraSocialNormalizado = (paciente.IdObraSocial == 1 || string.IsNullOrWhiteSpace(paciente.NumObraSocial)) 
+            ? null 
+            : paciente.NumObraSocial.Trim();
+
+        PersonaEntity personaCreated;
+
+        if (!string.IsNullOrEmpty(correoNormalizado))
         {
-            Nombre = persona.Nombre,
-            Apellido = persona.Apellido,
-            Correo = persona.Correo,
-            Telefono = persona.Telefono
-        };
+            var existingPersonaRes = await _supabaseClient.From<PersonaEntity>()
+                .Where(x => x.Correo == correoNormalizado)
+                .Get();
 
-        var personaCreated = (await _supabaseClient.From<PersonaEntity>().Insert(personaEntity)).Models.First();
-
-        var pacienteEntity = new PacienteEntity
+            var existingPersona = existingPersonaRes.Models.FirstOrDefault();
+            if (existingPersona != null)
+            {
+                personaCreated = existingPersona;
+                // Actualizar datos de la persona si cambiaron
+                personaCreated.Nombre = persona.Nombre;
+                personaCreated.Apellido = persona.Apellido;
+                personaCreated.Telefono = persona.Telefono;
+                await _supabaseClient.From<PersonaEntity>().Update(personaCreated);
+            }
+            else
+            {
+                var personaEntity = new PersonaEntity
+                {
+                    Nombre = persona.Nombre,
+                    Apellido = persona.Apellido,
+                    Correo = correoNormalizado,
+                    Telefono = persona.Telefono
+                };
+                personaCreated = (await _supabaseClient.From<PersonaEntity>().Insert(personaEntity)).Models.First();
+            }
+        }
+        else
         {
-            IdPaciente = personaCreated.IdPersona,
-            NumDocumento = paciente.NumDocumento,
-            TipoDocumento = paciente.TipoDocumento?.ToString(),
-            IdObraSocial = paciente.IdObraSocial,
-            NumObraSocial = paciente.NumObraSocial,
-            PorcentajeIva = paciente.PorcentajeIva
-        };
+            var personaEntity = new PersonaEntity
+            {
+                Nombre = persona.Nombre,
+                Apellido = persona.Apellido,
+                Correo = null,
+                Telefono = persona.Telefono
+            };
+            personaCreated = (await _supabaseClient.From<PersonaEntity>().Insert(personaEntity)).Models.First();
+        }
 
-        var pacienteCreated = (await _supabaseClient.From<PacienteEntity>().Insert(pacienteEntity)).Models.First();
+        // Verificar si ya existe como paciente
+        var existingPacRes = await _supabaseClient.From<PacienteEntity>()
+            .Where(x => x.IdPaciente == personaCreated.IdPersona)
+            .Get();
+
+        var existingPac = existingPacRes.Models.FirstOrDefault();
+        PacienteEntity pacienteCreated;
+
+        if (existingPac != null)
+        {
+            existingPac.NumDocumento = paciente.NumDocumento;
+            existingPac.TipoDocumento = paciente.TipoDocumento?.ToString();
+            existingPac.IdObraSocial = paciente.IdObraSocial;
+            existingPac.NumObraSocial = numObraSocialNormalizado;
+            existingPac.PorcentajeIva = paciente.PorcentajeIva;
+
+            await _supabaseClient.From<PacienteEntity>().Update(existingPac);
+            pacienteCreated = existingPac;
+        }
+        else
+        {
+            var pacienteEntity = new PacienteEntity
+            {
+                IdPaciente = personaCreated.IdPersona,
+                NumDocumento = paciente.NumDocumento,
+                TipoDocumento = paciente.TipoDocumento?.ToString(),
+                IdObraSocial = paciente.IdObraSocial,
+                NumObraSocial = numObraSocialNormalizado,
+                PorcentajeIva = paciente.PorcentajeIva
+            };
+            pacienteCreated = (await _supabaseClient.From<PacienteEntity>().Insert(pacienteEntity)).Models.First();
+        }
+
         return MapearAPaciente(pacienteCreated, personaCreated);
     }
 
     public async Task<Paciente> ActualizarAsync(Paciente paciente, Persona persona)
     {
+        var correoNormalizado = string.IsNullOrWhiteSpace(persona.Correo) ? null : persona.Correo.Trim();
+        var numObraSocialNormalizado = (paciente.IdObraSocial == 1 || string.IsNullOrWhiteSpace(paciente.NumObraSocial)) 
+            ? null 
+            : paciente.NumObraSocial.Trim();
+
         var personaEntity = new PersonaEntity
         {
             IdPersona = persona.IdPersona,
             Nombre = persona.Nombre,
             Apellido = persona.Apellido,
-            Correo = persona.Correo,
+            Correo = correoNormalizado,
             Telefono = persona.Telefono
         };
         await _supabaseClient.From<PersonaEntity>().Update(personaEntity);
@@ -85,7 +153,7 @@ public class PacienteRepository : IPacienteRepository
             NumDocumento = paciente.NumDocumento,
             TipoDocumento = paciente.TipoDocumento?.ToString(),
             IdObraSocial = paciente.IdObraSocial,
-            NumObraSocial = paciente.NumObraSocial,
+            NumObraSocial = numObraSocialNormalizado,
             PorcentajeIva = paciente.PorcentajeIva
         };
         await _supabaseClient.From<PacienteEntity>().Update(pacienteEntity);
@@ -113,5 +181,31 @@ public class PacienteRepository : IPacienteRepository
                 Telefono = personaEntity.Telefono
             }
         };
+    }
+
+    private async Task AsegurarObraSocialExisteAsync(long idObraSocial)
+    {
+        if (idObraSocial <= 0) return;
+        try
+        {
+            var res = await _supabaseClient.From<ObraSocialEntity>()
+                .Where(x => x.IdObraSocial == idObraSocial)
+                .Get();
+
+            if (!res.Models.Any())
+            {
+                var os = new ObraSocialEntity
+                {
+                    IdObraSocial = idObraSocial,
+                    Nombre = idObraSocial == 1 ? "Particular" : $"Obra Social #{idObraSocial}",
+                    Activo = true
+                };
+                await _supabaseClient.From<ObraSocialEntity>().Insert(os);
+            }
+        }
+        catch
+        {
+            // Ignorar si ya existe o falla concurrencia
+        }
     }
 }

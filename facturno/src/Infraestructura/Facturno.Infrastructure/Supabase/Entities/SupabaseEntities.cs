@@ -29,7 +29,7 @@ public class PersonaEntity : BaseModel
 [Table("usuarios")]
 public class UsuarioEntity : BaseModel
 {
-    [PrimaryKey("id_usuario", false)]
+    [PrimaryKey("id_usuario", true)]
     public string IdUsuario { get; set; } = string.Empty;
 
     [Column("created_at")]
@@ -48,7 +48,7 @@ public class UsuarioEntity : BaseModel
 [Table("profesionales")]
 public class ProfesionalEntity : BaseModel
 {
-    [PrimaryKey("id_profesional", false)]
+    [PrimaryKey("id_profesional", true)]
     public string IdProfesional { get; set; } = string.Empty;
 
     [Column("created_at")]
@@ -76,7 +76,7 @@ public class ProfesionalEntity : BaseModel
 [Table("obras_sociales")]
 public class ObraSocialEntity : BaseModel
 {
-    [PrimaryKey("id_obra_social", false)]
+    [PrimaryKey("id_obra_social", true)]
     public long IdObraSocial { get; set; }
 
     [Column("created_at")]
@@ -92,7 +92,7 @@ public class ObraSocialEntity : BaseModel
 [Table("pacientes")]
 public class PacienteEntity : BaseModel
 {
-    [PrimaryKey("id_paciente", false)]
+    [PrimaryKey("id_paciente", true)]
     public long IdPaciente { get; set; }
 
     [Column("created_at")]
@@ -145,7 +145,7 @@ public class TurnoEntity : BaseModel
 [Table("agendas_compartidas")]
 public class AgendaCompartidaEntity : BaseModel
 {
-    [PrimaryKey("id_administrativo", false)]
+    [PrimaryKey("id_administrativo", true)]
     public string IdAdministrativo { get; set; } = string.Empty;
 
     [Column("id_profesional")]

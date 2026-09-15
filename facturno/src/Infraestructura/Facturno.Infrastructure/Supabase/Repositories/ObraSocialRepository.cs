@@ -27,6 +27,31 @@ public class ObraSocialRepository : IObraSocialRepository
     public async Task<List<ObraSocial>> ObtenerTodasAsync()
     {
         var res = await _supabaseClient.From<ObraSocialEntity>().Get();
+        if (!res.Models.Any())
+        {
+            var defaults = new List<ObraSocialEntity>
+            {
+                new ObraSocialEntity { IdObraSocial = 1, Nombre = "Particular", Activo = true },
+                new ObraSocialEntity { IdObraSocial = 2, Nombre = "OSDE", Activo = true },
+                new ObraSocialEntity { IdObraSocial = 3, Nombre = "Swiss Medical", Activo = true },
+                new ObraSocialEntity { IdObraSocial = 4, Nombre = "Galeno", Activo = true }
+            };
+
+            foreach (var os in defaults)
+            {
+                try
+                {
+                    await _supabaseClient.From<ObraSocialEntity>().Insert(os);
+                }
+                catch
+                {
+                    // Ignorar si ya existe
+                }
+            }
+
+            res = await _supabaseClient.From<ObraSocialEntity>().Get();
+        }
+
         return res.Models.Select(MapearAObraSocial).ToList();
     }
 

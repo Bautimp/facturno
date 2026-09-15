@@ -1,0 +1,232 @@
+@page "/agenda"
+@attribute [Authorize]
+
+<div class="facturno-card">
+    <div class="card-header-custom">
+        <div>
+            <h3 class="m-0 font-bold">📅 Agenda de Turnos</h3>
+            <p class="text-muted m-0">Gestión de turnos médicos e historias de atención</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary-custom" @onclick="AbrirModalNuevoTurno">
+                + Nuevo Turno
+            </button>
+
+            <button class="btn btn-outline-primary" @onclick="AbrirModalTurnoRecurrente">
+                🔄 Turno Recurrente
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros de Fecha y Profesional -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-5">
+            <label class="form-label font-semibold">Profesional Médicos</label>
+            <select class="form-select" @onchange="OnProfesionalChanged">
+                @foreach (var prof in ListaProfesionales)
+                {
+                    var nombre = prof.Usuario?.Persona != null ? $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido} ({prof.Especialidad})" : "Profesional";
+                    <option value="@prof.IdProfesional" selected="@(prof.IdProfesional == SelectedProfesionalId)">@nombre</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label font-semibold">Fecha</label>
+            <input type="date" class="form-control" value="@SelectedFecha.ToString("yyyy-MM-dd")" @onchange="OnFechaChanged" />
+        </div>
+
+        <div class="col-md-3 d-flex align-items-end">
+            <button class="btn btn-secondary-custom w-100" @onclick="CargarTurnos">
+                🔍 Buscar Turnos
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(MensajeAlerta))
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            @MensajeAlerta
+            <button type="button" class="btn-close" @onclick="() => MensajeAlerta = null"></button>
+        </div>
+    }
+
+    <!-- Schedule Grid (30 minutos) -->
+    <div class="grid-turnos">
+        @foreach (var slot in TimeSlots)
+        {
+            var turnoSlot = ListaTurnos.FirstOrDefault(t => t.Hora == slot);
+
+            <div class="slot-hora">
+                <div class="slot-time">
+                    @slot.ToString("HH:mm") hs
+                </div>
+
+                <div class="slot-body">
+                    @if (turnoSlot != null)
+                    {
+                        <div class="turno-box">
+                            <div>
+                                <span class="badge-estado @GetBadgeClass(turnoSlot.Estado)">@turnoSlot.Estado</span>
+                                <strong class="ms-2">Paciente #@turnoSlot.IdPaciente</strong>
+                                @if (!string.IsNullOrWhiteSpace(turnoSlot.Observacion))
+                                {
+                                    <span class="text-muted ms-2 italic">(@turnoSlot.Observacion)</span>
+                                }
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2">
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => EditarEstadoTurno(turnoSlot)">
+                                    ✏️ Estado
+                                </button>
+
+                                @if (turnoSlot.Estado == EstadoTurno.Completo)
+                                {
+                                    <a href="@GetPdfUrl(turnoSlot.IdTurno)" target="_blank" class="btn btn-sm btn-outline-success">
+                                        📄 Comprobante PDF
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="text-muted italic">Disponible</span>
+                        <button class="btn btn-sm btn-light border" @onclick="() => AgendarSlotEspecifico(slot)">
+                            + Agendar
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal Nuevo Turno -->
+@if (MostrarModalNuevo)
+{
+    <div class="modal-overlay">
+        <div class="modal-content-custom">
+            <h4 class="mb-3">Nuevo Turno Médico</h4>
+            <EditForm Model="nuevoTurnoDto" OnValidSubmit="GuardarNuevoTurno">
+                <div class="mb-3">
+                    <label class="form-label font-semibold">Paciente</label>
+                    <select class="form-select" @bind="nuevoTurnoDto.IdPaciente">
+                        <option value="0">Seleccionar Paciente...</option>
+                        @foreach (var pac in ListaPacientes)
+                        {
+                            var nomPac = pac.Persona != null ? $"{pac.Persona.Nombre} {pac.Persona.Apellido} (DNI {pac.NumDocumento})" : $"Paciente #{pac.IdPaciente}";
+                            <option value="@pac.IdPaciente">@nomPac</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Fecha</label>
+                        <input type="date" class="form-control" value="@nuevoTurnoDto.Fecha.ToString("yyyy-MM-dd")" @onchange="(e) => nuevoTurnoDto.Fecha = DateOnly.Parse(e.Value!.ToString()!)" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Hora</label>
+                        <input type="time" class="form-control" value="@nuevoTurnoDto.Hora.ToString("HH:mm")" @onchange="(e) => nuevoTurnoDto.Hora = TimeOnly.Parse(e.Value!.ToString()!)" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label font-semibold">Observaciones</label>
+                    <textarea class="form-control" rows="2" @bind="nuevoTurnoDto.Observacion" placeholder="Motivo de consulta..."></textarea>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary-custom" @onclick="() => MostrarModalNuevo = false">Cancelar</button>
+                    <button type="submit" class="btn btn-primary-custom">Agendar Turno</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<!-- Modal Turno Recurrente (Issue #15) -->
+@if (MostrarModalRecurrente)
+{
+    <div class="modal-overlay">
+        <div class="modal-content-custom">
+            <h4 class="mb-3">Agendar Turnos Recurrentes</h4>
+            <EditForm Model="recurrenteDto" OnValidSubmit="GuardarTurnosRecurrentes">
+                <div class="mb-3">
+                    <label class="form-label font-semibold">Paciente</label>
+                    <select class="form-select" @bind="recurrenteDto.IdPaciente">
+                        <option value="0">Seleccionar Paciente...</option>
+                        @foreach (var pac in ListaPacientes)
+                        {
+                            var nomPac = pac.Persona != null ? $"{pac.Persona.Nombre} {pac.Persona.Apellido}" : $"Paciente #{pac.IdPaciente}";
+                            <option value="@pac.IdPaciente">@nomPac</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Día de la Semana</label>
+                        <select class="form-select" @bind="recurrenteDto.DiaSemana">
+                            <option value="@DayOfWeek.Monday">Lunes</option>
+                            <option value="@DayOfWeek.Tuesday">Martes</option>
+                            <option value="@DayOfWeek.Wednesday">Miércoles</option>
+                            <option value="@DayOfWeek.Thursday">Jueves</option>
+                            <option value="@DayOfWeek.Friday">Viernes</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Hora</label>
+                        <input type="time" class="form-control" value="@recurrenteDto.Hora.ToString("HH:mm")" @onchange="(e) => recurrenteDto.Hora = TimeOnly.Parse(e.Value!.ToString()!)" />
+                    </div>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Fecha Inicio</label>
+                        <input type="date" class="form-control" value="@recurrenteDto.FechaInicio.ToString("yyyy-MM-dd")" @onchange="(e) => recurrenteDto.FechaInicio = DateOnly.Parse(e.Value!.ToString()!)" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Fecha Fin</label>
+                        <input type="date" class="form-control" value="@recurrenteDto.FechaFin.ToString("yyyy-MM-dd")" @onchange="(e) => recurrenteDto.FechaFin = DateOnly.Parse(e.Value!.ToString()!)" />
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary-custom" @onclick="() => MostrarModalRecurrente = false">Cancelar</button>
+                    <button type="submit" class="btn btn-primary-custom">Generar Serie de Turnos</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<!-- Modal Editar Estado Turno -->
+@if (TurnoEnEdicion != null)
+{
+    <div class="modal-overlay">
+        <div class="modal-content-custom">
+            <h4 class="mb-3">Actualizar Turno #@TurnoEnEdicion.IdTurno</h4>
+            <div class="mb-3">
+                <label class="form-label font-semibold">Estado del Turno</label>
+                <select class="form-select" @bind="turnoUpdateDto.Estado">
+                    <option value="@EstadoTurno.Activo">Activo</option>
+                    <option value="@EstadoTurno.Completo">Completo (Atendido)</option>
+                    <option value="@EstadoTurno.Falta">Falta (Ausente)</option>
+                    <option value="@EstadoTurno.Cancelado">Cancelado</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label font-semibold">Observaciones</label>
+                <textarea class="form-control" rows="2" @bind="turnoUpdateDto.Observacion"></textarea>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-secondary-custom" @onclick="() => TurnoEnEdicion = null">Cancelar</button>
+                <button type="button" class="btn btn-primary-custom" @onclick="GuardarEstadoTurno">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+}
