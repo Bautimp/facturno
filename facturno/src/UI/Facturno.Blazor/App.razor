@@ -1,0 +1,25 @@
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    <div class="unauthorized-container">
+                        <h2>Acceso No Autorizado</h2>
+                        <p>Por favor inicia sesión con una cuenta permitida para acceder a este módulo.</p>
+                        <a href="/login" class="btn btn-primary">Ir a Iniciar Sesión</a>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <div class="not-found-container">
+                    <h2>Página No Encontrada</h2>
+                    <p>La dirección especificada no existe en Facturno.</p>
+                    <a href="/agenda" class="btn btn-primary">Volver a la Agenda</a>
+                </div>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>

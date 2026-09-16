@@ -485,3 +485,24 @@ $RECYCLE.BIN/
 appsettings.json
 appsettings.Development.json
 appsettings.*.json
+
+# Documentacion
+documentacion/
+
+# .NET & IDE files
+bin/
+obj/
+.vs/
+.idea/
+.vscode/
+
+# Environment and Secret configuration files
+.env
+.env.*
+appsettings.Development.json
+appsettings.Local.json
+*.user
+
+# Operating System files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,42 @@
+@inherits LayoutComponentBase
+
+<div class="app-container">
+    <AuthorizeView>
+        <Authorized>
+            <div class="sidebar">
+                <div class="sidebar-brand">
+                    <span class="brand-title">Facturno</span>
+                </div>
+                <NavMenu />
+            </div>
+
+            <div class="main-content">
+                <header class="header-nav">
+                    <div>
+                        <h5 class="m-0 font-bold header-title">Centro Médico Buen Pastor</h5>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="user-info-inline d-flex align-items-center gap-2">
+                            <span class="user-name font-semibold">@context.User.Identity?.Name</span>
+                            <span class="badge role-badge">@GetUserRole(context.User)</span>
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm" @onclick="Logout">
+                            Cerrar Sesión
+                        </button>
+                    </div>
+                </header>
+
+                <main class="page-content">
+                    @Body
+                </main>
+            </div>
+        </Authorized>
+
+        <NotAuthorized>
+            <div class="w-100">
+                @Body
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>

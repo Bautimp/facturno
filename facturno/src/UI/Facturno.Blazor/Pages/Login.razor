@@ -1,0 +1,45 @@
+@page "/"
+@page "/login"
+@layout EmptyLayout
+
+<div class="login-bg">
+    <div class="login-card">
+        <div class="text-center mb-4">
+            <h2 class="font-bold text-primary mb-1">FACTURNO</h2>
+            <p class="text-muted">Centro Médico Buen Pastor - Acceso al Sistema</p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <div class="alert alert-danger font-medium mb-3" role="alert">
+                @ErrorMessage
+            </div>
+        }
+
+        <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label class="form-label font-medium">Correo Electrónico</label>
+                <InputText @bind-Value="loginModel.Correo" class="form-control" placeholder="medico@facturno.com" />
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label font-medium">Contraseña</label>
+                <InputText @bind-Value="loginModel.Password" type="password" class="form-control" placeholder="••••••••" />
+            </div>
+
+            <button type="submit" class="btn btn-primary-custom w-100 mb-3" disabled="@isSubmitting">
+                @if (isSubmitting)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    <span>Ingresando...</span>
+                }
+                else
+                {
+                    <span>Iniciar Sesión</span>
+                }
+            </button>
+        </EditForm>
+    </div>
+</div>

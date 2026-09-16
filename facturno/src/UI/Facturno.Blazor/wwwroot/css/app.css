@@ -1,0 +1,434 @@
+/* Facturno Modern CSS Theme */
+:root {
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --primary-light: #eef2ff;
+    --secondary: #64748b;
+    --dark-bg: #0f172a;
+    --card-bg: #ffffff;
+    --surface: #f8fafc;
+    --border-color: #e2e8f0;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    
+    /* Estado Badges */
+    --badge-activo-bg: #dcfce7;
+    --badge-activo-text: #166534;
+    --badge-completo-bg: #dbeafe;
+    --badge-completo-text: #1e40af;
+    --badge-falta-bg: #fef3c7;
+    --badge-falta-text: #92400e;
+    --badge-cancelado-bg: #ffe4e6;
+    --badge-cancelado-text: #9f1239;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #f1f5f9;
+    color: var(--text-main);
+    margin: 0;
+    padding: 0;
+}
+
+/* Loader */
+.blazor-loader {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #0f172a;
+    color: #ffffff;
+}
+
+/* Layout */
+.app-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 260px;
+    background-color: var(--dark-bg);
+    color: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1rem;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-brand {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.brand-title {
+    color: #ffffff;
+    font-size: 1.6rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nav-link-custom {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: #94a3b8;
+    text-decoration: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.nav-link-custom:hover, .nav-link-custom.active {
+    background-color: #1e293b;
+    color: #ffffff;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+.header-nav {
+    height: 70px;
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2rem;
+}
+
+.header-title {
+    color: #1e293b;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.user-info-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.user-name {
+    color: #334155;
+    font-size: 0.95rem;
+}
+
+.role-badge {
+    background-color: #2563eb !important;
+    color: #ffffff;
+    padding: 0.3rem 0.65rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.page-content {
+    padding: 2rem;
+    flex: 1;
+}
+
+/* Cards & Glassmorphism */
+.facturno-card {
+    background-color: #ffffff;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.card-header-custom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+/* Badges */
+.badge-estado {
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.badge-activo { background-color: var(--badge-activo-bg); color: var(--badge-activo-text); }
+.badge-completo { background-color: var(--badge-completo-bg); color: var(--badge-completo-text); }
+.badge-falta { background-color: var(--badge-falta-bg); color: var(--badge-falta-text); }
+.badge-cancelado { background-color: var(--badge-cancelado-bg); color: var(--badge-cancelado-text); }
+
+/* Schedule Grid */
+.grid-turnos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.slot-hora {
+    display: flex;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background-color: #ffffff;
+    overflow: hidden;
+    min-height: 60px;
+}
+
+.slot-time {
+    width: 100px;
+    background-color: #f8fafc;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.slot-body {
+    flex: 1;
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.turno-box {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--primary-light);
+    border-left: 4px solid var(--primary);
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+}
+
+/* Modals */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(15, 23, 42, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+    backdrop-filter: blur(4px);
+}
+
+.modal-content-custom {
+    background: #ffffff;
+    border-radius: 1rem;
+    width: 100%;
+    max-width: 550px;
+    padding: 2rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Buttons */
+.btn-primary-custom {
+    background-color: var(--primary);
+    color: #ffffff;
+    border: none;
+    padding: 0.6rem 1.25rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+.btn-primary-custom:hover {
+    background-color: var(--primary-hover);
+    color: #ffffff;
+}
+
+.btn-secondary-custom {
+    background-color: #e2e8f0;
+    color: var(--text-main);
+    border: none;
+    padding: 0.6rem 1.25rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+}
+
+.btn-secondary-custom:hover {
+    background-color: #cbd5e1;
+}
+
+/* Auth Login Container */
+.login-bg {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    padding: 1rem;
+}
+
+.login-card {
+    background: #ffffff;
+    width: 100%;
+    max-width: 420px;
+    border-radius: 1.25rem;
+    padding: 2.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Turno Popover & Switcher */
+.turno-box-container {
+    position: relative;
+    width: 100%;
+}
+
+.turno-box {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.turno-box:hover, .turno-box.active-popover {
+    background-color: #e0e7ff;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+.popover-inline-estados {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    margin-top: 0.25rem;
+}
+
+.popover-header-small {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #475569;
+    padding: 0.4rem 0.75rem 0.2rem;
+    text-transform: uppercase;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.switcher-vistas button {
+    font-weight: 600;
+}
+
+/* Vista Semana & Mes */
+.card-dia-semana {
+    min-height: 220px;
+    border-radius: 0.5rem;
+}
+
+.min-h-200 {
+    min-height: 180px;
+}
+
+.turno-box-semana {
+    background-color: #f8fafc;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.turno-box-semana:hover {
+    background-color: #e2e8f0;
+}
+
+.card-dia-mes {
+    min-height: 110px;
+    border-radius: 0.5rem;
+    background-color: #ffffff;
+}
+
+.bg-light-blue {
+    background-color: #eff6ff !important;
+}
+
+.small-turno-tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.micro-text {
+    font-size: 0.65rem;
+}
+
+.btn-xs {
+    padding: 0.15rem 0.4rem;
+    font-size: 0.75rem;
+    border-radius: 0.25rem;
+}
+
+.popover-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 30;
+    background: transparent;
+}
+
+.calendar-grid-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+}
+
+.calendar-day-name {
+    padding: 0.4rem 0.25rem;
+    font-size: 0.75rem;
+    color: #475569;
+    background-color: #f1f5f9;
+    border-radius: 0.375rem;
+    letter-spacing: 0.5px;
+}
+
+.calendar-grid-body {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+}
+
+.card-dia-empty {
+    background-color: #f8fafc !important;
+    border: 1px dashed #cbd5e1 !important;
+    opacity: 0.4;
+}

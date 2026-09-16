@@ -1,0 +1,22 @@
+<ul class="nav-list">
+    <li>
+        <NavLink class="nav-link-custom" href="agenda" Match="NavLinkMatch.Prefix">
+            <span>Agenda y Turnos</span>
+        </NavLink>
+    </li>
+    <li>
+        <NavLink class="nav-link-custom" href="pacientes" Match="NavLinkMatch.Prefix">
+            <span>Pacientes</span>
+        </NavLink>
+    </li>
+    
+    <AuthorizeView Roles="Operador,Administrativo">
+        <Authorized>
+            <li>
+                <NavLink class="nav-link-custom" href="gestion-personal" Match="NavLinkMatch.Prefix">
+                    <span>Gestión de Personal</span>
+                </NavLink>
+            </li>
+        </Authorized>
+    </AuthorizeView>
+</ul>
