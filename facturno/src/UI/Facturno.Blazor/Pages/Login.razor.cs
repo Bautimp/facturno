@@ -20,6 +20,15 @@ public partial class Login : ComponentBase
     protected string? ErrorMessage;
     protected bool isSubmitting = false;
 
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            NavigationManager.NavigateTo("/agenda", replace: true);
+        }
+    }
+
     protected async Task HandleLogin()
     {
         ErrorMessage = null;

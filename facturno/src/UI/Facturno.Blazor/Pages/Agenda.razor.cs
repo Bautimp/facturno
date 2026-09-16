@@ -6,6 +6,13 @@ using Facturno.Shared.Enums;
 
 namespace Facturno.Blazor.Pages;
 
+public enum TipoVistaAgenda
+{
+    Dia,
+    Semana,
+    Mes
+}
+
 public partial class Agenda : ComponentBase
 {
     [Inject]
@@ -13,11 +20,17 @@ public partial class Agenda : ComponentBase
 
     protected Guid SelectedProfesionalId;
     protected DateOnly SelectedFecha = DateOnly.FromDateTime(DateTime.Today);
+    protected TipoVistaAgenda VistaActual = TipoVistaAgenda.Dia;
 
     protected List<Profesional> ListaProfesionales = new();
     protected List<Paciente> ListaPacientes = new();
     protected List<Turno> ListaTurnos = new();
     protected List<TimeOnly> TimeSlots = new();
+
+    // Vistas Semana y Mes
+    protected List<DateOnly> DiasSemana = new();
+    protected List<DateOnly> DiasMes = new();
+    protected Dictionary<DateOnly, List<Turno>> TurnosPorFecha = new();
 
     protected string? MensajeAlerta;
     protected bool MostrarModalNuevo = false;
@@ -25,8 +38,9 @@ public partial class Agenda : ComponentBase
 
     protected TurnoCreateDto nuevoTurnoDto = new();
     protected TurnoRecurrenteCreateDto recurrenteDto = new();
-    protected Turno? TurnoEnEdicion;
-    protected TurnoUpdateDto turnoUpdateDto = new();
+    protected long? PopoverTurnoId = null;
+
+    private bool _isLoadingTurnos = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -50,6 +64,14 @@ public partial class Agenda : ComponentBase
             TimeSlots.Add(horaInicio);
             horaInicio = horaInicio.AddMinutes(30);
         }
+    }
+
+    protected async Task CambiarVista(TipoVistaAgenda nuevaVista)
+    {
+        if (VistaActual == nuevaVista && _isLoadingTurnos) return;
+        VistaActual = nuevaVista;
+        PopoverTurnoId = null;
+        await CargarTurnos();
     }
 
     protected async Task CargarProfesionales()
@@ -84,32 +106,99 @@ public partial class Agenda : ComponentBase
         }
         catch
         {
-            // Silencioso en carga secundaria
+            // Carga defensiva
         }
     }
 
     protected async Task CargarTurnos()
     {
-        if (SelectedProfesionalId == Guid.Empty) return;
+        if (SelectedProfesionalId == Guid.Empty || _isLoadingTurnos) return;
 
+        _isLoadingTurnos = true;
         try
         {
-            var fechaStr = SelectedFecha.ToString("yyyy-MM-dd");
-            var url = $"api/turnos/profesional/{SelectedProfesionalId}?fecha={fechaStr}";
-            var res = await Http.GetFromJsonAsync<ApiResponse<List<Turno>>>(url);
+            PopoverTurnoId = null;
 
-            if (res != null && res.Exito && res.Datos != null)
+            if (VistaActual == TipoVistaAgenda.Dia)
             {
-                ListaTurnos = res.Datos;
+                var fechaStr = SelectedFecha.ToString("yyyy-MM-dd");
+                var url = $"api/turnos/profesional/{SelectedProfesionalId}?fecha={fechaStr}";
+                var res = await Http.GetFromJsonAsync<ApiResponse<List<Turno>>>(url);
+
+                ListaTurnos = (res != null && res.Exito && res.Datos != null) ? res.Datos : new List<Turno>();
             }
-            else
+            else if (VistaActual == TipoVistaAgenda.Semana)
             {
-                ListaTurnos.Clear();
+                GenerarDiasSemana();
+                var diasLocales = DiasSemana.ToList();
+                var tempDict = new Dictionary<DateOnly, List<Turno>>();
+
+                foreach (var dia in diasLocales)
+                {
+                    var fechaStr = dia.ToString("yyyy-MM-dd");
+                    var url = $"api/turnos/profesional/{SelectedProfesionalId}?fecha={fechaStr}";
+                    var res = await Http.GetFromJsonAsync<ApiResponse<List<Turno>>>(url);
+                    tempDict[dia] = (res != null && res.Exito && res.Datos != null) ? res.Datos : new List<Turno>();
+                }
+
+                TurnosPorFecha = tempDict;
+            }
+            else if (VistaActual == TipoVistaAgenda.Mes)
+            {
+                GenerarDiasMes();
+                var diasLocales = DiasMes.ToList();
+                var tempDict = new Dictionary<DateOnly, List<Turno>>();
+
+                foreach (var dia in diasLocales)
+                {
+                    var fechaStr = dia.ToString("yyyy-MM-dd");
+                    var url = $"api/turnos/profesional/{SelectedProfesionalId}?fecha={fechaStr}";
+                    var res = await Http.GetFromJsonAsync<ApiResponse<List<Turno>>>(url);
+                    if (res != null && res.Exito && res.Datos != null && res.Datos.Any())
+                    {
+                        tempDict[dia] = res.Datos;
+                    }
+                }
+
+                TurnosPorFecha = tempDict;
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al obtener turnos: {ex.Message}";
+        }
+        finally
+        {
+            _isLoadingTurnos = false;
+        }
+    }
+
+    private void GenerarDiasSemana()
+    {
+        DiasSemana.Clear();
+        int diff = (7 + (SelectedFecha.DayOfWeek - DayOfWeek.Monday)) % 7;
+        var primerDiaSemana = SelectedFecha.AddDays(-1 * diff);
+
+        for (int i = 0; i < 7; i++)
+        {
+            DiasSemana.Add(primerDiaSemana.AddDays(i));
+        }
+    }
+
+    protected int OffsetPrimerDiaMes = 0;
+
+    private void GenerarDiasMes()
+    {
+        DiasMes.Clear();
+        var primerDiaMes = new DateOnly(SelectedFecha.Year, SelectedFecha.Month, 1);
+        int diasEnMes = DateTime.DaysInMonth(SelectedFecha.Year, SelectedFecha.Month);
+
+        // Lunes = 0, Martes = 1, Miércoles = 2, Jueves = 3, Viernes = 4, Sábado = 5, Domingo = 6
+        OffsetPrimerDiaMes = ((int)primerDiaMes.DayOfWeek + 6) % 7;
+
+        for (int i = 0; i < diasEnMes; i++)
+        {
+            DiasMes.Add(primerDiaMes.AddDays(i));
         }
     }
 
@@ -131,6 +220,57 @@ public partial class Agenda : ComponentBase
         }
     }
 
+    protected void TogglePopoverEstado(long idTurno)
+    {
+        if (PopoverTurnoId == idTurno)
+        {
+            PopoverTurnoId = null;
+        }
+        else
+        {
+            PopoverTurnoId = idTurno;
+        }
+    }
+
+    protected void CerrarPopover()
+    {
+        PopoverTurnoId = null;
+    }
+
+    protected async Task CambiarEstadoDirecto(Turno turno, EstadoTurno nuevoEstado)
+    {
+        try
+        {
+            var updateDto = new TurnoUpdateDto
+            {
+                IdTurno = turno.IdTurno,
+                Fecha = turno.Fecha,
+                Hora = turno.Hora,
+                Estado = nuevoEstado,
+                Observacion = turno.Observacion
+            };
+
+            var res = await Http.PutAsJsonAsync("api/turnos", updateDto);
+            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Turno>>();
+
+            if (apiResult != null && apiResult.Exito)
+            {
+                turno.Estado = nuevoEstado;
+                PopoverTurnoId = null;
+                MensajeAlerta = $"Estado del turno #{turno.IdTurno} actualizado a {nuevoEstado}.";
+                await CargarTurnos();
+            }
+            else
+            {
+                MensajeAlerta = apiResult?.Mensaje ?? "No se pudo actualizar el estado del turno.";
+            }
+        }
+        catch (Exception ex)
+        {
+            MensajeAlerta = $"Error al cambiar estado: {ex.Message}";
+        }
+    }
+
     protected void AbrirModalNuevoTurno()
     {
         nuevoTurnoDto = new TurnoCreateDto
@@ -142,12 +282,23 @@ public partial class Agenda : ComponentBase
         MostrarModalNuevo = true;
     }
 
-    protected void AgendarSlotEspecifico(TimeOnly slot)
+    protected void AbrirModalNuevoTurnoConFecha(DateOnly fecha)
     {
         nuevoTurnoDto = new TurnoCreateDto
         {
             IdProfesional = SelectedProfesionalId,
-            Fecha = SelectedFecha,
+            Fecha = fecha,
+            Hora = new TimeOnly(9, 0)
+        };
+        MostrarModalNuevo = true;
+    }
+
+    protected void AgendarSlotEspecifico(TimeOnly slot, DateOnly? fecha = null)
+    {
+        nuevoTurnoDto = new TurnoCreateDto
+        {
+            IdProfesional = SelectedProfesionalId,
+            Fecha = fecha ?? SelectedFecha,
             Hora = slot
         };
         MostrarModalNuevo = true;
@@ -214,36 +365,14 @@ public partial class Agenda : ComponentBase
         }
     }
 
-    protected void EditarEstadoTurno(Turno turno)
+    protected string GetNombrePaciente(long idPaciente)
     {
-        TurnoEnEdicion = turno;
-        turnoUpdateDto = new TurnoUpdateDto
+        var pac = ListaPacientes.FirstOrDefault(p => p.IdPaciente == idPaciente);
+        if (pac?.Persona != null)
         {
-            IdTurno = turno.IdTurno,
-            Fecha = turno.Fecha,
-            Hora = turno.Hora,
-            Estado = turno.Estado,
-            Observacion = turno.Observacion
-        };
-    }
-
-    protected async Task GuardarEstadoTurno()
-    {
-        if (TurnoEnEdicion == null) return;
-
-        var res = await Http.PutAsJsonAsync("api/turnos", turnoUpdateDto);
-        var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Turno>>();
-
-        if (apiResult != null && apiResult.Exito)
-        {
-            TurnoEnEdicion = null;
-            MensajeAlerta = "Estado de turno actualizado.";
-            await CargarTurnos();
+            return $"{pac.Persona.Nombre} {pac.Persona.Apellido}";
         }
-        else
-        {
-            MensajeAlerta = apiResult?.Mensaje ?? "Error al actualizar el turno.";
-        }
+        return $"Paciente #{idPaciente}";
     }
 
     protected string GetBadgeClass(EstadoTurno estado) => estado switch

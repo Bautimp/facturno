@@ -4,7 +4,7 @@
 <div class="facturno-card">
     <div class="card-header-custom">
         <div>
-            <h3 class="m-0 font-bold">🩺 Gestión de Personal Médico</h3>
+            <h3 class="m-0 font-bold">Gestión de Personal Médico</h3>
             <p class="text-muted m-0">Administración de profesionales, especialidades, tarifas y vinculación de agendas</p>
         </div>
         <button class="btn btn-primary-custom" @onclick="AbrirModalNuevo">
@@ -43,7 +43,7 @@
                     <tr>
                         <td>
                             <strong>@nombreCompleto</strong>
-                            <div class="text-muted small">📧 @(prof.Usuario?.Persona?.Correo ?? "-")</div>
+                            <div class="text-muted small">@(prof.Usuario?.Persona?.Correo ?? "-")</div>
                         </td>
                         <td><span class="badge bg-info text-dark">@(prof.Especialidad?.ToString() ?? "General")</span></td>
                         <td>@(prof.Matricula ?? "-")</td>
@@ -74,14 +74,14 @@
         </table>
     </div>
 
-    <!-- Vinculación de Agendas Compartidas (Issue #14) -->
+    <!-- Vinculación de Agendas Compartidas -->
     <div class="border-top pt-4">
-        <h5 class="font-bold mb-2">🤝 Vinculación de Agendas Compartidas (Issue #14)</h5>
-        <p class="text-muted small mb-3">Conceder permisos a personal administrativo para gestionar la agenda del profesional.</p>
+        <h5 class="font-bold mb-2">Vinculación de Agendas Compartidas</h5>
+        <p class="text-muted small mb-3">Conceder permisos a personal administrativo para gestionar la agenda del profesional médico.</p>
 
         <div class="row g-3">
             <div class="col-md-5">
-                <label class="form-label font-semibold">Profesional</label>
+                <label class="form-label font-semibold">Profesional Médico</label>
                 <select class="form-select" @bind="IdProfesionalVinculo">
                     <option value="@Guid.Empty">Seleccionar Profesional...</option>
                     @foreach (var prof in ListaProfesionales)
@@ -93,8 +93,15 @@
             </div>
 
             <div class="col-md-5">
-                <label class="form-label font-semibold">ID Usuario Administrativo</label>
-                <input type="text" class="form-control" placeholder="UUID del usuario administrativo..." @bind="IdAdministrativoVinculoStr" />
+                <label class="form-label font-semibold">Personal Administrativo</label>
+                <select class="form-select" @bind="IdAdministrativoVinculoStr">
+                    <option value="">Seleccionar Administrativo...</option>
+                    @foreach (var admin in ListaAdministrativos)
+                    {
+                        var nomAdmin = admin.Persona != null ? $"{admin.Persona.Nombre} {admin.Persona.Apellido} ({admin.Rol})" : $"Usuario {admin.IdUsuario}";
+                        <option value="@admin.IdUsuario">@nomAdmin</option>
+                    }
+                </select>
             </div>
 
             <div class="col-md-2 d-flex align-items-end">
@@ -111,7 +118,7 @@
 {
     <div class="modal-overlay">
         <div class="modal-content-custom">
-            <h4 class="mb-3">Registrar Nuevo Profesional Médico</h4>
+            <h4 class="mb-3 font-bold">Registrar Nuevo Profesional Médico</h4>
             <EditForm Model="profesionalDto" OnValidSubmit="GuardarProfesional">
                 <div class="row g-2 mb-3">
                     <div class="col-6">

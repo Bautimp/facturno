@@ -4,6 +4,7 @@ using Facturno.Shared.Interfaces;
 using Facturno.Shared.DTOs;
 using Facturno.Shared.Models;
 using Facturno.Shared.Enums;
+using Facturno.Infrastructure.Supabase.Entities;
 
 namespace Facturno.API.Controllers;
 
@@ -56,8 +57,11 @@ public class ProfesionalesController : ControllerBase
             // 1. Crear el usuario en auth.users de Supabase Auth
             try
             {
-                var tempPassword = !string.IsNullOrWhiteSpace(dto.Correo) ? dto.Correo + "123!" : "Facturno123!";
-                var signupRes = await _supabaseClient.Auth.SignUp(dto.Correo, tempPassword);
+                var passwordAUsar = !string.IsNullOrWhiteSpace(dto.Password) 
+                    ? dto.Password 
+                    : (!string.IsNullOrWhiteSpace(dto.Correo) ? dto.Correo + "123!" : "Facturno123!");
+
+                var signupRes = await _supabaseClient.Auth.SignUp(dto.Correo, passwordAUsar);
                 if (signupRes?.User != null && Guid.TryParse(signupRes.User.Id, out var parsedGuid))
                 {
                     nuevoIdUsuario = parsedGuid;
@@ -160,5 +164,61 @@ public class ProfesionalesController : ControllerBase
 
         var mensaje = activo ? "Profesional activado correctamente." : "Profesional desactivado correctamente. Turnos activos cancelados por sistema.";
         return Ok(ApiResponse<bool>.Ok(true, mensaje));
+    }
+
+    [HttpGet("administrativos")]
+    public async Task<ActionResult<ApiResponse<List<Usuario>>>> ObtenerAdministrativos()
+    {
+        try
+        {
+            var usuariosRes = await _supabaseClient.From<UsuarioEntity>().Get();
+            var personasRes = await _supabaseClient.From<PersonaEntity>().Get();
+            var personasDict = personasRes.Models.ToDictionary(p => p.IdPersona);
+
+            var adminList = usuariosRes.Models
+                .Where(u => u.Rol == "Administrativo" || u.Rol == "Operador")
+                .Select(u => new Usuario
+                {
+                    IdUsuario = Guid.TryParse(u.IdUsuario, out var g) ? g : Guid.Empty,
+                    IdPersona = u.IdPersona,
+                    Rol = Enum.TryParse<RolUsuario>(u.Rol, out var r) ? r : RolUsuario.Administrativo,
+                    Activo = u.Activo,
+                    Persona = personasDict.TryGetValue(u.IdPersona, out var p) ? new Persona
+                    {
+                        IdPersona = p.IdPersona,
+                        Nombre = p.Nombre,
+                        Apellido = p.Apellido,
+                        Correo = p.Correo,
+                        Telefono = p.Telefono
+                    } : null
+                })
+                .ToList();
+
+            return Ok(ApiResponse<List<Usuario>>.Ok(adminList));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<List<Usuario>>.Error($"Error al obtener usuarios administrativos: {ex.Message}"));
+        }
+    }
+
+    [HttpPost("vincular-agenda")]
+    public async Task<ActionResult<ApiResponse<bool>>> VincularAgenda([FromQuery] Guid idProfesional, [FromQuery] string idAdministrativo)
+    {
+        try
+        {
+            var entity = new AgendaCompartidaEntity
+            {
+                IdAdministrativo = idAdministrativo,
+                IdProfesional = idProfesional.ToString()
+            };
+
+            await _supabaseClient.From<AgendaCompartidaEntity>().Insert(entity);
+            return Ok(ApiResponse<bool>.Ok(true, "Agenda vinculada correctamente."));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ApiResponse<bool>.Error($"Error o vinculación ya existente: {ex.Message}"));
+        }
     }
 }

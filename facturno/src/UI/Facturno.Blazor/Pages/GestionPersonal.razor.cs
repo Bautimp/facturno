@@ -11,6 +11,7 @@ public partial class GestionPersonal : ComponentBase
     public HttpClient Http { get; set; } = default!;
 
     protected List<Profesional> ListaProfesionales = new();
+    protected List<Usuario> ListaAdministrativos = new();
     protected string? MensajeAlerta;
 
     protected bool MostrarModal = false;
@@ -22,6 +23,7 @@ public partial class GestionPersonal : ComponentBase
     protected override async Task OnInitializedAsync()
     {
         await CargarProfesionales();
+        await CargarAdministrativos();
     }
 
     protected async Task CargarProfesionales()
@@ -37,6 +39,22 @@ public partial class GestionPersonal : ComponentBase
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al cargar profesionales: {ex.Message}";
+        }
+    }
+
+    protected async Task CargarAdministrativos()
+    {
+        try
+        {
+            var res = await Http.GetFromJsonAsync<ApiResponse<List<Usuario>>>("api/profesionales/administrativos");
+            if (res != null && res.Exito && res.Datos != null)
+            {
+                ListaAdministrativos = res.Datos;
+            }
+        }
+        catch
+        {
+            // Silencioso
         }
     }
 
@@ -97,13 +115,32 @@ public partial class GestionPersonal : ComponentBase
 
     protected async Task VincularAgenda()
     {
-        if (IdProfesionalVinculo == Guid.Empty || !Guid.TryParse(IdAdministrativoVinculoStr, out _))
+        if (IdProfesionalVinculo == Guid.Empty || string.IsNullOrWhiteSpace(IdAdministrativoVinculoStr))
         {
-            MensajeAlerta = "Debe seleccionar un profesional y colocar un UUID válido de administrativo.";
+            MensajeAlerta = "Debe seleccionar un profesional y un usuario administrativo.";
             return;
         }
 
-        MensajeAlerta = "Agenda vinculada correctamente.";
-        await Task.CompletedTask;
+        try
+        {
+            var url = $"api/profesionales/vincular-agenda?idProfesional={IdProfesionalVinculo}&idAdministrativo={IdAdministrativoVinculoStr}";
+            var res = await Http.PostAsync(url, null);
+            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<bool>>();
+
+            if (apiResult != null && apiResult.Exito)
+            {
+                MensajeAlerta = "Agenda del profesional vinculada correctamente al administrativo seleccionado.";
+                IdProfesionalVinculo = Guid.Empty;
+                IdAdministrativoVinculoStr = string.Empty;
+            }
+            else
+            {
+                MensajeAlerta = apiResult?.Mensaje ?? "No se pudo vincular la agenda.";
+            }
+        }
+        catch (Exception ex)
+        {
+            MensajeAlerta = $"Error al vincular agenda: {ex.Message}";
+        }
     }
 }

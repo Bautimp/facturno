@@ -1,27 +1,44 @@
 @page "/agenda"
 @attribute [Authorize]
 
-<div class="facturno-card">
-    <div class="card-header-custom">
+<div class="facturno-card" style="position: relative;">
+    @if (PopoverTurnoId != null)
+    {
+        <div class="popover-backdrop" @onclick="CerrarPopover"></div>
+    }
+    <div class="card-header-custom align-items-center">
         <div>
-            <h3 class="m-0 font-bold">📅 Agenda de Turnos</h3>
-            <p class="text-muted m-0">Gestión de turnos médicos e historias de atención</p>
+            <h3 class="m-0 font-bold">Agenda y Turnos Médicos</h3>
+            <p class="text-muted m-0 small">Gestión clínica y control asistencial de citas</p>
         </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-primary-custom" @onclick="AbrirModalNuevoTurno">
+        <div class="d-flex align-items-center gap-3">
+            <!-- Switch Selector de 3 Vistas: Día | Semana | Mes -->
+            <div class="btn-group switcher-vistas" role="group">
+                <button type="button" class="btn btn-sm @(VistaActual == TipoVistaAgenda.Dia ? "btn-primary-custom" : "btn-outline-secondary")" @onclick="() => CambiarVista(TipoVistaAgenda.Dia)">
+                    Día
+                </button>
+                <button type="button" class="btn btn-sm @(VistaActual == TipoVistaAgenda.Semana ? "btn-primary-custom" : "btn-outline-secondary")" @onclick="() => CambiarVista(TipoVistaAgenda.Semana)">
+                    Semana
+                </button>
+                <button type="button" class="btn btn-sm @(VistaActual == TipoVistaAgenda.Mes ? "btn-primary-custom" : "btn-outline-secondary")" @onclick="() => CambiarVista(TipoVistaAgenda.Mes)">
+                    Mes
+                </button>
+            </div>
+
+            <button class="btn btn-primary-custom btn-sm" @onclick="AbrirModalNuevoTurno">
                 + Nuevo Turno
             </button>
 
-            <button class="btn btn-outline-primary" @onclick="AbrirModalTurnoRecurrente">
+            <button class="btn btn-outline-primary btn-sm" @onclick="AbrirModalTurnoRecurrente">
                 🔄 Turno Recurrente
             </button>
         </div>
     </div>
 
     <!-- Filtros de Fecha y Profesional -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4 align-items-end">
         <div class="col-md-5">
-            <label class="form-label font-semibold">Profesional Médicos</label>
+            <label class="form-label font-semibold small">Profesional Médico</label>
             <select class="form-select" @onchange="OnProfesionalChanged">
                 @foreach (var prof in ListaProfesionales)
                 {
@@ -32,13 +49,13 @@
         </div>
 
         <div class="col-md-4">
-            <label class="form-label font-semibold">Fecha</label>
+            <label class="form-label font-semibold small">Fecha Referencia</label>
             <input type="date" class="form-control" value="@SelectedFecha.ToString("yyyy-MM-dd")" @onchange="OnFechaChanged" />
         </div>
 
-        <div class="col-md-3 d-flex align-items-end">
+        <div class="col-md-3">
             <button class="btn btn-secondary-custom w-100" @onclick="CargarTurnos">
-                🔍 Buscar Turnos
+                Buscar Turnos
             </button>
         </div>
     </div>
@@ -51,55 +68,218 @@
         </div>
     }
 
-    <!-- Schedule Grid (30 minutos) -->
-    <div class="grid-turnos">
-        @foreach (var slot in TimeSlots)
-        {
-            var turnoSlot = ListaTurnos.FirstOrDefault(t => t.Hora == slot);
+    @if (VistaActual == TipoVistaAgenda.Dia)
+    {
+        <!-- VISTA DÍA (Predeterminada) -->
+        <div class="grid-turnos">
+            @foreach (var slot in TimeSlots)
+            {
+                var turnoSlot = ListaTurnos.FirstOrDefault(t => t.Hora == slot);
 
-            <div class="slot-hora">
-                <div class="slot-time">
-                    @slot.ToString("HH:mm") hs
-                </div>
+                <div class="slot-hora" style="position: relative; overflow: visible; z-index: @(turnoSlot != null && PopoverTurnoId == turnoSlot.IdTurno ? "50" : "1");">
+                    <div class="slot-time">
+                        @slot.ToString("HH:mm") hs
+                    </div>
 
-                <div class="slot-body">
-                    @if (turnoSlot != null)
-                    {
-                        <div class="turno-box">
-                            <div>
-                                <span class="badge-estado @GetBadgeClass(turnoSlot.Estado)">@turnoSlot.Estado</span>
-                                <strong class="ms-2">Paciente #@turnoSlot.IdPaciente</strong>
-                                @if (!string.IsNullOrWhiteSpace(turnoSlot.Observacion))
+                    <div class="slot-body">
+                        @if (turnoSlot != null)
+                        {
+                            <div class="turno-box-container" style="position: relative;">
+                                <div class="turno-box @(PopoverTurnoId == turnoSlot.IdTurno ? "active-popover" : "")" @onclick="() => TogglePopoverEstado(turnoSlot.IdTurno)">
+                                    <div class="d-flex align-items-center justify-content-between w-100">
+                                        <div>
+                                            <span class="badge-estado @GetBadgeClass(turnoSlot.Estado)">@turnoSlot.Estado</span>
+                                            <strong class="ms-2">@GetNombrePaciente(turnoSlot.IdPaciente)</strong>
+                                            @if (!string.IsNullOrWhiteSpace(turnoSlot.Observacion))
+                                            {
+                                                <span class="text-muted ms-2 italic small">(@turnoSlot.Observacion)</span>
+                                            }
+                                        </div>
+
+                                        <div class="d-flex align-items-center gap-2" @onclick:stopPropagation="true">
+                                            @if (turnoSlot.Estado == EstadoTurno.Completo)
+                                            {
+                                                <a href="@GetPdfUrl(turnoSlot.IdTurno)" target="_blank" class="btn btn-sm btn-outline-success">
+                                                    Comprobante PDF
+                                                </a>
+                                            }
+                                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" @onclick="() => TogglePopoverEstado(turnoSlot.IdTurno)">
+                                                Estado &blacktriangledown;
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Pestaña Contextual (Popover Inline) de Estados -->
+                                @if (PopoverTurnoId == turnoSlot.IdTurno)
                                 {
-                                    <span class="text-muted ms-2 italic">(@turnoSlot.Observacion)</span>
+                                    <div class="popover-inline-estados shadow">
+                                        <div class="popover-header-small">Cambiar estado del turno:</div>
+                                        <div class="d-flex gap-2 p-2">
+                                            <button class="btn btn-sm btn-success flex-grow-1" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turnoSlot, EstadoTurno.Activo)">Activo</button>
+                                            <button class="btn btn-sm btn-info text-white flex-grow-1" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turnoSlot, EstadoTurno.Completo)">Completo</button>
+                                            <button class="btn btn-sm btn-warning flex-grow-1" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turnoSlot, EstadoTurno.Falta)">Falta</button>
+                                            <button class="btn btn-sm btn-danger flex-grow-1" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turnoSlot, EstadoTurno.Cancelado)">Cancelado</button>
+                                        </div>
+                                    </div>
                                 }
                             </div>
-
-                            <div class="d-flex align-items-center gap-2">
-                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => EditarEstadoTurno(turnoSlot)">
-                                    ✏️ Estado
+                        }
+                        else
+                        {
+                            <div class="d-flex align-items-center justify-content-between w-100">
+                                <span class="text-muted italic small">Disponible</span>
+                                <button class="btn btn-sm btn-light border" @onclick="() => AgendarSlotEspecifico(slot)">
+                                    + Agendar
                                 </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (VistaActual == TipoVistaAgenda.Semana)
+    {
+        <!-- VISTA SEMANA -->
+        <div class="vista-semana-container">
+            <div class="row g-2">
+                @foreach (var dia in DiasSemana)
+                {
+                    var turnosDelDia = TurnosPorFecha.ContainsKey(dia) ? TurnosPorFecha[dia] : new List<Turno>();
+                    var esHoy = dia == DateOnly.FromDateTime(DateTime.Today);
 
-                                @if (turnoSlot.Estado == EstadoTurno.Completo)
+                    <div class="col-md-4 col-lg">
+                        <div class="card card-dia-semana @(esHoy ? "border-primary" : "")">
+                            <div class="card-header p-2 d-flex align-items-center justify-content-between @(esHoy ? "bg-primary text-white font-bold" : "bg-light font-semibold")">
+                                <div>
+                                    <div>@dia.ToString("dddd", new System.Globalization.CultureInfo("es-ES")).ToUpper()</div>
+                                    <div class="small">@dia.ToString("dd/MM/yyyy")</div>
+                                </div>
+                                <button class="btn btn-xs @(esHoy ? "btn-light text-primary" : "btn-outline-primary")" @onclick="() => AbrirModalNuevoTurnoConFecha(dia)" title="Agregar turno este día">
+                                    + Turno
+                                </button>
+                            </div>
+                            <div class="card-body p-2 min-h-200">
+                                @if (turnosDelDia.Any())
                                 {
-                                    <a href="@GetPdfUrl(turnoSlot.IdTurno)" target="_blank" class="btn btn-sm btn-outline-success">
-                                        📄 Comprobante PDF
-                                    </a>
+                                    @foreach (var turno in turnosDelDia)
+                                    {
+                                        <div class="turno-box-semana mb-2 p-2 border rounded @(PopoverTurnoId == turno.IdTurno ? "active-popover" : "")" style="position: relative;" @onclick="() => TogglePopoverEstado(turno.IdTurno)">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="badge-estado @GetBadgeClass(turno.Estado)">@turno.Hora.ToString("HH:mm") hs</span>
+                                                <small class="badge bg-secondary">@turno.Estado</small>
+                                            </div>
+                                            <div class="small font-bold">@GetNombrePaciente(turno.IdPaciente)</div>
+                                            
+                                            <!-- Popover Inline Semana -->
+                                            @if (PopoverTurnoId == turno.IdTurno)
+                                            {
+                                                <div class="popover-inline-estados shadow p-2 bg-white border rounded" style="position: absolute; top: 100%; left: 0; right: 0; z-index: 100;">
+                                                    <div class="popover-header-small mb-1">Cambiar estado:</div>
+                                                    <div class="d-grid gap-1">
+                                                        <button class="btn btn-xs btn-success text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Activo)">Activo</button>
+                                                        <button class="btn btn-xs btn-info text-white text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Completo)">Completo</button>
+                                                        <button class="btn btn-xs btn-warning text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Falta)">Falta</button>
+                                                        <button class="btn btn-xs btn-danger text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Cancelado)">Cancelado</button>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="text-muted small text-center py-3">Sin turnos</div>
                                 }
                             </div>
                         </div>
-                    }
-                    else
-                    {
-                        <span class="text-muted italic">Disponible</span>
-                        <button class="btn btn-sm btn-light border" @onclick="() => AgendarSlotEspecifico(slot)">
-                            + Agendar
-                        </button>
-                    }
-                </div>
+                    </div>
+                }
             </div>
-        }
-    </div>
+        </div>
+    }
+    else if (VistaActual == TipoVistaAgenda.Mes)
+    {
+        <!-- VISTA MES (Ordenado de Lunes a Domingo) -->
+        <div class="vista-mes-container">
+            <h5 class="font-bold text-center mb-3">@SelectedFecha.ToString("MMMM yyyy", new System.Globalization.CultureInfo("es-ES")).ToUpper()</h5>
+            
+            <!-- Cabecera de Días de la Semana -->
+            <div class="calendar-grid-header mb-2">
+                <div class="calendar-day-name font-bold text-center">LUNES</div>
+                <div class="calendar-day-name font-bold text-center">MARTES</div>
+                <div class="calendar-day-name font-bold text-center">MIÉRCOLES</div>
+                <div class="calendar-day-name font-bold text-center">JUEVES</div>
+                <div class="calendar-day-name font-bold text-center">VIERNES</div>
+                <div class="calendar-day-name font-bold text-center text-secondary">SÁBADO</div>
+                <div class="calendar-day-name font-bold text-center text-secondary">DOMINGO</div>
+            </div>
+
+            <!-- Grilla del Calendario -->
+            <div class="calendar-grid-body">
+                @for (int i = 0; i < OffsetPrimerDiaMes; i++)
+                {
+                    <div class="card card-dia-mes card-dia-empty p-2"></div>
+                }
+
+                @foreach (var dia in DiasMes)
+                {
+                    var turnosDelDia = TurnosPorFecha.ContainsKey(dia) ? TurnosPorFecha[dia] : new List<Turno>();
+                    var esHoy = dia == DateOnly.FromDateTime(DateTime.Today);
+
+                    <div class="card card-dia-mes p-2 @(esHoy ? "border-primary bg-light-blue" : "")" style="position: relative;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="font-bold @(esHoy ? "text-primary" : "")">@dia.Day</span>
+                            <div class="d-flex align-items-center gap-1">
+                                @if (turnosDelDia.Any())
+                                {
+                                    <span class="badge bg-primary" style="font-size: 0.65rem;">@turnosDelDia.Count</span>
+                                }
+                                <button class="btn btn-xs btn-outline-primary py-0 px-1" style="font-size: 0.7rem; line-height: 1;" @onclick="() => AbrirModalNuevoTurnoConFecha(dia)" title="Agregar turno este día">
+                                    +
+                                </button>
+                            </div>
+                        </div>
+                        @if (turnosDelDia.Any())
+                        {
+                            <div class="list-turnos-mes">
+                                @foreach (var turno in turnosDelDia.Take(3))
+                                {
+                                    <div class="position-relative mb-1">
+                                        <div class="small-turno-tag @GetBadgeClass(turno.Estado)" @onclick="() => TogglePopoverEstado(turno.IdTurno)">
+                                            @turno.Hora.ToString("HH:mm") - @GetNombrePaciente(turno.IdPaciente)
+                                        </div>
+
+                                        @if (PopoverTurnoId == turno.IdTurno)
+                                        {
+                                            <div class="popover-inline-estados shadow p-2 bg-white border rounded" style="position: absolute; top: 100%; left: 0; right: 0; z-index: 200;">
+                                                <div class="popover-header-small mb-1">Estado:</div>
+                                                <div class="d-grid gap-1">
+                                                    <button class="btn btn-xs btn-success text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Activo)">Activo</button>
+                                                    <button class="btn btn-xs btn-info text-white text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Completo)">Completo</button>
+                                                    <button class="btn btn-xs btn-warning text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Falta)">Falta</button>
+                                                    <button class="btn btn-xs btn-danger text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Cancelado)">Cancelado</button>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                @if (turnosDelDia.Count > 3)
+                                {
+                                    <div class="text-muted text-center micro-text">+@(turnosDelDia.Count - 3) más</div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-muted micro-text py-1"></div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
 </div>
 
 <!-- Modal Nuevo Turno -->
@@ -107,7 +287,7 @@
 {
     <div class="modal-overlay">
         <div class="modal-content-custom">
-            <h4 class="mb-3">Nuevo Turno Médico</h4>
+            <h4 class="mb-3 font-bold">Nuevo Turno Médico</h4>
             <EditForm Model="nuevoTurnoDto" OnValidSubmit="GuardarNuevoTurno">
                 <div class="mb-3">
                     <label class="form-label font-semibold">Paciente</label>
@@ -146,12 +326,12 @@
     </div>
 }
 
-<!-- Modal Turno Recurrente (Issue #15) -->
+<!-- Modal Turno Recurrente -->
 @if (MostrarModalRecurrente)
 {
     <div class="modal-overlay">
         <div class="modal-content-custom">
-            <h4 class="mb-3">Agendar Turnos Recurrentes</h4>
+            <h4 class="mb-3 font-bold">Agendar Turnos Recurrentes</h4>
             <EditForm Model="recurrenteDto" OnValidSubmit="GuardarTurnosRecurrentes">
                 <div class="mb-3">
                     <label class="form-label font-semibold">Paciente</label>
@@ -198,35 +378,6 @@
                     <button type="submit" class="btn btn-primary-custom">Generar Serie de Turnos</button>
                 </div>
             </EditForm>
-        </div>
-    </div>
-}
-
-<!-- Modal Editar Estado Turno -->
-@if (TurnoEnEdicion != null)
-{
-    <div class="modal-overlay">
-        <div class="modal-content-custom">
-            <h4 class="mb-3">Actualizar Turno #@TurnoEnEdicion.IdTurno</h4>
-            <div class="mb-3">
-                <label class="form-label font-semibold">Estado del Turno</label>
-                <select class="form-select" @bind="turnoUpdateDto.Estado">
-                    <option value="@EstadoTurno.Activo">Activo</option>
-                    <option value="@EstadoTurno.Completo">Completo (Atendido)</option>
-                    <option value="@EstadoTurno.Falta">Falta (Ausente)</option>
-                    <option value="@EstadoTurno.Cancelado">Cancelado</option>
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label font-semibold">Observaciones</label>
-                <textarea class="form-control" rows="2" @bind="turnoUpdateDto.Observacion"></textarea>
-            </div>
-
-            <div class="d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-secondary-custom" @onclick="() => TurnoEnEdicion = null">Cancelar</button>
-                <button type="button" class="btn btn-primary-custom" @onclick="GuardarEstadoTurno">Guardar Cambios</button>
-            </div>
         </div>
     </div>
 }

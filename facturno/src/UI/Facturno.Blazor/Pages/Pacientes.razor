@@ -4,7 +4,7 @@
 <div class="facturno-card">
     <div class="card-header-custom">
         <div>
-            <h3 class="m-0 font-bold">👥 Gestor de Pacientes</h3>
+            <h3 class="m-0 font-bold">Gestión de Pacientes</h3>
             <p class="text-muted m-0">Administración de historias personales y cobertura de obras sociales</p>
         </div>
         <button class="btn btn-primary-custom" @onclick="AbrirModalNuevo">
@@ -14,7 +14,7 @@
 
     <!-- Buscador -->
     <div class="mb-4">
-        <input type="text" class="form-control" placeholder="🔍 Buscar paciente por nombre, apellido o DNI..."
+        <input type="text" class="form-control" placeholder="Buscar paciente por nombre, apellido o DNI..."
                @bind="FiltroBusqueda" @bind:event="oninput" />
     </div>
 
@@ -49,14 +49,14 @@
                         <td>@nombreCompleto</td>
                         <td>@(pac.TipoDocumento?.ToString() ?? "DNI") @(pac.NumDocumento ?? "-")</td>
                         <td>
-                            <div>📧 @(pac.Persona?.Correo ?? "-")</div>
-                            <div>📞 @(pac.Persona?.Telefono?.ToString() ?? "-")</div>
+                            <div>@(pac.Persona?.Correo ?? "-")</div>
+                            <div class="text-muted small">Tel: @(pac.Persona?.Telefono?.ToString() ?? "-")</div>
                         </td>
                         <td><span class="badge bg-secondary">@(pac.ObraSocial?.Nombre ?? "Particular")</span></td>
                         <td>@(pac.NumObraSocial ?? "-")</td>
                         <td class="text-end">
                             <button class="btn btn-sm btn-outline-primary" @onclick="() => EditarPaciente(pac)">
-                                ✏️ Editar
+                                Editar
                             </button>
                         </td>
                     </tr>
@@ -79,7 +79,7 @@
 {
     <div class="modal-overlay">
         <div class="modal-content-custom">
-            <h4 class="mb-3">@(EsEdicion ? "Editar Paciente" : "Registrar Nuevo Paciente")</h4>
+            <h4 class="mb-3 font-bold">@(EsEdicion ? "Editar Paciente" : "Registrar Nuevo Paciente")</h4>
             <EditForm Model="pacienteDto" OnValidSubmit="GuardarPaciente">
                 <div class="row g-2 mb-3">
                     <div class="col-6">
