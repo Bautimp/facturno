@@ -15,7 +15,9 @@ public partial class GestionPersonal : ComponentBase
     protected string? MensajeAlerta;
 
     protected bool MostrarModal = false;
+    protected bool MostrarModalAdmin = false;
     protected ProfesionalCreateDto profesionalDto = new();
+    protected AdministrativoCreateDto adminDto = new();
 
     protected Guid IdProfesionalVinculo = Guid.Empty;
     protected string IdAdministrativoVinculoStr = string.Empty;
@@ -85,6 +87,36 @@ public partial class GestionPersonal : ComponentBase
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al guardar profesional: {ex.Message}";
+        }
+    }
+
+    protected void AbrirModalNuevoAdmin()
+    {
+        adminDto = new AdministrativoCreateDto();
+        MostrarModalAdmin = true;
+    }
+
+    protected async Task GuardarAdministrativo()
+    {
+        try
+        {
+            var res = await Http.PostAsJsonAsync("api/profesionales/administrativo", adminDto);
+            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Usuario>>();
+
+            if (apiResult != null && apiResult.Exito)
+            {
+                MostrarModalAdmin = false;
+                MensajeAlerta = "Usuario Administrativo registrado correctamente.";
+                await CargarAdministrativos();
+            }
+            else
+            {
+                MensajeAlerta = apiResult?.Mensaje ?? "No se pudo crear el usuario administrativo.";
+            }
+        }
+        catch (Exception ex)
+        {
+            MensajeAlerta = $"Error al guardar usuario administrativo: {ex.Message}";
         }
     }
 

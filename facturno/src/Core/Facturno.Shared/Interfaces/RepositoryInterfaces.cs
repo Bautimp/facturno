@@ -37,6 +37,7 @@ public interface IUsuarioRepository
 {
     Task<Usuario?> ObtenerPorIdAsync(Guid idUsuario);
     Task<Usuario?> ObtenerPorCorreoAsync(string correo);
+    Task<Usuario> CrearConPersonaAsync(Usuario usuario, Persona persona);
     Task<bool> CambiarEstadoActivoAsync(Guid idUsuario, bool activo);
 }
 

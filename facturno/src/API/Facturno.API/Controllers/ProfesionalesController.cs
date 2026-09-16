@@ -52,15 +52,21 @@ public class ProfesionalesController : ControllerBase
 
         try
         {
+            // Verificar si el correo ya existe en nuestro sistema
+            var usuarioExistente = !string.IsNullOrEmpty(dto.Correo) ? await _usuarioRepository.ObtenerPorCorreoAsync(dto.Correo) : null;
+            if (usuarioExistente != null)
+            {
+                return BadRequest(ApiResponse<Profesional>.Error($"El correo '{dto.Correo}' ya se encuentra registrado para otro usuario."));
+            }
+
             Guid nuevoIdUsuario;
+            var passwordAUsar = !string.IsNullOrWhiteSpace(dto.Password) 
+                ? dto.Password 
+                : (!string.IsNullOrWhiteSpace(dto.Correo) ? dto.Correo + "123!" : "Facturno123!");
 
             // 1. Crear el usuario en auth.users de Supabase Auth
             try
             {
-                var passwordAUsar = !string.IsNullOrWhiteSpace(dto.Password) 
-                    ? dto.Password 
-                    : (!string.IsNullOrWhiteSpace(dto.Correo) ? dto.Correo + "123!" : "Facturno123!");
-
                 var signupRes = await _supabaseClient.Auth.SignUp(dto.Correo, passwordAUsar);
                 if (signupRes?.User != null && Guid.TryParse(signupRes.User.Id, out var parsedGuid))
                 {
@@ -71,11 +77,9 @@ public class ProfesionalesController : ControllerBase
                     nuevoIdUsuario = Guid.NewGuid();
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Si el usuario ya existía en auth.users, intentar recuperar su ID desde la persona/usuario
-                var existente = !string.IsNullOrEmpty(dto.Correo) ? await _usuarioRepository.ObtenerPorCorreoAsync(dto.Correo) : null;
-                nuevoIdUsuario = existente?.IdUsuario ?? Guid.NewGuid();
+                return BadRequest(ApiResponse<Profesional>.Error($"No se pudo crear el acceso en Supabase Auth: {ex.Message}"));
             }
 
             var persona = new Persona
@@ -219,6 +223,66 @@ public class ProfesionalesController : ControllerBase
         catch (Exception ex)
         {
             return BadRequest(ApiResponse<bool>.Error($"Error o vinculación ya existente: {ex.Message}"));
+        }
+    }
+
+    [HttpPost("administrativo")]
+    public async Task<ActionResult<ApiResponse<Usuario>>> CrearAdministrativo([FromBody] AdministrativoCreateDto dto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ApiResponse<Usuario>.Error("Datos de entrada inválidos."));
+        }
+
+        try
+        {
+            var usuarioExistente = !string.IsNullOrEmpty(dto.Correo) ? await _usuarioRepository.ObtenerPorCorreoAsync(dto.Correo) : null;
+            if (usuarioExistente != null)
+            {
+                return BadRequest(ApiResponse<Usuario>.Error($"El correo '{dto.Correo}' ya se encuentra registrado."));
+            }
+
+            Guid nuevoIdUsuario;
+            var passwordAUsar = !string.IsNullOrWhiteSpace(dto.Password) ? dto.Password : "Facturno123!";
+
+            try
+            {
+                var signupRes = await _supabaseClient.Auth.SignUp(dto.Correo, passwordAUsar);
+                if (signupRes?.User != null && Guid.TryParse(signupRes.User.Id, out var parsedGuid))
+                {
+                    nuevoIdUsuario = parsedGuid;
+                }
+                else
+                {
+                    nuevoIdUsuario = Guid.NewGuid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<Usuario>.Error($"No se pudo crear el acceso en Supabase Auth: {ex.Message}"));
+            }
+
+            var persona = new Persona
+            {
+                Nombre = dto.Nombre,
+                Apellido = dto.Apellido,
+                Correo = dto.Correo,
+                Telefono = dto.Telefono
+            };
+
+            var usuario = new Usuario
+            {
+                IdUsuario = nuevoIdUsuario,
+                Rol = RolUsuario.Administrativo,
+                Activo = true
+            };
+
+            var creado = await _usuarioRepository.CrearConPersonaAsync(usuario, persona);
+            return Ok(ApiResponse<Usuario>.Ok(creado, "Usuario Administrativo creado correctamente."));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ApiResponse<Usuario>.Error($"Error al guardar usuario administrativo: {ex.Message}"));
         }
     }
 }

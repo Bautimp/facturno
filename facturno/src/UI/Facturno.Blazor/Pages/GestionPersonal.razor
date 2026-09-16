@@ -7,9 +7,14 @@
             <h3 class="m-0 font-bold">Gestión de Personal Médico</h3>
             <p class="text-muted m-0">Administración de profesionales, especialidades, tarifas y vinculación de agendas</p>
         </div>
-        <button class="btn btn-primary-custom" @onclick="AbrirModalNuevo">
-            + Nuevo Profesional
-        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary" @onclick="AbrirModalNuevoAdmin">
+                + Nuevo Administrativo
+            </button>
+            <button class="btn btn-primary-custom" @onclick="AbrirModalNuevo">
+                + Nuevo Profesional
+            </button>
+        </div>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(MensajeAlerta))
@@ -172,6 +177,49 @@
                 <div class="d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-secondary-custom" @onclick="() => MostrarModal = false">Cancelar</button>
                     <button type="submit" class="btn btn-primary-custom">Guardar Profesional</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<!-- Modal Nuevo Administrativo -->
+@if (MostrarModalAdmin)
+{
+    <div class="modal-overlay">
+        <div class="modal-content-custom">
+            <h4 class="mb-3 font-bold">Registrar Usuario Administrativo</h4>
+            <EditForm Model="adminDto" OnValidSubmit="GuardarAdministrativo">
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Nombre *</label>
+                        <InputText @bind-Value="adminDto.Nombre" class="form-control" required />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Apellido *</label>
+                        <InputText @bind-Value="adminDto.Apellido" class="form-control" required />
+                    </div>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Correo Electrónico *</label>
+                        <InputText @bind-Value="adminDto.Correo" type="email" class="form-control" required />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Contraseña Inicial *</label>
+                        <InputText @bind-Value="adminDto.Password" type="password" class="form-control" required />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label font-semibold">Teléfono</label>
+                    <input type="number" class="form-control" @bind="adminDto.Telefono" />
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary-custom" @onclick="() => MostrarModalAdmin = false">Cancelar</button>
+                    <button type="submit" class="btn btn-primary-custom">Guardar Administrativo</button>
                 </div>
             </EditForm>
         </div>

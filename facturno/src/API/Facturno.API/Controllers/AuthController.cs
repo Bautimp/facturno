@@ -27,8 +27,42 @@ public class AuthController : ControllerBase
 
         try
         {
-            var session = await _supabaseClient.Auth.SignIn(dto.Correo, dto.Password);
-            
+            global::Supabase.Gotrue.Session? session = null;
+            try
+            {
+                session = await _supabaseClient.Auth.SignIn(dto.Correo, dto.Password);
+            }
+            catch
+            {
+                // Fallback de migración para usuarios creados previamente con clave generada automáticamente
+                var tempPassword1 = dto.Correo + "123!";
+                var tempPassword2 = "Facturno123!";
+
+                try
+                {
+                    session = await _supabaseClient.Auth.SignIn(dto.Correo, tempPassword1);
+                    if (session != null && !string.IsNullOrWhiteSpace(dto.Password))
+                    {
+                        await _supabaseClient.Auth.Update(new global::Supabase.Gotrue.UserAttributes { Password = dto.Password });
+                    }
+                }
+                catch
+                {
+                    try
+                    {
+                        session = await _supabaseClient.Auth.SignIn(dto.Correo, tempPassword2);
+                        if (session != null && !string.IsNullOrWhiteSpace(dto.Password))
+                        {
+                            await _supabaseClient.Auth.Update(new global::Supabase.Gotrue.UserAttributes { Password = dto.Password });
+                        }
+                    }
+                    catch
+                    {
+                        throw;
+                    }
+                }
+            }
+
             var usuario = await _usuarioRepository.ObtenerPorCorreoAsync(dto.Correo);
             if (usuario == null || !usuario.Activo)
             {

@@ -89,6 +89,16 @@ public class ProfesionalUpdateDto
     public CondicionIVA? CondicionIva { get; set; }
 }
 
+//Recibe el objeto del usuario administrativo a crear
+public class AdministrativoCreateDto
+{
+    public string Nombre { get; set; } = string.Empty;
+    public string Apellido { get; set; } = string.Empty;
+    public string Correo { get; set; } = string.Empty;
+    public long? Telefono { get; set; }
+    public string Password { get; set; } = string.Empty;
+}
+
 // --- Auth DTOs ---
 //Recibe el objeto del usuario a loguearse
 public class UsuarioLoginDto

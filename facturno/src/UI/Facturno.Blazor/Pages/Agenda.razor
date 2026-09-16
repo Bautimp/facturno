@@ -37,16 +37,26 @@
 
     <!-- Filtros de Fecha y Profesional -->
     <div class="row g-3 mb-4 align-items-end">
-        <div class="col-md-5">
-            <label class="form-label font-semibold small">Profesional Médico</label>
-            <select class="form-select" @onchange="OnProfesionalChanged">
-                @foreach (var prof in ListaProfesionales)
-                {
-                    var nombre = prof.Usuario?.Persona != null ? $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido} ({prof.Especialidad})" : "Profesional";
-                    <option value="@prof.IdProfesional" selected="@(prof.IdProfesional == SelectedProfesionalId)">@nombre</option>
-                }
-            </select>
-        </div>
+        @if (!EsProfesionalLogueado)
+        {
+            <div class="col-md-5">
+                <label class="form-label font-semibold small">Profesional Médico</label>
+                <select class="form-select" @onchange="OnProfesionalChanged">
+                    @foreach (var prof in ListaProfesionales)
+                    {
+                        var nombre = prof.Usuario?.Persona != null ? $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido} ({prof.Especialidad})" : "Profesional";
+                        <option value="@prof.IdProfesional" selected="@(prof.IdProfesional == SelectedProfesionalId)">@nombre</option>
+                    }
+                </select>
+            </div>
+        }
+        else
+        {
+            <div class="col-md-5">
+                <label class="form-label font-semibold small">Agenda de</label>
+                <input type="text" class="form-control bg-light" value="@GetNombreProfesionalSeleccionado()" readonly />
+            </div>
+        }
 
         <div class="col-md-4">
             <label class="form-label font-semibold small">Fecha Referencia</label>

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using System.Net.Http.Json;
 using Facturno.Shared.Models;
 using Facturno.Shared.DTOs;
@@ -17,6 +18,9 @@ public partial class Agenda : ComponentBase
 {
     [Inject]
     public HttpClient Http { get; set; } = default!;
+
+    [Inject]
+    public AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
 
     protected Guid SelectedProfesionalId;
     protected DateOnly SelectedFecha = DateOnly.FromDateTime(DateTime.Today);
@@ -40,16 +44,46 @@ public partial class Agenda : ComponentBase
     protected TurnoRecurrenteCreateDto recurrenteDto = new();
     protected long? PopoverTurnoId = null;
 
+    protected bool EsProfesionalLogueado = false;
+    protected string NombreProfesionalLogueado = string.Empty;
+
     private bool _isLoadingTurnos = false;
 
     protected override async Task OnInitializedAsync()
     {
         GenerarSlotsDeTiempo();
+        await VerificarRolUsuario();
         await CargarProfesionales();
         await CargarPacientes();
         if (SelectedProfesionalId != Guid.Empty)
         {
             await CargarTurnos();
+        }
+    }
+
+    private async Task VerificarRolUsuario()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                EsProfesionalLogueado = user.IsInRole("Profesional");
+                if (EsProfesionalLogueado)
+                {
+                    var idClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    if (Guid.TryParse(idClaim, out var profesionalGuid))
+                    {
+                        SelectedProfesionalId = profesionalGuid;
+                    }
+                    NombreProfesionalLogueado = user.Identity.Name ?? "Mi Agenda";
+                }
+            }
+        }
+        catch
+        {
+            // Fallback silencioso
         }
     }
 
@@ -82,7 +116,7 @@ public partial class Agenda : ComponentBase
             if (res != null && res.Exito && res.Datos != null)
             {
                 ListaProfesionales = res.Datos;
-                if (ListaProfesionales.Any() && SelectedProfesionalId == Guid.Empty)
+                if (!EsProfesionalLogueado && ListaProfesionales.Any() && SelectedProfesionalId == Guid.Empty)
                 {
                     SelectedProfesionalId = ListaProfesionales.First().IdProfesional;
                 }
@@ -92,6 +126,16 @@ public partial class Agenda : ComponentBase
         {
             MensajeAlerta = $"Error al cargar profesionales: {ex.Message}";
         }
+    }
+
+    protected string GetNombreProfesionalSeleccionado()
+    {
+        var prof = ListaProfesionales.FirstOrDefault(p => p.IdProfesional == SelectedProfesionalId);
+        if (prof?.Usuario?.Persona != null)
+        {
+            return $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido} ({prof.Especialidad})";
+        }
+        return !string.IsNullOrWhiteSpace(NombreProfesionalLogueado) ? NombreProfesionalLogueado : "Mi Agenda";
     }
 
     protected async Task CargarPacientes()
