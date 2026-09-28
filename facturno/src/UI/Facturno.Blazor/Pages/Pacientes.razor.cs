@@ -26,6 +26,8 @@ public partial class Pacientes : ComponentBase
             (p.Persona?.Apellido != null && p.Persona.Apellido.Contains(FiltroBusqueda, StringComparison.OrdinalIgnoreCase)) ||
             (p.NumDocumento != null && p.NumDocumento.Contains(FiltroBusqueda, StringComparison.OrdinalIgnoreCase)));
 
+    protected bool IsLoading = false;
+
     protected override async Task OnInitializedAsync()
     {
         await CargarObrasSociales();
@@ -34,6 +36,7 @@ public partial class Pacientes : ComponentBase
 
     protected async Task CargarPacientes()
     {
+        IsLoading = true;
         try
         {
             var res = await Http.GetFromJsonAsync<ApiResponse<List<Paciente>>>("api/pacientes");
@@ -45,6 +48,11 @@ public partial class Pacientes : ComponentBase
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al cargar pacientes: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
         }
     }
 

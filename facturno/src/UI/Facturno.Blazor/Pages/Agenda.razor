@@ -2,6 +2,7 @@
 @attribute [Authorize]
 
 <div class="facturno-card" style="position: relative;">
+    <LoadingOverlay IsLoading="IsLoading" Text="Cargando agenda de turnos..." />
     @if (PopoverTurnoId != null)
     {
         <div class="popover-backdrop" @onclick="CerrarPopover"></div>

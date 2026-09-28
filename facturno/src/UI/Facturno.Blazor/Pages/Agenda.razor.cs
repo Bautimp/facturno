@@ -47,7 +47,7 @@ public partial class Agenda : ComponentBase
     protected bool EsProfesionalLogueado = false;
     protected string NombreProfesionalLogueado = string.Empty;
 
-    private bool _isLoadingTurnos = false;
+    protected bool IsLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -158,7 +158,7 @@ public partial class Agenda : ComponentBase
     {
         if (SelectedProfesionalId == Guid.Empty) return;
 
-        _isLoadingTurnos = true;
+        IsLoading = true;
         try
         {
             PopoverTurnoId = null;
@@ -213,7 +213,7 @@ public partial class Agenda : ComponentBase
         }
         finally
         {
-            _isLoadingTurnos = false;
+            IsLoading = false;
             StateHasChanged();
         }
     }

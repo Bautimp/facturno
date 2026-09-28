@@ -1,7 +1,8 @@
 @page "/gestion-personal"
 @attribute [Authorize(Roles = "Operador,Administrativo")]
 
-<div class="facturno-card">
+<div class="facturno-card" style="position: relative;">
+    <LoadingOverlay IsLoading="IsLoading" Text="Cargando personal médico..." />
     <div class="card-header-custom">
         <div>
             <h3 class="m-0 font-bold">Gestión de Personal Médico</h3>
@@ -60,6 +61,9 @@
                             </span>
                         </td>
                         <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => AbrirModalEditar(prof)">
+                                ✏️ Editar
+                            </button>
                             <button class="btn btn-sm @(esActivo ? "btn-outline-danger" : "btn-outline-success")"
                                     @onclick="() => ToggleEstadoActivo(prof, !esActivo)">
                                 @(esActivo ? "Desactivar (Baja)" : "Activar")
@@ -220,6 +224,71 @@
                 <div class="d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-secondary-custom" @onclick="() => MostrarModalAdmin = false">Cancelar</button>
                     <button type="submit" class="btn btn-primary-custom">Guardar Administrativo</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<!-- Modal Editar Profesional -->
+@if (MostrarModalEditar)
+{
+    <div class="modal-overlay">
+        <div class="modal-content-custom">
+            <h4 class="mb-3 font-bold">Modificar Datos del Profesional Médico</h4>
+            <EditForm Model="profesionalEditarDto" OnValidSubmit="ActualizarProfesional">
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Nombre *</label>
+                        <InputText @bind-Value="profesionalEditarDto.Nombre" class="form-control" required />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Apellido *</label>
+                        <InputText @bind-Value="profesionalEditarDto.Apellido" class="form-control" required />
+                    </div>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Correo Electrónico</label>
+                        <InputText @bind-Value="profesionalEditarDto.Correo" type="email" class="form-control" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Teléfono</label>
+                        <input type="number" class="form-control" @bind="profesionalEditarDto.Telefono" />
+                    </div>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Especialidad</label>
+                        <InputSelect @bind-Value="profesionalEditarDto.Especialidad" class="form-select">
+                            <option value="">Seleccionar...</option>
+                            <option value="@TipoEspecialidad.Psicologo">Psicólogo</option>
+                            <option value="@TipoEspecialidad.Psiquiatra">Psiquiatra</option>
+                            <option value="@TipoEspecialidad.Otro">Otro</option>
+                        </InputSelect>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Matrícula</label>
+                        <InputText @bind-Value="profesionalEditarDto.Matricula" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label font-semibold">CUIT</label>
+                        <InputText @bind-Value="profesionalEditarDto.Cuit" class="form-control" placeholder="20-12345678-9" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Precio Consulta ($)</label>
+                        <input type="number" step="0.01" class="form-control" @bind="profesionalEditarDto.PrecioConsulta" />
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary-custom" @onclick="() => MostrarModalEditar = false">Cancelar</button>
+                    <button type="submit" class="btn btn-primary-custom">Guardar Cambios</button>
                 </div>
             </EditForm>
         </div>

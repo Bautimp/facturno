@@ -1,7 +1,8 @@
 @page "/pacientes"
 @attribute [Authorize(Roles = "Profesional,Administrativo,Operador")]
 
-<div class="facturno-card">
+<div class="facturno-card" style="position: relative;">
+    <LoadingOverlay IsLoading="IsLoading" Text="Cargando listado de pacientes..." />
     <div class="card-header-custom">
         <div>
             <h3 class="m-0 font-bold">Gestión de Pacientes</h3>

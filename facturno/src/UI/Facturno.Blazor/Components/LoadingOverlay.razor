@@ -1,0 +1,19 @@
+@namespace Facturno.Blazor.Components
+
+@if (IsLoading)
+{
+    <div class="facturno-loading-overlay">
+        <div class="spinner-medical"></div>
+        <div class="loading-text-medical">
+            @(!string.IsNullOrWhiteSpace(Text) ? Text : "Cargando datos de la base de datos...")
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsLoading { get; set; } = false;
+
+    [Parameter]
+    public string? Text { get; set; } = "Cargando datos de la base de datos...";
+}

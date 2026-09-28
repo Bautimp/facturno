@@ -16,11 +16,15 @@ public partial class GestionPersonal : ComponentBase
 
     protected bool MostrarModal = false;
     protected bool MostrarModalAdmin = false;
+    protected bool MostrarModalEditar = false;
     protected ProfesionalCreateDto profesionalDto = new();
+    protected ProfesionalUpdateDto profesionalEditarDto = new();
     protected AdministrativoCreateDto adminDto = new();
 
     protected Guid IdProfesionalVinculo = Guid.Empty;
     protected string IdAdministrativoVinculoStr = string.Empty;
+
+    protected bool IsLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -30,6 +34,7 @@ public partial class GestionPersonal : ComponentBase
 
     protected async Task CargarProfesionales()
     {
+        IsLoading = true;
         try
         {
             var res = await Http.GetFromJsonAsync<ApiResponse<List<Profesional>>>("api/profesionales");
@@ -41,6 +46,11 @@ public partial class GestionPersonal : ComponentBase
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al cargar profesionales: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
         }
     }
 
@@ -87,6 +97,49 @@ public partial class GestionPersonal : ComponentBase
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al guardar profesional: {ex.Message}";
+        }
+    }
+
+    protected void AbrirModalEditar(Profesional prof)
+    {
+        profesionalEditarDto = new ProfesionalUpdateDto
+        {
+            IdProfesional = prof.IdProfesional,
+            Nombre = prof.Usuario?.Persona?.Nombre ?? string.Empty,
+            Apellido = prof.Usuario?.Persona?.Apellido ?? string.Empty,
+            Correo = prof.Usuario?.Persona?.Correo ?? string.Empty,
+            Telefono = prof.Usuario?.Persona?.Telefono,
+            Especialidad = prof.Especialidad,
+            Matricula = prof.Matricula,
+            Cuit = prof.Cuit,
+            PrecioConsulta = prof.PrecioConsulta,
+            TipoComprobante = prof.TipoComprobante,
+            CondicionIva = prof.CondicionIva
+        };
+        MostrarModalEditar = true;
+    }
+
+    protected async Task ActualizarProfesional()
+    {
+        try
+        {
+            var res = await Http.PutAsJsonAsync($"api/profesionales/{profesionalEditarDto.IdProfesional}", profesionalEditarDto);
+            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Profesional>>();
+
+            if (apiResult != null && apiResult.Exito)
+            {
+                MostrarModalEditar = false;
+                MensajeAlerta = $"Profesional {profesionalEditarDto.Nombre} {profesionalEditarDto.Apellido} actualizado correctamente.";
+                await CargarProfesionales();
+            }
+            else
+            {
+                MensajeAlerta = apiResult?.Mensaje ?? "No se pudo actualizar el profesional.";
+            }
+        }
+        catch (Exception ex)
+        {
+            MensajeAlerta = $"Error al actualizar profesional: {ex.Message}";
         }
     }
 
