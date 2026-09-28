@@ -17,6 +17,19 @@ public partial class MainLayout : LayoutComponentBase
         return user.FindFirst(ClaimTypes.Role)?.Value ?? "Usuario";
     }
 
+    protected string GetUserInitials(ClaimsPrincipal user)
+    {
+        var name = user.Identity?.Name;
+        if (string.IsNullOrWhiteSpace(name)) return "U";
+
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+        {
+            return $"{parts[0][0]}{parts[1][0]}".ToUpper();
+        }
+        return name[..Math.Min(2, name.Length)].ToUpper();
+    }
+
     protected async Task Logout()
     {
         await AuthStateProvider.MarkUserAsLoggedOut();

@@ -95,10 +95,10 @@
                         @if (turnoSlot != null)
                         {
                             <div class="turno-box-container" style="position: relative;">
-                                <div class="turno-box @(PopoverTurnoId == turnoSlot.IdTurno ? "active-popover" : "")" @onclick="() => TogglePopoverEstado(turnoSlot.IdTurno)">
+                                <div class="turno-box @GetBorderAccentClass(turnoSlot.Estado) @(PopoverTurnoId == turnoSlot.IdTurno ? "active-popover" : "")" @onclick="() => TogglePopoverEstado(turnoSlot.IdTurno)">
                                     <div class="d-flex align-items-center justify-content-between w-100">
                                         <div>
-                                            <span class="badge-estado @GetBadgeClass(turnoSlot.Estado)">@turnoSlot.Estado</span>
+                                            <span class="badge-estado @GetBadgeClass(turnoSlot.Estado)">@GetEstadoTextoConIcono(turnoSlot.Estado)</span>
                                             <strong class="ms-2">@GetNombrePaciente(turnoSlot.IdPaciente)</strong>
                                             @if (!string.IsNullOrWhiteSpace(turnoSlot.Observacion))
                                             {
@@ -120,16 +120,28 @@
                                     </div>
                                 </div>
 
-                                <!-- Pestaña Contextual (Popover Inline) de Estados -->
+                                <!-- Popover Flotante a la Derecha -->
                                 @if (PopoverTurnoId == turnoSlot.IdTurno)
                                 {
                                     <div class="popover-inline-estados shadow">
-                                        <div class="popover-header-small">Cambiar estado del turno:</div>
-                                        <div class="d-flex gap-2 p-2">
-                                            <button class="btn btn-sm btn-success flex-grow-1" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turnoSlot, EstadoTurno.Activo)">Activo</button>
-                                            <button class="btn btn-sm btn-info text-white flex-grow-1" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turnoSlot, EstadoTurno.Completo)">Completo</button>
-                                            <button class="btn btn-sm btn-warning flex-grow-1" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turnoSlot, EstadoTurno.Falta)">Falta</button>
-                                            <button class="btn btn-sm btn-danger flex-grow-1" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turnoSlot, EstadoTurno.Cancelado)">Cancelado</button>
+                                        <div class="popover-header-small">Cambiar estado:</div>
+                                        <div class="d-flex flex-column gap-1">
+                                            <button type="button" class="btn-state-item btn-state-activo" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turnoSlot, EstadoTurno.Activo)">
+                                                <span class="state-icon-circle bg-activo">✓</span>
+                                                <span>Activo</span>
+                                            </button>
+                                            <button type="button" class="btn-state-item btn-state-completo" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turnoSlot, EstadoTurno.Completo)">
+                                                <span class="state-icon-circle bg-completo">✓</span>
+                                                <span>Completo</span>
+                                            </button>
+                                            <button type="button" class="btn-state-item btn-state-falta" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turnoSlot, EstadoTurno.Falta)">
+                                                <span class="state-icon-circle bg-falta">⚠</span>
+                                                <span>Falta</span>
+                                            </button>
+                                            <button type="button" class="btn-state-item btn-state-cancelado" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turnoSlot, EstadoTurno.Cancelado)">
+                                                <span class="state-icon-circle bg-cancelado">✕</span>
+                                                <span>Cancelado</span>
+                                            </button>
                                         </div>
                                     </div>
                                 }
@@ -158,6 +170,8 @@
                 {
                     var turnosDelDia = TurnosPorFecha.ContainsKey(dia) ? TurnosPorFecha[dia] : new List<Turno>();
                     var esHoy = dia == DateOnly.FromDateTime(DateTime.Today);
+                    var colIndex = DiasSemana.IndexOf(dia);
+                    var isRightEdge = colIndex >= 4;
 
                     <div class="col-md-4 col-lg">
                         <div class="card card-dia-semana @(esHoy ? "border-primary" : "")">
@@ -175,23 +189,35 @@
                                 {
                                     @foreach (var turno in turnosDelDia)
                                     {
-                                        <div class="turno-box-semana mb-2 p-2 border rounded @(PopoverTurnoId == turno.IdTurno ? "active-popover" : "")" style="position: relative;" @onclick="() => TogglePopoverEstado(turno.IdTurno)">
+                                        <div class="turno-box-semana mb-2 p-2 border rounded @GetBorderAccentClass(turno.Estado) @(PopoverTurnoId == turno.IdTurno ? "active-popover" : "")" style="position: relative;" @onclick="() => TogglePopoverEstado(turno.IdTurno)">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <span class="badge-estado @GetBadgeClass(turno.Estado)">@turno.Hora.ToString("HH:mm") hs</span>
-                                                <small class="badge bg-secondary">@turno.Estado</small>
+                                                <span class="badge-estado @GetBadgeClass(turno.Estado)">@GetEstadoTextoConIcono(turno.Estado)</span>
+                                                <small class="text-muted font-semibold">@turno.Hora.ToString("HH:mm") hs</small>
                                             </div>
                                             <div class="small font-bold">@GetNombrePaciente(turno.IdPaciente)</div>
                                             
-                                            <!-- Popover Inline Semana -->
+                                            <!-- Popover Flotante a la Derecha -->
                                             @if (PopoverTurnoId == turno.IdTurno)
                                             {
-                                                <div class="popover-inline-estados shadow p-2 bg-white border rounded" style="position: absolute; top: 100%; left: 0; right: 0; z-index: 100;">
+                                                <div class="popover-inline-estados shadow @(isRightEdge ? "popover-align-left" : "")">
                                                     <div class="popover-header-small mb-1">Cambiar estado:</div>
-                                                    <div class="d-grid gap-1">
-                                                        <button class="btn btn-xs btn-success text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Activo)">Activo</button>
-                                                        <button class="btn btn-xs btn-info text-white text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Completo)">Completo</button>
-                                                        <button class="btn btn-xs btn-warning text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Falta)">Falta</button>
-                                                        <button class="btn btn-xs btn-danger text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Cancelado)">Cancelado</button>
+                                                    <div class="d-flex flex-column gap-1">
+                                                        <button type="button" class="btn-state-item btn-state-activo" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Activo)">
+                                                            <span class="state-icon-circle bg-activo">✓</span>
+                                                            <span>Activo</span>
+                                                        </button>
+                                                        <button type="button" class="btn-state-item btn-state-completo" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Completo)">
+                                                            <span class="state-icon-circle bg-completo">✓</span>
+                                                            <span>Completo</span>
+                                                        </button>
+                                                        <button type="button" class="btn-state-item btn-state-falta" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Falta)">
+                                                            <span class="state-icon-circle bg-falta">⚠</span>
+                                                            <span>Falta</span>
+                                                        </button>
+                                                        <button type="button" class="btn-state-item btn-state-cancelado" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Cancelado)">
+                                                            <span class="state-icon-circle bg-cancelado">✕</span>
+                                                            <span>Cancelado</span>
+                                                        </button>
                                                     </div>
                                                 </div>
                                             }
@@ -237,6 +263,8 @@
                 {
                     var turnosDelDia = TurnosPorFecha.ContainsKey(dia) ? TurnosPorFecha[dia] : new List<Turno>();
                     var esHoy = dia == DateOnly.FromDateTime(DateTime.Today);
+                    var dayCol = ((int)dia.DayOfWeek + 6) % 7;
+                    var isRightEdgeMonth = dayCol >= 4;
 
                     <div class="card card-dia-mes p-2 @(esHoy ? "border-primary bg-light-blue" : "")" style="position: relative;">
                         <div class="d-flex justify-content-between align-items-center mb-1">
@@ -257,19 +285,31 @@
                                 @foreach (var turno in turnosDelDia.Take(3))
                                 {
                                     <div class="position-relative mb-1">
-                                        <div class="small-turno-tag @GetBadgeClass(turno.Estado)" @onclick="() => TogglePopoverEstado(turno.IdTurno)">
+                                        <div class="small-turno-tag @GetBadgeClass(turno.Estado) @GetBorderAccentClass(turno.Estado)" @onclick="() => TogglePopoverEstado(turno.IdTurno)">
                                             @turno.Hora.ToString("HH:mm") - @GetNombrePaciente(turno.IdPaciente)
                                         </div>
 
                                         @if (PopoverTurnoId == turno.IdTurno)
                                         {
-                                            <div class="popover-inline-estados shadow p-2 bg-white border rounded" style="position: absolute; top: 100%; left: 0; right: 0; z-index: 200;">
+                                            <div class="popover-inline-estados shadow @(isRightEdgeMonth ? "popover-align-left" : "")">
                                                 <div class="popover-header-small mb-1">Estado:</div>
-                                                <div class="d-grid gap-1">
-                                                    <button class="btn btn-xs btn-success text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Activo)">Activo</button>
-                                                    <button class="btn btn-xs btn-info text-white text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Completo)">Completo</button>
-                                                    <button class="btn btn-xs btn-warning text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Falta)">Falta</button>
-                                                    <button class="btn btn-xs btn-danger text-start" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Cancelado)">Cancelado</button>
+                                                <div class="d-flex flex-column gap-1">
+                                                    <button type="button" class="btn-state-item btn-state-activo" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Activo)">
+                                                        <span class="state-icon-circle bg-activo">✓</span>
+                                                        <span>Activo</span>
+                                                    </button>
+                                                    <button type="button" class="btn-state-item btn-state-completo" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Completo)">
+                                                        <span class="state-icon-circle bg-completo">✓</span>
+                                                        <span>Completo</span>
+                                                    </button>
+                                                    <button type="button" class="btn-state-item btn-state-falta" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Falta)">
+                                                        <span class="state-icon-circle bg-falta">⚠</span>
+                                                        <span>Falta</span>
+                                                    </button>
+                                                    <button type="button" class="btn-state-item btn-state-cancelado" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Cancelado)">
+                                                        <span class="state-icon-circle bg-cancelado">✕</span>
+                                                        <span>Cancelado</span>
+                                                    </button>
                                                 </div>
                                             </div>
                                         }

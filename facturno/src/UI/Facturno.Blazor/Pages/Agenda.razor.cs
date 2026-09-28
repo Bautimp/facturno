@@ -102,10 +102,10 @@ public partial class Agenda : ComponentBase
 
     protected async Task CambiarVista(TipoVistaAgenda nuevaVista)
     {
-        if (VistaActual == nuevaVista && _isLoadingTurnos) return;
         VistaActual = nuevaVista;
         PopoverTurnoId = null;
         await CargarTurnos();
+        StateHasChanged();
     }
 
     protected async Task CargarProfesionales()
@@ -156,7 +156,7 @@ public partial class Agenda : ComponentBase
 
     protected async Task CargarTurnos()
     {
-        if (SelectedProfesionalId == Guid.Empty || _isLoadingTurnos) return;
+        if (SelectedProfesionalId == Guid.Empty) return;
 
         _isLoadingTurnos = true;
         try
@@ -214,6 +214,7 @@ public partial class Agenda : ComponentBase
         finally
         {
             _isLoadingTurnos = false;
+            StateHasChanged();
         }
     }
 
@@ -301,7 +302,8 @@ public partial class Agenda : ComponentBase
             {
                 turno.Estado = nuevoEstado;
                 PopoverTurnoId = null;
-                MensajeAlerta = $"Estado del turno #{turno.IdTurno} actualizado a {nuevoEstado}.";
+                var nombrePaciente = GetNombrePaciente(turno.IdPaciente);
+                MensajeAlerta = $"Estado del turno de {nombrePaciente} actualizado a {nuevoEstado}.";
                 await CargarTurnos();
             }
             else
@@ -426,6 +428,24 @@ public partial class Agenda : ComponentBase
         EstadoTurno.Falta => "badge-falta",
         EstadoTurno.Cancelado => "badge-cancelado",
         _ => "badge-activo"
+    };
+
+    protected string GetEstadoTextoConIcono(EstadoTurno estado) => estado switch
+    {
+        EstadoTurno.Activo => "✓ Activo",
+        EstadoTurno.Completo => "✓ Completo",
+        EstadoTurno.Falta => "⚠ Falta",
+        EstadoTurno.Cancelado => "✕ Cancelado",
+        _ => estado.ToString()
+    };
+
+    protected string GetBorderAccentClass(EstadoTurno estado) => estado switch
+    {
+        EstadoTurno.Activo => "border-estado-activo",
+        EstadoTurno.Completo => "border-estado-completo",
+        EstadoTurno.Falta => "border-estado-falta",
+        EstadoTurno.Cancelado => "border-estado-cancelado",
+        _ => "border-estado-activo"
     };
 
     protected string GetPdfUrl(long idTurno) => $"http://localhost:5082/api/facturacion/comprobante/{idTurno}";
