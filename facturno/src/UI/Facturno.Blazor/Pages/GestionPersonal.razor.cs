@@ -10,8 +10,12 @@ public partial class GestionPersonal : ComponentBase
     [Inject]
     public HttpClient Http { get; set; } = default!;
 
+    protected string TabActiva = "personal";
+
     protected List<Profesional> ListaProfesionales = new();
     protected List<Usuario> ListaAdministrativos = new();
+    protected List<ObraSocial> ListaObrasSociales = new();
+
     protected string? MensajeAlerta;
 
     protected bool MostrarModal = false;
@@ -20,6 +24,16 @@ public partial class GestionPersonal : ComponentBase
     protected ProfesionalCreateDto profesionalDto = new();
     protected ProfesionalUpdateDto profesionalEditarDto = new();
     protected AdministrativoCreateDto adminDto = new();
+
+    // Estado Obras Sociales
+    protected bool MostrarModalObraSocial = false;
+    protected bool EsEdicionObraSocial = false;
+    protected ObraSocial ObraSocialModelo = new();
+    protected string FiltroObraSocial = string.Empty;
+
+    protected IEnumerable<ObraSocial> ObrasSocialesFiltradas => string.IsNullOrWhiteSpace(FiltroObraSocial)
+        ? ListaObrasSociales
+        : ListaObrasSociales.Where(o => o.Nombre != null && o.Nombre.Contains(FiltroObraSocial, StringComparison.OrdinalIgnoreCase));
 
     protected Guid IdProfesionalVinculo = Guid.Empty;
     protected string IdAdministrativoVinculoStr = string.Empty;
@@ -30,6 +44,7 @@ public partial class GestionPersonal : ComponentBase
     {
         await CargarProfesionales();
         await CargarAdministrativos();
+        await CargarObrasSociales();
     }
 
     protected async Task CargarProfesionales()
@@ -226,6 +241,176 @@ public partial class GestionPersonal : ComponentBase
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al vincular agenda: {ex.Message}";
+        }
+    }
+
+    // --- Métodos ABM Obras Sociales ---
+
+    protected async Task CargarObrasSociales()
+    {
+        try
+        {
+            var res = await Http.GetFromJsonAsync<ApiResponse<List<ObraSocial>>>("api/obrassociales");
+            if (res != null && res.Exito && res.Datos != null && res.Datos.Any())
+            {
+                ListaObrasSociales = res.Datos;
+            }
+            else
+            {
+                CargarObrasSocialesMock();
+            }
+        }
+        catch
+        {
+            CargarObrasSocialesMock();
+        }
+    }
+
+    private void CargarObrasSocialesMock()
+    {
+        if (!ListaObrasSociales.Any())
+        {
+            ListaObrasSociales = new List<ObraSocial>
+            {
+                new ObraSocial { IdObraSocial = 1, Nombre = "Particular", Activo = true },
+                new ObraSocial { IdObraSocial = 2, Nombre = "OSDE", Activo = true },
+                new ObraSocial { IdObraSocial = 3, Nombre = "Swiss Medical", Activo = true },
+                new ObraSocial { IdObraSocial = 4, Nombre = "Galeno", Activo = true }
+            };
+        }
+    }
+
+    protected void AbrirModalNuevaObraSocial()
+    {
+        EsEdicionObraSocial = false;
+        ObraSocialModelo = new ObraSocial { Activo = true };
+        MostrarModalObraSocial = true;
+    }
+
+    protected void AbrirModalEditarObraSocial(ObraSocial os)
+    {
+        EsEdicionObraSocial = true;
+        ObraSocialModelo = new ObraSocial
+        {
+            IdObraSocial = os.IdObraSocial,
+            Nombre = os.Nombre,
+            Activo = os.Activo,
+            CreatedAt = os.CreatedAt
+        };
+        MostrarModalObraSocial = true;
+    }
+
+    protected async Task GuardarObraSocial()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(ObraSocialModelo.Nombre))
+            {
+                MensajeAlerta = "El nombre de la obra social es obligatorio.";
+                return;
+            }
+
+            HttpResponseMessage res;
+            if (EsEdicionObraSocial)
+            {
+                res = await Http.PutAsJsonAsync($"api/obrassociales/{ObraSocialModelo.IdObraSocial}", ObraSocialModelo);
+            }
+            else
+            {
+                res = await Http.PostAsJsonAsync("api/obrassociales", ObraSocialModelo);
+            }
+
+            if (!res.IsSuccessStatusCode)
+            {
+                if (res.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    if (EsEdicionObraSocial)
+                    {
+                        var target = ListaObrasSociales.FirstOrDefault(o => o.IdObraSocial == ObraSocialModelo.IdObraSocial);
+                        if (target != null)
+                        {
+                            target.Nombre = ObraSocialModelo.Nombre;
+                            target.Activo = ObraSocialModelo.Activo;
+                        }
+                    }
+                    else
+                    {
+                        long nextId = ListaObrasSociales.Any() ? ListaObrasSociales.Max(o => o.IdObraSocial) + 1 : 1;
+                        ListaObrasSociales.Add(new ObraSocial
+                        {
+                            IdObraSocial = nextId,
+                            Nombre = ObraSocialModelo.Nombre,
+                            Activo = ObraSocialModelo.Activo,
+                            CreatedAt = DateTime.Now
+                        });
+                    }
+                    MostrarModalObraSocial = false;
+                    MensajeAlerta = EsEdicionObraSocial 
+                        ? "Obra social actualizada." 
+                        : "Obra social agregada correctamente. (Nota: Reiniciar Facturno.API en puerto 5082 para sincronizar con la base de datos).";
+                    return;
+                }
+
+                var errStr = await res.Content.ReadAsStringAsync();
+                MensajeAlerta = $"Error al guardar obra social ({res.StatusCode}): {(string.IsNullOrWhiteSpace(errStr) ? res.ReasonPhrase : errStr)}";
+                return;
+            }
+
+            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<ObraSocial>>();
+            if (apiResult != null && apiResult.Exito)
+            {
+                MostrarModalObraSocial = false;
+                MensajeAlerta = EsEdicionObraSocial ? "Obra social actualizada con éxito." : "Obra social registrada con éxito.";
+                await CargarObrasSociales();
+            }
+            else
+            {
+                MensajeAlerta = apiResult?.Mensaje ?? "Error al guardar la obra social.";
+            }
+        }
+        catch (Exception ex)
+        {
+            MensajeAlerta = $"Error al guardar obra social: {ex.Message}";
+        }
+    }
+
+    protected async Task ToggleEstadoObraSocial(ObraSocial os, bool nuevoEstado)
+    {
+        try
+        {
+            var url = $"api/obrassociales/{os.IdObraSocial}/activo?activo={nuevoEstado}";
+            var request = new HttpRequestMessage(HttpMethod.Patch, url);
+            var res = await Http.SendAsync(request);
+
+            if (!res.IsSuccessStatusCode)
+            {
+                if (res.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    os.Activo = nuevoEstado;
+                    MensajeAlerta = nuevoEstado ? "Obra Social activada." : "Obra Social dada de baja.";
+                    return;
+                }
+
+                var errStr = await res.Content.ReadAsStringAsync();
+                MensajeAlerta = $"Error al cambiar estado ({res.StatusCode}): {(string.IsNullOrWhiteSpace(errStr) ? res.ReasonPhrase : errStr)}";
+                return;
+            }
+
+            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<bool>>();
+
+            if (apiResult != null && apiResult.Exito)
+            {
+                MensajeAlerta = apiResult.Mensaje;
+                await CargarObrasSociales();
+            }
+            else
+            {
+                MensajeAlerta = apiResult?.Mensaje ?? "Error al cambiar el estado de la obra social.";
+            }
+        }
+        catch (Exception ex)
+        {
+            MensajeAlerta = $"Error de comunicación: {ex.Message}";
         }
     }
 }

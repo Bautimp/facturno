@@ -2,21 +2,49 @@
 @attribute [Authorize(Roles = "Operador,Administrativo")]
 
 <div class="facturno-card" style="position: relative;">
-    <LoadingOverlay IsLoading="IsLoading" Text="Cargando personal médico..." />
-    <div class="card-header-custom">
+    <LoadingOverlay IsLoading="IsLoading" Text="Cargando información..." />
+    
+    <div class="card-header-custom mb-3">
         <div>
-            <h3 class="m-0 font-bold">Gestión de Personal Médico</h3>
-            <p class="text-muted m-0">Administración de profesionales, especialidades, tarifas y vinculación de agendas</p>
+            <h3 class="m-0 font-bold">Gestión de Personal & Obras Sociales</h3>
+            <p class="text-muted m-0">Administración de profesionales, especialidades, agendas compartidas y convenios con Obras Sociales</p>
         </div>
         <div class="d-flex gap-2">
-            <button class="btn btn-outline-primary" @onclick="AbrirModalNuevoAdmin">
-                + Nuevo Administrativo
-            </button>
-            <button class="btn btn-primary-custom" @onclick="AbrirModalNuevo">
-                + Nuevo Profesional
-            </button>
+            @if (TabActiva == "personal")
+            {
+                <button class="btn btn-outline-primary" @onclick="AbrirModalNuevoAdmin">
+                    + Nuevo Administrativo
+                </button>
+                <button class="btn btn-primary-custom" @onclick="AbrirModalNuevo">
+                    + Nuevo Profesional
+                </button>
+            }
+            else
+            {
+                <button class="btn btn-primary-custom" @onclick="AbrirModalNuevaObraSocial">
+                    + Nueva Obra Social
+                </button>
+            }
         </div>
     </div>
+
+    <!-- Navegación por Pestañas -->
+    <ul class="nav nav-tabs mb-4 border-bottom">
+        <li class="nav-item">
+            <button class="nav-link @(TabActiva == "personal" ? "active fw-bold border-bottom-0 text-primary" : "text-secondary")" 
+                    style="cursor: pointer;"
+                    @onclick='() => TabActiva = "personal"'>
+                👨‍⚕️ Personal Médico y Usuarios
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(TabActiva == "obrassociales" ? "active fw-bold border-bottom-0 text-primary" : "text-secondary")" 
+                    style="cursor: pointer;"
+                    @onclick='() => TabActiva = "obrassociales"'>
+                🏥 Obras Sociales
+            </button>
+        </li>
+    </ul>
 
     @if (!string.IsNullOrWhiteSpace(MensajeAlerta))
     {
@@ -26,100 +54,166 @@
         </div>
     }
 
-    <!-- Tabla de Profesionales -->
-    <div class="table-responsive mb-4">
-        <table class="table table-hover align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>Nombre Completo</th>
-                    <th>Especialidad</th>
-                    <th>Matrícula</th>
-                    <th>CUIT</th>
-                    <th>Precio Consulta</th>
-                    <th>Estado</th>
-                    <th class="text-end">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var prof in ListaProfesionales)
-                {
-                    var nombreCompleto = prof.Usuario?.Persona != null ? $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido}" : "Sin nombre";
-                    var esActivo = prof.Usuario?.Activo ?? true;
-
+    @if (TabActiva == "personal")
+    {
+        <!-- Tabla de Profesionales -->
+        <div class="table-responsive mb-4">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
                     <tr>
-                        <td>
-                            <strong>@nombreCompleto</strong>
-                            <div class="text-muted small">@(prof.Usuario?.Persona?.Correo ?? "-")</div>
-                        </td>
-                        <td><span class="badge bg-info text-dark">@(prof.Especialidad?.ToString() ?? "General")</span></td>
-                        <td>@(prof.Matricula ?? "-")</td>
-                        <td>@(prof.Cuit ?? "-")</td>
-                        <td><strong>$ @(prof.PrecioConsulta?.ToString("N2") ?? "0.00")</strong></td>
-                        <td>
-                            <span class="badge @(esActivo ? "bg-success" : "bg-danger")">
-                                @(esActivo ? "Activo" : "Inactivo")
-                            </span>
-                        </td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => AbrirModalEditar(prof)">
-                                ✏️ Editar
-                            </button>
-                            <button class="btn btn-sm @(esActivo ? "btn-outline-danger" : "btn-outline-success")"
-                                    @onclick="() => ToggleEstadoActivo(prof, !esActivo)">
-                                @(esActivo ? "Desactivar (Baja)" : "Activar")
-                            </button>
-                        </td>
+                        <th>Nombre Completo</th>
+                        <th>Especialidad</th>
+                        <th>Matrícula</th>
+                        <th>CUIT</th>
+                        <th>Precio Consulta</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acciones</th>
                     </tr>
-                }
-                @if (!ListaProfesionales.Any())
-                {
-                    <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">
-                            No se encontraron profesionales registrados.
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Vinculación de Agendas Compartidas -->
-    <div class="border-top pt-4">
-        <h5 class="font-bold mb-2">Vinculación de Agendas Compartidas</h5>
-        <p class="text-muted small mb-3">Conceder permisos a personal administrativo para gestionar la agenda del profesional médico.</p>
-
-        <div class="row g-3">
-            <div class="col-md-5">
-                <label class="form-label font-semibold">Profesional Médico</label>
-                <select class="form-select" @bind="IdProfesionalVinculo">
-                    <option value="@Guid.Empty">Seleccionar Profesional...</option>
+                </thead>
+                <tbody>
                     @foreach (var prof in ListaProfesionales)
                     {
-                        var nom = prof.Usuario?.Persona != null ? $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido}" : "Profesional";
-                        <option value="@prof.IdProfesional">@nom</option>
-                    }
-                </select>
-            </div>
+                        var nombreCompleto = prof.Usuario?.Persona != null ? $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido}" : "Sin nombre";
+                        var esActivo = prof.Usuario?.Activo ?? true;
 
-            <div class="col-md-5">
-                <label class="form-label font-semibold">Personal Administrativo</label>
-                <select class="form-select" @bind="IdAdministrativoVinculoStr">
-                    <option value="">Seleccionar Administrativo...</option>
-                    @foreach (var admin in ListaAdministrativos)
+                        <tr>
+                            <td>
+                                <strong>@nombreCompleto</strong>
+                                <div class="text-muted small">@(prof.Usuario?.Persona?.Correo ?? "-")</div>
+                            </td>
+                            <td><span class="badge bg-info text-dark">@(prof.Especialidad?.ToString() ?? "General")</span></td>
+                            <td>@(prof.Matricula ?? "-")</td>
+                            <td>@(prof.Cuit ?? "-")</td>
+                            <td><strong>$ @(prof.PrecioConsulta?.ToString("N2") ?? "0.00")</strong></td>
+                            <td>
+                                <span class="badge @(esActivo ? "bg-success" : "bg-danger")">
+                                    @(esActivo ? "Activo" : "Inactivo")
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => AbrirModalEditar(prof)">
+                                    ✏️ Editar
+                                </button>
+                                <button class="btn btn-sm @(esActivo ? "btn-outline-danger" : "btn-outline-success")"
+                                        @onclick="() => ToggleEstadoActivo(prof, !esActivo)">
+                                    @(esActivo ? "Desactivar (Baja)" : "Activar")
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                    @if (!ListaProfesionales.Any())
                     {
-                        var nomAdmin = admin.Persona != null ? $"{admin.Persona.Nombre} {admin.Persona.Apellido} ({admin.Rol})" : $"Usuario {admin.IdUsuario}";
-                        <option value="@admin.IdUsuario">@nomAdmin</option>
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                No se encontraron profesionales registrados.
+                            </td>
+                        </tr>
                     }
-                </select>
-            </div>
+                </tbody>
+            </table>
+        </div>
 
-            <div class="col-md-2 d-flex align-items-end">
-                <button class="btn btn-outline-primary w-100" @onclick="VincularAgenda">
-                    Vincular
-                </button>
+        <!-- Vinculación de Agendas Compartidas -->
+        <div class="border-top pt-4">
+            <h5 class="font-bold mb-2">Vinculación de Agendas Compartidas</h5>
+            <p class="text-muted small mb-3">Conceder permisos a personal administrativo para gestionar la agenda del profesional médico.</p>
+
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <label class="form-label font-semibold">Profesional Médico</label>
+                    <select class="form-select" @bind="IdProfesionalVinculo">
+                        <option value="@Guid.Empty">Seleccionar Profesional...</option>
+                        @foreach (var prof in ListaProfesionales)
+                        {
+                            var nom = prof.Usuario?.Persona != null ? $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido}" : "Profesional";
+                            <option value="@prof.IdProfesional">@nom</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-5">
+                    <label class="form-label font-semibold">Personal Administrativo</label>
+                    <select class="form-select" @bind="IdAdministrativoVinculoStr">
+                        <option value="">Seleccionar Administrativo...</option>
+                        @foreach (var admin in ListaAdministrativos)
+                        {
+                            var nomAdmin = admin.Persona != null ? $"{admin.Persona.Nombre} {admin.Persona.Apellido} ({admin.Rol})" : $"Usuario {admin.IdUsuario}";
+                            <option value="@admin.IdUsuario">@nomAdmin</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-outline-primary w-100" @onclick="VincularAgenda">
+                        Vincular
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
+    }
+    else if (TabActiva == "obrassociales")
+    {
+        <!-- Pestaña Obras Sociales -->
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-white">🔍</span>
+                    <input type="text" class="form-control" placeholder="Buscar Obra Social por nombre..." @bind="FiltroObraSocial" @bind:event="oninput" />
+                </div>
+            </div>
+            <div class="col-md-6 text-end text-muted small">
+                Total obras sociales: <strong>@ObrasSocialesFiltradas.Count()</strong>
+            </div>
+        </div>
+
+        <div class="table-responsive mb-4">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 80px;">ID</th>
+                        <th>Nombre / Denominación</th>
+                        <th>Fecha Registro</th>
+                        <th style="width: 120px;">Estado</th>
+                        <th class="text-end" style="width: 220px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var os in ObrasSocialesFiltradas)
+                    {
+                        <tr>
+                            <td><code>#@os.IdObraSocial</code></td>
+                            <td>
+                                <strong>@os.Nombre</strong>
+                            </td>
+                            <td>@(os.CreatedAt != default ? os.CreatedAt.ToString("dd/MM/yyyy HH:mm") : "-")</td>
+                            <td>
+                                <span class="badge @(os.Activo ? "bg-success" : "bg-danger")">
+                                    @(os.Activo ? "Activo" : "Dado de Baja")
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => AbrirModalEditarObraSocial(os)">
+                                    ✏️ Editar
+                                </button>
+                                <button class="btn btn-sm @(os.Activo ? "btn-outline-danger" : "btn-outline-success")"
+                                        @onclick="() => ToggleEstadoObraSocial(os, !os.Activo)">
+                                    @(os.Activo ? "Dar de Baja" : "Activar")
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                    @if (!ObrasSocialesFiltradas.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                No se encontraron obras sociales registradas.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 </div>
 
 <!-- Modal Nuevo Profesional -->
@@ -289,6 +383,36 @@
                 <div class="d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-secondary-custom" @onclick="() => MostrarModalEditar = false">Cancelar</button>
                     <button type="submit" class="btn btn-primary-custom">Guardar Cambios</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<!-- Modal Agregar/Editar Obra Social -->
+@if (MostrarModalObraSocial)
+{
+    <div class="modal-overlay">
+        <div class="modal-content-custom">
+            <h4 class="mb-3 font-bold">@(EsEdicionObraSocial ? "Modificar Obra Social" : "Añadir Nueva Obra Social")</h4>
+            <EditForm Model="ObraSocialModelo" OnValidSubmit="GuardarObraSocial">
+                <div class="mb-3">
+                    <label class="form-label font-semibold">Nombre / Denominación *</label>
+                    <InputText @bind-Value="ObraSocialModelo.Nombre" class="form-control" placeholder="Ej. OSDE, Swiss Medical, Galeno..." required />
+                </div>
+
+                <div class="mb-3 form-check">
+                    <InputCheckbox @bind-Value="ObraSocialModelo.Activo" class="form-check-input" id="checkObraSocialActivo" />
+                    <label class="form-check-label font-semibold" for="checkObraSocialActivo">
+                        Obra Social Activa (Disponible para pacientes)
+                    </label>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary-custom" @onclick="() => MostrarModalObraSocial = false">Cancelar</button>
+                    <button type="submit" class="btn btn-primary-custom">
+                        @(EsEdicionObraSocial ? "Guardar Cambios" : "Crear Obra Social")
+                    </button>
                 </div>
             </EditForm>
         </div>

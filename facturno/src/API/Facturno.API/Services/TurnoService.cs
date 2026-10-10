@@ -98,6 +98,25 @@ public class TurnoService : ITurnoService
             return ApiResponse<Turno>.Error("El turno especificado no existe.");
         }
 
+        // Si se modifica la fecha u hora y el nuevo estado no es Cancelado, validar solapamientos
+        if (dto.Estado != EstadoTurno.Cancelado && (dto.Fecha != turnoExistente.Fecha || dto.Hora != turnoExistente.Hora))
+        {
+            var turnosDelDia = await _turnoRepository.ObtenerPorProfesionalYFechaAsync(turnoExistente.IdProfesional, dto.Fecha);
+            var horaInicio = dto.Hora;
+            var horaFin = dto.Hora.Add(TimeSpan.FromMinutes(30));
+
+            bool existeSolapamiento = turnosDelDia.Any(t =>
+                t.IdTurno != dto.IdTurno &&
+                t.Estado != EstadoTurno.Cancelado &&
+                ((t.Hora >= horaInicio && t.Hora < horaFin) ||
+                 (t.Hora.Add(TimeSpan.FromMinutes(30)) > horaInicio && t.Hora <= horaInicio)));
+
+            if (existeSolapamiento)
+            {
+                return ApiResponse<Turno>.Error("El profesional ya cuenta con un turno asignado dentro del rango de 30 minutos en dicho horario.");
+            }
+        }
+
         turnoExistente.Fecha = dto.Fecha;
         turnoExistente.Hora = dto.Hora;
         turnoExistente.Estado = dto.Estado;

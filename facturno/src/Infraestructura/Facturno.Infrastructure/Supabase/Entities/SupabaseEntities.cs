@@ -76,7 +76,7 @@ public class ProfesionalEntity : BaseModel
 [Table("obras_sociales")]
 public class ObraSocialEntity : BaseModel
 {
-    [PrimaryKey("id_obra_social", true)]
+    [PrimaryKey("id_obra_social", false)]
     public long IdObraSocial { get; set; }
 
     [Column("created_at")]

@@ -58,15 +58,34 @@ public partial class Pacientes : ComponentBase
 
     protected async Task CargarObrasSociales()
     {
-        // Mock fallback/default Obra Social si no hay endpoint activo
-        ListaObrasSociales = new List<ObraSocial>
+        try
         {
-            new ObraSocial { IdObraSocial = 1, Nombre = "Particular" },
-            new ObraSocial { IdObraSocial = 2, Nombre = "OSDE" },
-            new ObraSocial { IdObraSocial = 3, Nombre = "Swiss Medical" },
-            new ObraSocial { IdObraSocial = 4, Nombre = "Galeno" }
-        };
-        await Task.CompletedTask;
+            var res = await Http.GetFromJsonAsync<ApiResponse<List<ObraSocial>>>("api/obrassociales");
+            if (res != null && res.Exito && res.Datos != null && res.Datos.Any())
+            {
+                ListaObrasSociales = res.Datos.Where(os => os.Activo).ToList();
+            }
+            else
+            {
+                ListaObrasSociales = new List<ObraSocial>
+                {
+                    new ObraSocial { IdObraSocial = 1, Nombre = "Particular", Activo = true },
+                    new ObraSocial { IdObraSocial = 2, Nombre = "OSDE", Activo = true },
+                    new ObraSocial { IdObraSocial = 3, Nombre = "Swiss Medical", Activo = true },
+                    new ObraSocial { IdObraSocial = 4, Nombre = "Galeno", Activo = true }
+                };
+            }
+        }
+        catch
+        {
+            ListaObrasSociales = new List<ObraSocial>
+            {
+                new ObraSocial { IdObraSocial = 1, Nombre = "Particular", Activo = true },
+                new ObraSocial { IdObraSocial = 2, Nombre = "OSDE", Activo = true },
+                new ObraSocial { IdObraSocial = 3, Nombre = "Swiss Medical", Activo = true },
+                new ObraSocial { IdObraSocial = 4, Nombre = "Galeno", Activo = true }
+            };
+        }
     }
 
     protected void AbrirModalNuevo()

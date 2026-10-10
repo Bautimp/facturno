@@ -448,5 +448,5 @@ public partial class Agenda : ComponentBase
         _ => "border-estado-activo"
     };
 
-    protected string GetPdfUrl(long idTurno) => $"http://localhost:5082/api/facturacion/comprobante/{idTurno}";
+    protected string GetPdfUrl(long idTurno) => $"{Http.BaseAddress?.ToString().TrimEnd('/')}/api/facturacion/comprobante/{idTurno}";
 }

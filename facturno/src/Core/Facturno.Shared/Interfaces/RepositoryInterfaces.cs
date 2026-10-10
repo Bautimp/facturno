@@ -48,4 +48,5 @@ public interface IObraSocialRepository
     Task<List<ObraSocial>> ObtenerTodasAsync();
     Task<ObraSocial> CrearAsync(ObraSocial obraSocial);
     Task<ObraSocial> ActualizarAsync(ObraSocial obraSocial);
+    Task<bool> CambiarEstadoActivoAsync(long idObraSocial, bool activo);
 }

@@ -80,6 +80,19 @@ public class ObraSocialRepository : IObraSocialRepository
         return MapearAObraSocial(updated);
     }
 
+    public async Task<bool> CambiarEstadoActivoAsync(long idObraSocial, bool activo)
+    {
+        var existing = await _supabaseClient.From<ObraSocialEntity>()
+            .Where(x => x.IdObraSocial == idObraSocial)
+            .Single();
+
+        if (existing == null) return false;
+
+        existing.Activo = activo;
+        await _supabaseClient.From<ObraSocialEntity>().Update(existing);
+        return true;
+    }
+
     private static ObraSocial MapearAObraSocial(ObraSocialEntity entity)
     {
         return new ObraSocial
