@@ -28,7 +28,7 @@ public class TurnosController : ControllerBase
                 return BadRequest(ApiResponse<List<Turno>>.Error("Formato de fecha inválido. Usar YYYY-MM-DD."));
             }
 
-            var respuesta = await _turnoService.ListarPorProfesionalYFechaAsync(idProfesional, dateOnly);
+            var respuesta = await _turnoService.ListarPorProfesionalYFecha(idProfesional, dateOnly);
             return Ok(respuesta);
         }
         catch (Exception ex)
@@ -47,7 +47,7 @@ public class TurnosController : ControllerBase
                 return BadRequest(ApiResponse<Turno>.Error("Datos de solicitud inválidos."));
             }
 
-            var respuesta = await _turnoService.AgendarTurnoAsync(dto);
+            var respuesta = await _turnoService.AgendarTurno(dto);
             if (!respuesta.Exito)
             {
                 return BadRequest(respuesta);
@@ -71,7 +71,7 @@ public class TurnosController : ControllerBase
                 return BadRequest(ApiResponse<List<Turno>>.Error("Datos de solicitud inválidos."));
             }
 
-            var respuesta = await _turnoService.AgendarTurnosRecurrentesAsync(dto);
+            var respuesta = await _turnoService.AgendarTurnosRecurrentes(dto);
             return Ok(respuesta);
         }
         catch (Exception ex)
@@ -85,7 +85,7 @@ public class TurnosController : ControllerBase
     {
         try
         {
-            var respuesta = await _turnoService.ActualizarTurnoAsync(dto);
+            var respuesta = await _turnoService.ActualizarTurno(dto);
             if (!respuesta.Exito)
             {
                 return BadRequest(respuesta);
@@ -104,7 +104,7 @@ public class TurnosController : ControllerBase
     {
         try
         {
-            var respuesta = await _turnoService.CancelarTurnoAsync(idTurno);
+            var respuesta = await _turnoService.CancelarTurno(idTurno);
             if (!respuesta.Exito)
             {
                 return NotFound(respuesta);

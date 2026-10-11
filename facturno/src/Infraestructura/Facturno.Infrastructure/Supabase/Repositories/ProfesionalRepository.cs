@@ -14,7 +14,7 @@ public class ProfesionalRepository : IProfesionalRepository
         _supabaseClient = supabaseClient;
     }
 
-    public async Task<Profesional?> ObtenerPorIdAsync(Guid idProfesional)
+    public async Task<Profesional?> ObtenerPorId(Guid idProfesional)
     {
         var profIdStr = idProfesional.ToString();
         var profRes = await _supabaseClient.From<ProfesionalEntity>()
@@ -38,7 +38,7 @@ public class ProfesionalRepository : IProfesionalRepository
         return MapearAProfesional(profRes, userRes, personaRes);
     }
 
-    public async Task<List<Profesional>> ObtenerTodosAsync()
+    public async Task<List<Profesional>> ObtenerTodos()
     {
         var profsRes = await _supabaseClient.From<ProfesionalEntity>().Get();
         var usersRes = await _supabaseClient.From<UsuarioEntity>().Get();
@@ -55,7 +55,7 @@ public class ProfesionalRepository : IProfesionalRepository
         }).ToList();
     }
 
-    public async Task<Profesional> CrearAsync(Profesional profesional, Usuario usuario, Persona persona)
+    public async Task<Profesional> Crear(Profesional profesional, Usuario usuario, Persona persona)
     {
         var rpcParams = new Dictionary<string, object>
         {
@@ -77,7 +77,7 @@ public class ProfesionalRepository : IProfesionalRepository
             var createdIdString = response.Content.Trim('"');
             if (Guid.TryParse(createdIdString, out var createdGuid))
             {
-                var result = await ObtenerPorIdAsync(createdGuid);
+                var result = await ObtenerPorId(createdGuid);
                 if (result != null) return result;
             }
         }
@@ -85,7 +85,7 @@ public class ProfesionalRepository : IProfesionalRepository
         throw new Exception("No se pudo obtener el ID del profesional creado desde la función RPC 'crear_profesional'.");
     }
 
-    public async Task<Profesional> ActualizarAsync(Profesional profesional, Persona persona)
+    public async Task<Profesional> Actualizar(Profesional profesional, Persona persona)
     {
         var personaEntity = new PersonaEntity
         {

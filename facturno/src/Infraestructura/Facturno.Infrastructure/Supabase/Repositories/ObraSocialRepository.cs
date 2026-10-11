@@ -13,7 +13,7 @@ public class ObraSocialRepository : IObraSocialRepository
         _supabaseClient = supabaseClient;
     }
 
-    public async Task<ObraSocial?> ObtenerPorIdAsync(long idObraSocial)
+    public async Task<ObraSocial?> ObtenerPorId(long idObraSocial)
     {
         var res = await _supabaseClient.From<ObraSocialEntity>()
             .Where(x => x.IdObraSocial == idObraSocial)
@@ -24,7 +24,7 @@ public class ObraSocialRepository : IObraSocialRepository
         return MapearAObraSocial(res);
     }
 
-    public async Task<List<ObraSocial>> ObtenerTodasAsync()
+    public async Task<List<ObraSocial>> ObtenerTodas()
     {
         var res = await _supabaseClient.From<ObraSocialEntity>().Get();
         if (!res.Models.Any())
@@ -55,7 +55,7 @@ public class ObraSocialRepository : IObraSocialRepository
         return res.Models.Select(MapearAObraSocial).ToList();
     }
 
-    public async Task<ObraSocial> CrearAsync(ObraSocial obraSocial)
+    public async Task<ObraSocial> Crear(ObraSocial obraSocial)
     {
         var entity = new ObraSocialEntity
         {
@@ -67,7 +67,7 @@ public class ObraSocialRepository : IObraSocialRepository
         return MapearAObraSocial(created);
     }
 
-    public async Task<ObraSocial> ActualizarAsync(ObraSocial obraSocial)
+    public async Task<ObraSocial> Actualizar(ObraSocial obraSocial)
     {
         var entity = new ObraSocialEntity
         {
@@ -80,7 +80,7 @@ public class ObraSocialRepository : IObraSocialRepository
         return MapearAObraSocial(updated);
     }
 
-    public async Task<bool> CambiarEstadoActivoAsync(long idObraSocial, bool activo)
+    public async Task<bool> CambiarEstadoActivo(long idObraSocial, bool activo)
     {
         var existing = await _supabaseClient.From<ObraSocialEntity>()
             .Where(x => x.IdObraSocial == idObraSocial)

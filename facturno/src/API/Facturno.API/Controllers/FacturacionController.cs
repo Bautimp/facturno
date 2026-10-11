@@ -31,25 +31,25 @@ public class FacturacionController : ControllerBase
     [HttpGet("comprobante/{idTurno:long}")]
     public async Task<IActionResult> DescargarComprobante(long idTurno)
     {
-        var turno = await _turnoRepository.ObtenerPorIdAsync(idTurno);
+        var turno = await _turnoRepository.ObtenerPorId(idTurno);
         if (turno == null)
         {
             return NotFound(ApiResponse<string>.Error("El turno especificado no existe."));
         }
 
-        var paciente = await _pacienteRepository.ObtenerPorIdAsync(turno.IdPaciente);
+        var paciente = await _pacienteRepository.ObtenerPorId(turno.IdPaciente);
         if (paciente == null)
         {
             return NotFound(ApiResponse<string>.Error("El paciente asociado al turno no existe."));
         }
 
-        var profesional = await _profesionalRepository.ObtenerPorIdAsync(turno.IdProfesional);
+        var profesional = await _profesionalRepository.ObtenerPorId(turno.IdProfesional);
         if (profesional == null)
         {
             return NotFound(ApiResponse<string>.Error("El profesional asociado al turno no existe."));
         }
 
-        var obraSocial = await _obraSocialRepository.ObtenerPorIdAsync(paciente.IdObraSocial);
+        var obraSocial = await _obraSocialRepository.ObtenerPorId(paciente.IdObraSocial);
 
         var pdfBytes = _facturaPdfService.GenerarComprobanteTurnoPdf(turno, paciente, profesional, obraSocial);
 

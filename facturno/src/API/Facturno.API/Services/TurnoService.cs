@@ -5,7 +5,7 @@ using Facturno.Shared.Enums;
 
 namespace Facturno.API.Services;
 
-//Implementación de la interfaz de servicio para los turnos
+// Implementación de la interfaz de servicio para los turnos
 public class TurnoService : ITurnoService
 {
     private readonly ITurnoRepository _turnoRepository;
@@ -15,10 +15,10 @@ public class TurnoService : ITurnoService
         _turnoRepository = turnoRepository;
     }
 
-    public async Task<ApiResponse<Turno>> AgendarTurnoAsync(TurnoCreateDto dto)
+    public async Task<ApiResponse<Turno>> AgendarTurno(TurnoCreateDto dto)
     {
         // Validar solapamiento de turnos (30 minutos mínimos)
-        var turnosDelDia = await _turnoRepository.ObtenerPorProfesionalYFechaAsync(dto.IdProfesional, dto.Fecha);
+        var turnosDelDia = await _turnoRepository.ObtenerPorProfesionalYFecha(dto.IdProfesional, dto.Fecha);
 
         var horaInicio = dto.Hora;
         var horaFin = dto.Hora.Add(TimeSpan.FromMinutes(30));
@@ -44,11 +44,11 @@ public class TurnoService : ITurnoService
             Estado = EstadoTurno.Activo
         };
 
-        var turnoCreado = await _turnoRepository.CrearAsync(nuevoTurno);
+        var turnoCreado = await _turnoRepository.Crear(nuevoTurno);
         return ApiResponse<Turno>.Ok(turnoCreado, "Turno agendado exitosamente.");
     }
 
-    public async Task<ApiResponse<List<Turno>>> AgendarTurnosRecurrentesAsync(TurnoRecurrenteCreateDto dto)
+    public async Task<ApiResponse<List<Turno>>> AgendarTurnosRecurrentes(TurnoRecurrenteCreateDto dto)
     {
         var turnosCreados = new List<Turno>();
         var erroresSolapamiento = new List<string>();
@@ -67,7 +67,7 @@ public class TurnoService : ITurnoService
                     Observacion = dto.Observacion
                 };
 
-                var resultado = await AgendarTurnoAsync(createDto);
+                var resultado = await AgendarTurno(createDto);
                 if (resultado.Exito && resultado.Datos != null)
                 {
                     turnosCreados.Add(resultado.Datos);
@@ -90,9 +90,9 @@ public class TurnoService : ITurnoService
         return response;
     }
 
-    public async Task<ApiResponse<Turno>> ActualizarTurnoAsync(TurnoUpdateDto dto)
+    public async Task<ApiResponse<Turno>> ActualizarTurno(TurnoUpdateDto dto)
     {
-        var turnoExistente = await _turnoRepository.ObtenerPorIdAsync(dto.IdTurno);
+        var turnoExistente = await _turnoRepository.ObtenerPorId(dto.IdTurno);
         if (turnoExistente == null)
         {
             return ApiResponse<Turno>.Error("El turno especificado no existe.");
@@ -101,7 +101,7 @@ public class TurnoService : ITurnoService
         // Si se modifica la fecha u hora y el nuevo estado no es Cancelado, validar solapamientos
         if (dto.Estado != EstadoTurno.Cancelado && (dto.Fecha != turnoExistente.Fecha || dto.Hora != turnoExistente.Hora))
         {
-            var turnosDelDia = await _turnoRepository.ObtenerPorProfesionalYFechaAsync(turnoExistente.IdProfesional, dto.Fecha);
+            var turnosDelDia = await _turnoRepository.ObtenerPorProfesionalYFecha(turnoExistente.IdProfesional, dto.Fecha);
             var horaInicio = dto.Hora;
             var horaFin = dto.Hora.Add(TimeSpan.FromMinutes(30));
 
@@ -122,26 +122,26 @@ public class TurnoService : ITurnoService
         turnoExistente.Estado = dto.Estado;
         turnoExistente.Observacion = dto.Observacion;
 
-        var actualizado = await _turnoRepository.ActualizarAsync(turnoExistente);
+        var actualizado = await _turnoRepository.Actualizar(turnoExistente);
         return ApiResponse<Turno>.Ok(actualizado, "Turno actualizado correctamente.");
     }
 
-    public async Task<ApiResponse<bool>> CancelarTurnoAsync(long idTurno)
+    public async Task<ApiResponse<bool>> CancelarTurno(long idTurno)
     {
-        var turno = await _turnoRepository.ObtenerPorIdAsync(idTurno);
+        var turno = await _turnoRepository.ObtenerPorId(idTurno);
         if (turno == null)
         {
             return ApiResponse<bool>.Error("Turno no encontrado.");
         }
 
         turno.Estado = EstadoTurno.Cancelado;
-        await _turnoRepository.ActualizarAsync(turno);
+        await _turnoRepository.Actualizar(turno);
         return ApiResponse<bool>.Ok(true, "Turno cancelado exitosamente.");
     }
 
-    public async Task<ApiResponse<List<Turno>>> ListarPorProfesionalYFechaAsync(Guid idProfesional, DateOnly fecha)
+    public async Task<ApiResponse<List<Turno>>> ListarPorProfesionalYFecha(Guid idProfesional, DateOnly fecha)
     {
-        var turnos = await _turnoRepository.ObtenerPorProfesionalYFechaAsync(idProfesional, fecha);
+        var turnos = await _turnoRepository.ObtenerPorProfesionalYFecha(idProfesional, fecha);
         return ApiResponse<List<Turno>>.Ok(turnos);
     }
 }

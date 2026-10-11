@@ -14,7 +14,7 @@ public class TurnoRepository : ITurnoRepository
         _supabaseClient = supabaseClient;
     }
 
-    public async Task<Turno?> ObtenerPorIdAsync(long idTurno)
+    public async Task<Turno?> ObtenerPorId(long idTurno)
     {
         var response = await _supabaseClient.From<TurnoEntity>()
             .Where(x => x.IdTurno == idTurno)
@@ -25,7 +25,7 @@ public class TurnoRepository : ITurnoRepository
         return MapearATurno(response);
     }
 
-    public async Task<List<Turno>> ObtenerPorProfesionalYFechaAsync(Guid idProfesional, DateOnly fecha)
+    public async Task<List<Turno>> ObtenerPorProfesionalYFecha(Guid idProfesional, DateOnly fecha)
     {
         var profIdStr = idProfesional.ToString();
         var response = await _supabaseClient.From<TurnoEntity>()
@@ -40,7 +40,7 @@ public class TurnoRepository : ITurnoRepository
             .ToList();
     }
 
-    public async Task<List<Turno>> ObtenerPorPacienteAsync(long idPaciente)
+    public async Task<List<Turno>> ObtenerPorPaciente(long idPaciente)
     {
         var response = await _supabaseClient.From<TurnoEntity>()
             .Where(x => x.IdPaciente == idPaciente)
@@ -49,7 +49,7 @@ public class TurnoRepository : ITurnoRepository
         return response.Models.Select(MapearATurno).ToList();
     }
 
-    public async Task<Turno> CrearAsync(Turno turno)
+    public async Task<Turno> Crear(Turno turno)
     {
         var entity = new TurnoEntity
         {
@@ -66,7 +66,7 @@ public class TurnoRepository : ITurnoRepository
         return MapearATurno(creada);
     }
 
-    public async Task<Turno> ActualizarAsync(Turno turno)
+    public async Task<Turno> Actualizar(Turno turno)
     {
         var entity = new TurnoEntity
         {
@@ -84,7 +84,7 @@ public class TurnoRepository : ITurnoRepository
         return MapearATurno(actualizada);
     }
 
-    public async Task<bool> EliminarAsync(long idTurno)
+    public async Task<bool> Eliminar(long idTurno)
     {
         await _supabaseClient.From<TurnoEntity>()
             .Where(x => x.IdTurno == idTurno)

@@ -14,7 +14,7 @@ public class UsuarioRepository : IUsuarioRepository
         _supabaseClient = supabaseClient;
     }
 
-    public async Task<Usuario?> ObtenerPorIdAsync(Guid idUsuario)
+    public async Task<Usuario?> ObtenerPorId(Guid idUsuario)
     {
         var userIdStr = idUsuario.ToString();
         var userRes = await _supabaseClient.From<UsuarioEntity>()
@@ -33,7 +33,7 @@ public class UsuarioRepository : IUsuarioRepository
         return MapearAUsuario(userEntity, personaEntity);
     }
 
-    public async Task<Usuario?> ObtenerPorCorreoAsync(string correo)
+    public async Task<Usuario?> ObtenerPorCorreo(string correo)
     {
         var personaRes = await _supabaseClient.From<PersonaEntity>()
             .Where(x => x.Correo == correo)
@@ -52,7 +52,7 @@ public class UsuarioRepository : IUsuarioRepository
         return MapearAUsuario(userEntity, personaEntity);
     }
 
-    public async Task<Usuario> CrearConPersonaAsync(Usuario usuario, Persona persona)
+    public async Task<Usuario> CrearConPersona(Usuario usuario, Persona persona)
     {
         var personaEntity = new PersonaEntity
         {
@@ -88,7 +88,7 @@ public class UsuarioRepository : IUsuarioRepository
         return usuario;
     }
 
-    public async Task<bool> CambiarEstadoActivoAsync(Guid idUsuario, bool activo)
+    public async Task<bool> CambiarEstadoActivo(Guid idUsuario, bool activo)
     {
         var userIdStr = idUsuario.ToString();
         var userRes = await _supabaseClient.From<UsuarioEntity>()

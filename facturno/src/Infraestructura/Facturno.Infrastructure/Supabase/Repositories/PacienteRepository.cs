@@ -14,7 +14,7 @@ public class PacienteRepository : IPacienteRepository
         _supabaseClient = supabaseClient;
     }
 
-    public async Task<Paciente?> ObtenerPorIdAsync(long idPaciente)
+    public async Task<Paciente?> ObtenerPorId(long idPaciente)
     {
         var pacienteRes = await _supabaseClient.From<PacienteEntity>()
             .Where(x => x.IdPaciente == idPaciente)
@@ -29,7 +29,7 @@ public class PacienteRepository : IPacienteRepository
         return MapearAPaciente(pacienteRes, personaRes);
     }
 
-    public async Task<List<Paciente>> ObtenerTodosAsync()
+    public async Task<List<Paciente>> ObtenerTodos()
     {
         var pacientesRes = await _supabaseClient.From<PacienteEntity>().Get();
         var personasRes = await _supabaseClient.From<PersonaEntity>().Get();
@@ -41,7 +41,7 @@ public class PacienteRepository : IPacienteRepository
         ).ToList();
     }
 
-    public async Task<Paciente> CrearAsync(Paciente paciente, Persona persona)
+    public async Task<Paciente> Crear(Paciente paciente, Persona persona)
     {
         var idOs = paciente.IdObraSocial > 0 ? paciente.IdObraSocial : 1;
         await AsegurarObraSocialExisteAsync(idOs);
@@ -130,7 +130,7 @@ public class PacienteRepository : IPacienteRepository
         return MapearAPaciente(pacienteCreated, personaCreated);
     }
 
-    public async Task<Paciente> ActualizarAsync(Paciente paciente, Persona persona)
+    public async Task<Paciente> Actualizar(Paciente paciente, Persona persona)
     {
         var correoNormalizado = string.IsNullOrWhiteSpace(persona.Correo) ? null : persona.Correo.Trim();
         var numObraSocialNormalizado = (paciente.IdObraSocial == 1 || string.IsNullOrWhiteSpace(paciente.NumObraSocial)) 

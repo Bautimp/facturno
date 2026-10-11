@@ -21,14 +21,14 @@ public class PacientesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<ApiResponse<List<Paciente>>>> ObtenerTodos()
     {
-        var pacientes = await _pacienteRepository.ObtenerTodosAsync();
+        var pacientes = await _pacienteRepository.ObtenerTodos();
         return Ok(ApiResponse<List<Paciente>>.Ok(pacientes));
     }
 
     [HttpGet("{idPaciente:long}")]
     public async Task<ActionResult<ApiResponse<Paciente>>> ObtenerPorId(long idPaciente)
     {
-        var paciente = await _pacienteRepository.ObtenerPorIdAsync(idPaciente);
+        var paciente = await _pacienteRepository.ObtenerPorId(idPaciente);
         if (paciente == null)
         {
             return NotFound(ApiResponse<Paciente>.Error("Paciente no encontrado."));
@@ -58,7 +58,7 @@ public class PacientesController : ControllerBase
                 PorcentajeIva = dto.PorcentajeIva
             };
 
-            var pacienteCreado = await _pacienteRepository.CrearAsync(paciente, persona);
+            var pacienteCreado = await _pacienteRepository.Crear(paciente, persona);
             return CreatedAtAction(nameof(ObtenerPorId), new { idPaciente = pacienteCreado.IdPaciente }, ApiResponse<Paciente>.Ok(pacienteCreado, "Paciente creado con éxito."));
         }
         catch (Exception ex)
@@ -91,7 +91,7 @@ public class PacientesController : ControllerBase
                 PorcentajeIva = dto.PorcentajeIva
             };
 
-            var pacienteActualizado = await _pacienteRepository.ActualizarAsync(paciente, persona);
+            var pacienteActualizado = await _pacienteRepository.Actualizar(paciente, persona);
             return Ok(ApiResponse<Paciente>.Ok(pacienteActualizado, "Paciente actualizado con éxito."));
         }
         catch (Exception ex)

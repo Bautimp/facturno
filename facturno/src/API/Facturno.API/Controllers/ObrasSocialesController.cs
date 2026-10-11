@@ -23,7 +23,7 @@ public class ObrasSocialesController : ControllerBase
     {
         try
         {
-            var result = await _obraSocialRepository.ObtenerTodasAsync();
+            var result = await _obraSocialRepository.ObtenerTodas();
             return Ok(ApiResponse<List<ObraSocial>>.Ok(result));
         }
         catch (Exception ex)
@@ -37,7 +37,7 @@ public class ObrasSocialesController : ControllerBase
     {
         try
         {
-            var result = await _obraSocialRepository.ObtenerPorIdAsync(idObraSocial);
+            var result = await _obraSocialRepository.ObtenerPorId(idObraSocial);
             if (result == null)
             {
                 return NotFound(ApiResponse<ObraSocial>.Error("Obra Social no encontrada."));
@@ -61,7 +61,7 @@ public class ObrasSocialesController : ControllerBase
                 return BadRequest(ApiResponse<ObraSocial>.Error("El nombre de la obra social es obligatorio."));
             }
 
-            var creada = await _obraSocialRepository.CrearAsync(obraSocial);
+            var creada = await _obraSocialRepository.Crear(obraSocial);
             return Ok(ApiResponse<ObraSocial>.Ok(creada, "Obra Social creada con éxito."));
         }
         catch (Exception ex)
@@ -86,7 +86,7 @@ public class ObrasSocialesController : ControllerBase
                 return BadRequest(ApiResponse<ObraSocial>.Error("El nombre de la obra social es obligatorio."));
             }
 
-            var actualizada = await _obraSocialRepository.ActualizarAsync(obraSocial);
+            var actualizada = await _obraSocialRepository.Actualizar(obraSocial);
             return Ok(ApiResponse<ObraSocial>.Ok(actualizada, "Obra Social actualizada con éxito."));
         }
         catch (Exception ex)
@@ -101,7 +101,7 @@ public class ObrasSocialesController : ControllerBase
     {
         try
         {
-            var exito = await _obraSocialRepository.CambiarEstadoActivoAsync(idObraSocial, activo);
+            var exito = await _obraSocialRepository.CambiarEstadoActivo(idObraSocial, activo);
             if (!exito)
             {
                 return NotFound(ApiResponse<bool>.Error("Obra Social no encontrada."));

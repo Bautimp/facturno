@@ -74,7 +74,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     if (!cache.TryGetValue(cacheKey, out object? cachedObj) || cachedObj is not string rolString)
                     {
                         var repo = context.HttpContext.RequestServices.GetRequiredService<IUsuarioRepository>();
-                        var usuario = await repo.ObtenerPorCorreoAsync(email);
+                        var usuario = await repo.ObtenerPorCorreo(email);
                         if (usuario != null && usuario.Activo)
                         {
                             rolString = usuario.Rol.ToString();

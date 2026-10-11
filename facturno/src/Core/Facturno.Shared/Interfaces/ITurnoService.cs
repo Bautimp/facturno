@@ -3,12 +3,12 @@ using Facturno.Shared.DTOs;
 
 namespace Facturno.Shared.Interfaces;
 
-//Interfaz de servicio para los turnos
+// Interfaz de servicio para los turnos
 public interface ITurnoService
 {
-    Task<ApiResponse<Turno>> AgendarTurnoAsync(TurnoCreateDto dto);
-    Task<ApiResponse<List<Turno>>> AgendarTurnosRecurrentesAsync(TurnoRecurrenteCreateDto dto);
-    Task<ApiResponse<Turno>> ActualizarTurnoAsync(TurnoUpdateDto dto);
-    Task<ApiResponse<bool>> CancelarTurnoAsync(long idTurno);
-    Task<ApiResponse<List<Turno>>> ListarPorProfesionalYFechaAsync(Guid idProfesional, DateOnly fecha);
+    Task<ApiResponse<Turno>> AgendarTurno(TurnoCreateDto dto);
+    Task<ApiResponse<List<Turno>>> AgendarTurnosRecurrentes(TurnoRecurrenteCreateDto dto);
+    Task<ApiResponse<Turno>> ActualizarTurno(TurnoUpdateDto dto);
+    Task<ApiResponse<bool>> CancelarTurno(long idTurno);
+    Task<ApiResponse<List<Turno>>> ListarPorProfesionalYFecha(Guid idProfesional, DateOnly fecha);
 }

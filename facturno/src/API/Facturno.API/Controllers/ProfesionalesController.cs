@@ -27,14 +27,14 @@ public class ProfesionalesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<ApiResponse<List<Profesional>>>> ObtenerTodos()
     {
-        var profesionales = await _profesionalRepository.ObtenerTodosAsync();
+        var profesionales = await _profesionalRepository.ObtenerTodos();
         return Ok(ApiResponse<List<Profesional>>.Ok(profesionales));
     }
 
     [HttpGet("{idProfesional:guid}")]
     public async Task<ActionResult<ApiResponse<Profesional>>> ObtenerPorId(Guid idProfesional)
     {
-        var profesional = await _profesionalRepository.ObtenerPorIdAsync(idProfesional);
+        var profesional = await _profesionalRepository.ObtenerPorId(idProfesional);
         if (profesional == null)
         {
             return NotFound(ApiResponse<Profesional>.Error("Profesional no encontrado."));
@@ -53,7 +53,7 @@ public class ProfesionalesController : ControllerBase
         try
         {
             // Verificar si el correo ya existe en nuestro sistema
-            var usuarioExistente = !string.IsNullOrEmpty(dto.Correo) ? await _usuarioRepository.ObtenerPorCorreoAsync(dto.Correo) : null;
+            var usuarioExistente = !string.IsNullOrEmpty(dto.Correo) ? await _usuarioRepository.ObtenerPorCorreo(dto.Correo) : null;
             if (usuarioExistente != null)
             {
                 return BadRequest(ApiResponse<Profesional>.Error($"El correo '{dto.Correo}' ya se encuentra registrado para otro usuario."));
@@ -108,7 +108,7 @@ public class ProfesionalesController : ControllerBase
                 CondicionIva = dto.CondicionIva
             };
 
-            var creado = await _profesionalRepository.CrearAsync(profesional, usuario, persona);
+            var creado = await _profesionalRepository.Crear(profesional, usuario, persona);
             return CreatedAtAction(nameof(ObtenerPorId), new { idProfesional = creado.IdProfesional }, ApiResponse<Profesional>.Ok(creado, "Profesional creado correctamente."));
         }
         catch (Exception ex)
@@ -122,7 +122,7 @@ public class ProfesionalesController : ControllerBase
     {
         try
         {
-            var existente = await _profesionalRepository.ObtenerPorIdAsync(idProfesional);
+            var existente = await _profesionalRepository.ObtenerPorId(idProfesional);
             if (existente == null)
             {
                 return NotFound(ApiResponse<Profesional>.Error("Profesional no encontrado."));
@@ -148,7 +148,7 @@ public class ProfesionalesController : ControllerBase
                 CondicionIva = dto.CondicionIva ?? existente.CondicionIva
             };
 
-            var actualizado = await _profesionalRepository.ActualizarAsync(profesional, persona);
+            var actualizado = await _profesionalRepository.Actualizar(profesional, persona);
             return Ok(ApiResponse<Profesional>.Ok(actualizado, "Profesional actualizado correctamente."));
         }
         catch (Exception ex)
@@ -160,7 +160,7 @@ public class ProfesionalesController : ControllerBase
     [HttpPatch("{idProfesional:guid}/activo")]
     public async Task<ActionResult<ApiResponse<bool>>> CambiarEstadoActivo(Guid idProfesional, [FromQuery] bool activo)
     {
-        var resultado = await _usuarioRepository.CambiarEstadoActivoAsync(idProfesional, activo);
+        var resultado = await _usuarioRepository.CambiarEstadoActivo(idProfesional, activo);
         if (!resultado)
         {
             return NotFound(ApiResponse<bool>.Error("No se pudo encontrar el usuario del profesional."));
@@ -236,7 +236,7 @@ public class ProfesionalesController : ControllerBase
 
         try
         {
-            var usuarioExistente = !string.IsNullOrEmpty(dto.Correo) ? await _usuarioRepository.ObtenerPorCorreoAsync(dto.Correo) : null;
+            var usuarioExistente = !string.IsNullOrEmpty(dto.Correo) ? await _usuarioRepository.ObtenerPorCorreo(dto.Correo) : null;
             if (usuarioExistente != null)
             {
                 return BadRequest(ApiResponse<Usuario>.Error($"El correo '{dto.Correo}' ya se encuentra registrado."));
@@ -277,7 +277,7 @@ public class ProfesionalesController : ControllerBase
                 Activo = true
             };
 
-            var creado = await _usuarioRepository.CrearConPersonaAsync(usuario, persona);
+            var creado = await _usuarioRepository.CrearConPersona(usuario, persona);
             return Ok(ApiResponse<Usuario>.Ok(creado, "Usuario Administrativo creado correctamente."));
         }
         catch (Exception ex)

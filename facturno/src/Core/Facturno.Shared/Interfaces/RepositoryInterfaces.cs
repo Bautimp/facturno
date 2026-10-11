@@ -3,50 +3,50 @@ using Facturno.Shared.DTOs;
 
 namespace Facturno.Shared.Interfaces;
 
-//Interfaz de repositorio para los turnos
+// Interfaz de repositorio para los turnos
 public interface ITurnoRepository
 {
-    Task<Turno?> ObtenerPorIdAsync(long idTurno);
-    Task<List<Turno>> ObtenerPorProfesionalYFechaAsync(Guid idProfesional, DateOnly fecha);
-    Task<List<Turno>> ObtenerPorPacienteAsync(long idPaciente);
-    Task<Turno> CrearAsync(Turno turno);
-    Task<Turno> ActualizarAsync(Turno turno);
-    Task<bool> EliminarAsync(long idTurno);
+    Task<Turno?> ObtenerPorId(long idTurno);
+    Task<List<Turno>> ObtenerPorProfesionalYFecha(Guid idProfesional, DateOnly fecha);
+    Task<List<Turno>> ObtenerPorPaciente(long idPaciente);
+    Task<Turno> Crear(Turno turno);
+    Task<Turno> Actualizar(Turno turno);
+    Task<bool> Eliminar(long idTurno);
 }
 
-//Interfaz de repositorio para los pacientes
+// Interfaz de repositorio para los pacientes
 public interface IPacienteRepository
 {
-    Task<Paciente?> ObtenerPorIdAsync(long idPaciente);
-    Task<List<Paciente>> ObtenerTodosAsync();
-    Task<Paciente> CrearAsync(Paciente paciente, Persona persona);
-    Task<Paciente> ActualizarAsync(Paciente paciente, Persona persona);
+    Task<Paciente?> ObtenerPorId(long idPaciente);
+    Task<List<Paciente>> ObtenerTodos();
+    Task<Paciente> Crear(Paciente paciente, Persona persona);
+    Task<Paciente> Actualizar(Paciente paciente, Persona persona);
 }
 
-//Interfaz de repositorio para los profesionales
+// Interfaz de repositorio para los profesionales
 public interface IProfesionalRepository
 {
-    Task<Profesional?> ObtenerPorIdAsync(Guid idProfesional);
-    Task<List<Profesional>> ObtenerTodosAsync();
-    Task<Profesional> CrearAsync(Profesional profesional, Usuario usuario, Persona persona);
-    Task<Profesional> ActualizarAsync(Profesional profesional, Persona persona);
+    Task<Profesional?> ObtenerPorId(Guid idProfesional);
+    Task<List<Profesional>> ObtenerTodos();
+    Task<Profesional> Crear(Profesional profesional, Usuario usuario, Persona persona);
+    Task<Profesional> Actualizar(Profesional profesional, Persona persona);
 }
 
-//Interfaz de repositorio para los usuarios
+// Interfaz de repositorio para los usuarios
 public interface IUsuarioRepository
 {
-    Task<Usuario?> ObtenerPorIdAsync(Guid idUsuario);
-    Task<Usuario?> ObtenerPorCorreoAsync(string correo);
-    Task<Usuario> CrearConPersonaAsync(Usuario usuario, Persona persona);
-    Task<bool> CambiarEstadoActivoAsync(Guid idUsuario, bool activo);
+    Task<Usuario?> ObtenerPorId(Guid idUsuario);
+    Task<Usuario?> ObtenerPorCorreo(string correo);
+    Task<Usuario> CrearConPersona(Usuario usuario, Persona persona);
+    Task<bool> CambiarEstadoActivo(Guid idUsuario, bool activo);
 }
 
-//Interfaz de repositorio para las obras sociales
+// Interfaz de repositorio para las obras sociales
 public interface IObraSocialRepository
 {
-    Task<ObraSocial?> ObtenerPorIdAsync(long idObraSocial);
-    Task<List<ObraSocial>> ObtenerTodasAsync();
-    Task<ObraSocial> CrearAsync(ObraSocial obraSocial);
-    Task<ObraSocial> ActualizarAsync(ObraSocial obraSocial);
-    Task<bool> CambiarEstadoActivoAsync(long idObraSocial, bool activo);
+    Task<ObraSocial?> ObtenerPorId(long idObraSocial);
+    Task<List<ObraSocial>> ObtenerTodas();
+    Task<ObraSocial> Crear(ObraSocial obraSocial);
+    Task<ObraSocial> Actualizar(ObraSocial obraSocial);
+    Task<bool> CambiarEstadoActivo(long idObraSocial, bool activo);
 }
