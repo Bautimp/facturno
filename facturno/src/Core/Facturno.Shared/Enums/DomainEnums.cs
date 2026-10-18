@@ -42,3 +42,9 @@ public enum TipoEspecialidad
     Psiquiatra,
     Otro
 }
+
+public enum ModalidadTurno
+{
+    Presencial,
+    Online
+}

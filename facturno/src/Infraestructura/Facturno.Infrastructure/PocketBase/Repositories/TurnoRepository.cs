@@ -31,6 +31,15 @@ internal class TurnoPbRecord
     [JsonPropertyName("observacion")]
     public string? Observacion { get; set; }
 
+    [JsonPropertyName("es_online")]
+    public bool EsOnline { get; set; }
+
+    [JsonPropertyName("modalidad")]
+    public string? Modalidad { get; set; }
+
+    [JsonPropertyName("enlace_reunion")]
+    public string? EnlaceReunion { get; set; }
+
     [JsonPropertyName("created")]
     public DateTime Created { get; set; }
 }
@@ -87,7 +96,10 @@ public class TurnoRepository : ITurnoRepository
             fecha = turno.Fecha.ToString("yyyy-MM-dd"),
             hora = turno.Hora.ToString("HH:mm:ss"),
             estado = turno.Estado.ToString(),
-            observacion = turno.Observacion
+            observacion = turno.Observacion,
+            es_online = turno.Modalidad == ModalidadTurno.Online,
+            modalidad = turno.Modalidad.ToString(),
+            enlace_reunion = turno.EnlaceReunion
         };
 
         var created = await _client.Create<TurnoPbRecord>(CollectionName, payload);
@@ -109,7 +121,10 @@ public class TurnoRepository : ITurnoRepository
             fecha = turno.Fecha.ToString("yyyy-MM-dd"),
             hora = turno.Hora.ToString("HH:mm:ss"),
             estado = turno.Estado.ToString(),
-            observacion = turno.Observacion
+            observacion = turno.Observacion,
+            es_online = turno.Modalidad == ModalidadTurno.Online,
+            modalidad = turno.Modalidad.ToString(),
+            enlace_reunion = turno.EnlaceReunion
         };
 
         var updated = await _client.Update<TurnoPbRecord>(CollectionName, existing.Id, payload);
@@ -131,6 +146,12 @@ public class TurnoRepository : ITurnoRepository
         Enum.TryParse<EstadoTurno>(record.Estado, out var estado);
         Guid.TryParse(record.IdProfesional, out var idProf);
 
+        var modalidad = ModalidadTurno.Presencial;
+        if (record.EsOnline || string.Equals(record.Modalidad, "Online", StringComparison.OrdinalIgnoreCase))
+        {
+            modalidad = ModalidadTurno.Online;
+        }
+
         return new Turno
         {
             IdTurno = record.IdTurno,
@@ -139,6 +160,8 @@ public class TurnoRepository : ITurnoRepository
             Hora = hora,
             Estado = estado,
             Observacion = record.Observacion,
+            Modalidad = modalidad,
+            EnlaceReunion = record.EnlaceReunion,
             IdPaciente = record.IdPaciente,
             IdProfesional = idProf
         };

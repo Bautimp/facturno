@@ -95,8 +95,9 @@ public class FacturaPdfService : IFacturaPdfService
                             header.Cell().Background(Colors.Grey.Lighten3).Padding(5).AlignRight().Text("Importe").Bold();
                         });
 
+                        var modalidadTxt = turno.Modalidad == Facturno.Shared.Enums.ModalidadTurno.Online ? " (Telemedicina / Online)" : " (Presencial)";
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
-                            .Text($"Consulta Médica - {profesional.Especialidad?.ToString() ?? "General"}");
+                            .Text($"Consulta Médica - {profesional.Especialidad?.ToString() ?? "General"}{modalidadTxt}");
                         
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
                             .Text($"{turno.Fecha:dd/MM/yyyy} - {turno.Hora:HH:mm} hs");

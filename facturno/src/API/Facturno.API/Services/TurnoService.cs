@@ -33,6 +33,12 @@ public class TurnoService : ITurnoService
             return ApiResponse<Turno>.Error("El profesional ya cuenta con un turno asignado dentro del rango de 30 minutos en dicho horario.");
         }
 
+        string? enlace = null;
+        if (dto.Modalidad == ModalidadTurno.Online && !string.IsNullOrWhiteSpace(dto.EnlaceReunion))
+        {
+            enlace = dto.EnlaceReunion.Trim();
+        }
+
         // Crear entidad Turno
         var nuevoTurno = new Turno
         {
@@ -41,7 +47,9 @@ public class TurnoService : ITurnoService
             IdPaciente = dto.IdPaciente,
             IdProfesional = dto.IdProfesional,
             Observacion = dto.Observacion,
-            Estado = EstadoTurno.Activo
+            Estado = EstadoTurno.Activo,
+            Modalidad = dto.Modalidad,
+            EnlaceReunion = enlace
         };
 
         var turnoCreado = await _turnoRepository.Crear(nuevoTurno);
@@ -64,7 +72,9 @@ public class TurnoService : ITurnoService
                     Hora = dto.Hora,
                     IdPaciente = dto.IdPaciente,
                     IdProfesional = dto.IdProfesional,
-                    Observacion = dto.Observacion
+                    Observacion = dto.Observacion,
+                    Modalidad = dto.Modalidad,
+                    EnlaceReunion = dto.EnlaceReunion
                 };
 
                 var resultado = await AgendarTurno(createDto);
@@ -121,6 +131,18 @@ public class TurnoService : ITurnoService
         turnoExistente.Hora = dto.Hora;
         turnoExistente.Estado = dto.Estado;
         turnoExistente.Observacion = dto.Observacion;
+        turnoExistente.Modalidad = dto.Modalidad;
+
+        if (dto.Modalidad == ModalidadTurno.Online)
+        {
+            turnoExistente.EnlaceReunion = !string.IsNullOrWhiteSpace(dto.EnlaceReunion)
+                ? dto.EnlaceReunion.Trim()
+                : null;
+        }
+        else
+        {
+            turnoExistente.EnlaceReunion = null;
+        }
 
         var actualizado = await _turnoRepository.Actualizar(turnoExistente);
         return ApiResponse<Turno>.Ok(actualizado, "Turno actualizado correctamente.");

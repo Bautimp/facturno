@@ -101,7 +101,10 @@ migrate((db) => {
       new SchemaField({ name: "fecha", type: "text", required: true }),
       new SchemaField({ name: "hora", type: "text", required: true }),
       new SchemaField({ name: "estado", type: "text", required: true }),
-      new SchemaField({ name: "observacion", type: "text" })
+      new SchemaField({ name: "observacion", type: "text" }),
+      new SchemaField({ name: "es_online", type: "bool" }),
+      new SchemaField({ name: "modalidad", type: "text" }),
+      new SchemaField({ name: "enlace_reunion", type: "text" })
     ],
     listRule: "", viewRule: "", createRule: "", updateRule: "", deleteRule: ""
   });

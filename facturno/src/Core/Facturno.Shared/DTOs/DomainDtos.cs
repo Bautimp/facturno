@@ -11,6 +11,8 @@ public class TurnoCreateDto
     public long IdPaciente { get; set; }
     public Guid IdProfesional { get; set; }
     public string? Observacion { get; set; }
+    public ModalidadTurno Modalidad { get; set; } = ModalidadTurno.Presencial;
+    public string? EnlaceReunion { get; set; }
 }
 
 //Recibe el objeto del turno a modificar
@@ -21,6 +23,8 @@ public class TurnoUpdateDto
     public TimeOnly Hora { get; set; }
     public EstadoTurno Estado { get; set; }
     public string? Observacion { get; set; }
+    public ModalidadTurno Modalidad { get; set; } = ModalidadTurno.Presencial;
+    public string? EnlaceReunion { get; set; }
 }
 
 //Recibe el objeto del turno recurrente a crear
@@ -33,6 +37,8 @@ public class TurnoRecurrenteCreateDto
     public DateOnly FechaInicio { get; set; }
     public DateOnly FechaFin { get; set; }
     public string? Observacion { get; set; }
+    public ModalidadTurno Modalidad { get; set; } = ModalidadTurno.Presencial;
+    public string? EnlaceReunion { get; set; }
 }
 
 // --- Paciente DTOs ---

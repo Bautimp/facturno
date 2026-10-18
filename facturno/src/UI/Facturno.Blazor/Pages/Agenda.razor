@@ -97,17 +97,38 @@
                         {
                             <div class="turno-box-container" style="position: relative;">
                                 <div class="turno-box @GetBorderAccentClass(turnoSlot.Estado) @(PopoverTurnoId == turnoSlot.IdTurno ? "active-popover" : "")" @onclick="() => TogglePopoverEstado(turnoSlot.IdTurno)">
-                                    <div class="d-flex align-items-center justify-content-between w-100">
-                                        <div>
+                                    <div class="d-flex align-items-center justify-content-between w-100 flex-wrap gap-2">
+                                        <div class="d-flex align-items-center flex-wrap gap-1">
                                             <span class="badge-estado @GetBadgeClass(turnoSlot.Estado)">@GetEstadoTextoConIcono(turnoSlot.Estado)</span>
+                                            @if (turnoSlot.Modalidad == ModalidadTurno.Online)
+                                            {
+                                                <span class="badge badge-modalidad-online ms-1" title="Consulta médica online por videollamada">
+                                                    📹 Online
+                                                </span>
+                                            }
                                             <strong class="ms-2">@GetNombrePaciente(turnoSlot.IdPaciente)</strong>
                                             @if (!string.IsNullOrWhiteSpace(turnoSlot.Observacion))
                                             {
-                                                <span class="text-muted ms-2 italic small">(@turnoSlot.Observacion)</span>
+                                                <span class="text-muted ms-1 italic small">(@turnoSlot.Observacion)</span>
                                             }
                                         </div>
 
                                         <div class="d-flex align-items-center gap-2" @onclick:stopPropagation="true">
+                                            @if (turnoSlot.Modalidad == ModalidadTurno.Online)
+                                            {
+                                                @if (!string.IsNullOrWhiteSpace(turnoSlot.EnlaceReunion))
+                                                {
+                                                    <a href="@turnoSlot.EnlaceReunion" target="_blank" class="btn btn-sm btn-join-videocall" title="Unirse a la videollamada de la consulta">
+                                                        <span class="video-icon-pulse">●</span> 📹 Unirse a Videollamada
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 disabled" disabled title="Sin enlace de videollamada configurado" style="cursor: not-allowed; opacity: 0.65;">
+                                                        📹 Sin enlace
+                                                    </button>
+                                                }
+                                            }
                                             @if (turnoSlot.Estado == EstadoTurno.Completo)
                                             {
                                                 <a href="@GetPdfUrl(turnoSlot.IdTurno)" target="_blank" class="btn btn-sm btn-outline-success">
@@ -125,6 +146,24 @@
                                 @if (PopoverTurnoId == turnoSlot.IdTurno)
                                 {
                                     <div class="popover-inline-estados shadow">
+                                        @if (turnoSlot.Modalidad == ModalidadTurno.Online)
+                                        {
+                                            <div class="p-2 mb-2 bg-light rounded border text-start">
+                                                <div class="small font-bold text-primary mb-1">📹 Consulta Online</div>
+                                                @if (!string.IsNullOrWhiteSpace(turnoSlot.EnlaceReunion))
+                                                {
+                                                    <a href="@turnoSlot.EnlaceReunion" target="_blank" class="btn btn-xs btn-primary w-100 text-truncate" title="@turnoSlot.EnlaceReunion" @onclick:stopPropagation="true">
+                                                        Abrir Videollamada
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle w-100 py-1 d-block text-center" style="cursor: not-allowed;">
+                                                        Sin enlace configurado
+                                                    </span>
+                                                }
+                                            </div>
+                                        }
                                         <div class="popover-header-small">Cambiar estado:</div>
                                         <div class="d-flex flex-column gap-1">
                                             <button type="button" class="btn-state-item btn-state-activo" @onclick:stopPropagation="true" @onclick="() => CambiarEstadoDirecto(turnoSlot, EstadoTurno.Activo)">
@@ -192,10 +231,33 @@
                                     {
                                         <div class="turno-box-semana mb-2 p-2 border rounded @GetBorderAccentClass(turno.Estado) @(PopoverTurnoId == turno.IdTurno ? "active-popover" : "")" style="position: relative;" @onclick="() => TogglePopoverEstado(turno.IdTurno)">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <span class="badge-estado @GetBadgeClass(turno.Estado)">@GetEstadoTextoConIcono(turno.Estado)</span>
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <span class="badge-estado @GetBadgeClass(turno.Estado)">@GetEstadoTextoConIcono(turno.Estado)</span>
+                                                    @if (turno.Modalidad == ModalidadTurno.Online)
+                                                    {
+                                                        <span class="badge badge-modalidad-online-sm" title="Turno Online (Videollamada)">📹 Online</span>
+                                                    }
+                                                </div>
                                                 <small class="text-muted font-semibold">@turno.Hora.ToString("HH:mm") hs</small>
                                             </div>
                                             <div class="small font-bold">@GetNombrePaciente(turno.IdPaciente)</div>
+                                            @if (turno.Modalidad == ModalidadTurno.Online)
+                                            {
+                                                <div class="mt-1" @onclick:stopPropagation="true">
+                                                    @if (!string.IsNullOrWhiteSpace(turno.EnlaceReunion))
+                                                    {
+                                                        <a href="@turno.EnlaceReunion" target="_blank" class="btn btn-xs btn-outline-primary py-0 px-2 w-100 text-center" style="font-size: 0.72rem;">
+                                                            📹 Unirse a llamada
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 w-100 text-center disabled" disabled style="font-size: 0.72rem; cursor: not-allowed; opacity: 0.65;" title="Sin enlace de videollamada asignado">
+                                                            📹 Sin enlace
+                                                        </button>
+                                                    }
+                                                </div>
+                                            }
                                             
                                             <!-- Popover Flotante a la Derecha -->
                                             @if (PopoverTurnoId == turno.IdTurno)
@@ -287,7 +349,7 @@
                                 {
                                     <div class="position-relative mb-1">
                                         <div class="small-turno-tag @GetBadgeClass(turno.Estado) @GetBorderAccentClass(turno.Estado)" @onclick="() => TogglePopoverEstado(turno.IdTurno)">
-                                            @turno.Hora.ToString("HH:mm") - @GetNombrePaciente(turno.IdPaciente)
+                                            @turno.Hora.ToString("HH:mm") @(turno.Modalidad == ModalidadTurno.Online ? "📹 " : "")- @GetNombrePaciente(turno.IdPaciente)
                                         </div>
 
                                         @if (PopoverTurnoId == turno.IdTurno)
@@ -364,6 +426,43 @@
                 </div>
 
                 <div class="mb-3">
+                    <label class="form-label font-semibold">Modalidad de Atención</label>
+                    <div class="d-flex gap-2">
+                        <div class="modal-check-btn @(nuevoTurnoDto.Modalidad == ModalidadTurno.Presencial ? "active" : "")" @onclick="() => nuevoTurnoDto.Modalidad = ModalidadTurno.Presencial">
+                            <input class="form-check-input mt-0" type="radio" name="modalidadNuevo" id="modNuevoPresencial" 
+                                   checked="@(nuevoTurnoDto.Modalidad == ModalidadTurno.Presencial)"
+                                   @onchange="() => nuevoTurnoDto.Modalidad = ModalidadTurno.Presencial" />
+                            <label class="form-check-label mb-0 cursor-pointer" for="modNuevoPresencial">
+                                🏥 Presencial (Consultorio)
+                            </label>
+                        </div>
+                        <div class="modal-check-btn @(nuevoTurnoDto.Modalidad == ModalidadTurno.Online ? "active" : "")" @onclick="() => nuevoTurnoDto.Modalidad = ModalidadTurno.Online">
+                            <input class="form-check-input mt-0" type="radio" name="modalidadNuevo" id="modNuevoOnline" 
+                                   checked="@(nuevoTurnoDto.Modalidad == ModalidadTurno.Online)"
+                                   @onchange="() => nuevoTurnoDto.Modalidad = ModalidadTurno.Online" />
+                            <label class="form-check-label mb-0 cursor-pointer" for="modNuevoOnline">
+                                📹 Online (Videollamada)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                @if (nuevoTurnoDto.Modalidad == ModalidadTurno.Online)
+                {
+                    <div class="mb-3 p-3 rounded border online-config-box">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label font-semibold mb-0">Enlace de Videollamada</label>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Telemedicina</span>
+                        </div>
+                        <input type="url" class="form-control" @bind="nuevoTurnoDto.EnlaceReunion" 
+                               placeholder="https://meet.google.com/... o https://zoom.us/... (opcional)" />
+                        <div class="form-text small text-muted mt-1">
+                            💡 Opcional. Si no ingresas un enlace, el turno se registrará sin enlace y el botón de acceso permanecerá inhabilitado.
+                        </div>
+                    </div>
+                }
+
+                <div class="mb-3">
                     <label class="form-label font-semibold">Observaciones</label>
                     <textarea class="form-control" rows="2" @bind="nuevoTurnoDto.Observacion" placeholder="Motivo de consulta..."></textarea>
                 </div>
@@ -423,6 +522,43 @@
                         <input type="date" class="form-control" value="@recurrenteDto.FechaFin.ToString("yyyy-MM-dd")" @onchange="(e) => recurrenteDto.FechaFin = DateOnly.Parse(e.Value!.ToString()!)" />
                     </div>
                 </div>
+
+                <div class="mb-3">
+                    <label class="form-label font-semibold">Modalidad de Atención</label>
+                    <div class="d-flex gap-2">
+                        <div class="modal-check-btn @(recurrenteDto.Modalidad == ModalidadTurno.Presencial ? "active" : "")" @onclick="() => recurrenteDto.Modalidad = ModalidadTurno.Presencial">
+                            <input class="form-check-input mt-0" type="radio" name="modalidadRecurrente" id="modRecPresencial" 
+                                   checked="@(recurrenteDto.Modalidad == ModalidadTurno.Presencial)"
+                                   @onchange="() => recurrenteDto.Modalidad = ModalidadTurno.Presencial" />
+                            <label class="form-check-label mb-0 cursor-pointer" for="modRecPresencial">
+                                🏥 Presencial (Consultorio)
+                            </label>
+                        </div>
+                        <div class="modal-check-btn @(recurrenteDto.Modalidad == ModalidadTurno.Online ? "active" : "")" @onclick="() => recurrenteDto.Modalidad = ModalidadTurno.Online">
+                            <input class="form-check-input mt-0" type="radio" name="modalidadRecurrente" id="modRecOnline" 
+                                   checked="@(recurrenteDto.Modalidad == ModalidadTurno.Online)"
+                                   @onchange="() => recurrenteDto.Modalidad = ModalidadTurno.Online" />
+                            <label class="form-check-label mb-0 cursor-pointer" for="modRecOnline">
+                                📹 Online (Videollamada)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                @if (recurrenteDto.Modalidad == ModalidadTurno.Online)
+                {
+                    <div class="mb-3 p-3 rounded border online-config-box">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label font-semibold mb-0">Enlace de Videollamada</label>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Telemedicina</span>
+                        </div>
+                        <input type="url" class="form-control" @bind="recurrenteDto.EnlaceReunion" 
+                               placeholder="https://meet.google.com/... o https://zoom.us/... (opcional)" />
+                        <div class="form-text small text-muted mt-1">
+                            💡 Opcional. Si no ingresas un enlace, el turno se registrará sin enlace y el botón de acceso permanecerá inhabilitado.
+                        </div>
+                    </div>
+                }
 
                 <div class="d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-secondary-custom" @onclick="() => MostrarModalRecurrente = false">Cancelar</button>

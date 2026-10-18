@@ -292,7 +292,9 @@ public partial class Agenda : ComponentBase
                 Fecha = turno.Fecha,
                 Hora = turno.Hora,
                 Estado = nuevoEstado,
-                Observacion = turno.Observacion
+                Observacion = turno.Observacion,
+                Modalidad = turno.Modalidad,
+                EnlaceReunion = turno.EnlaceReunion
             };
 
             var res = await Http.PutAsJsonAsync("api/turnos", updateDto);

@@ -63,6 +63,8 @@ public class Turno
     public DateOnly Fecha { get; set; }
     public TimeOnly Hora { get; set; }
     public EstadoTurno Estado { get; set; } = EstadoTurno.Activo;
+    public ModalidadTurno Modalidad { get; set; } = ModalidadTurno.Presencial;
+    public string? EnlaceReunion { get; set; }
     public string? Observacion { get; set; }
     public long IdPaciente { get; set; }
     public Paciente? Paciente { get; set; }
