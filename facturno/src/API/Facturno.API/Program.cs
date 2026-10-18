@@ -1,62 +1,54 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.IdentityModel.Tokens;
 using Facturno.Shared.Interfaces;
 using Facturno.API.Services;
-using Facturno.Infrastructure.Supabase.Repositories;
-using Supabase;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using Facturno.Infrastructure.PocketBase;
+using Facturno.Infrastructure.PocketBase.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Agregar soporte para Controladores RESTful
+// 1. Soporte para Controladores RESTful y OpenAPI
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 
-// 2. Configurar el Cliente de Supabase en IoC
-var supabaseUrl = builder.Configuration["Supabase:Url"] 
-    ?? Environment.GetEnvironmentVariable("SUPABASE_URL") 
-    ?? string.Empty;
+// 2. Configurar PocketBase Client en IoC
+builder.Services.AddHttpClient<PocketBaseClient>();
 
-var supabaseKey = builder.Configuration["Supabase:Key"] 
-    ?? Environment.GetEnvironmentVariable("SUPABASE_KEY") 
-    ?? string.Empty;
-
-builder.Services.AddScoped<Supabase.Client>(_ =>
-    new Supabase.Client(supabaseUrl, supabaseKey, new SupabaseOptions
-    {
-        AutoRefreshToken = true,
-        AutoConnectRealtime = false
-    }));
-
-// 3. Registrar Repositorios de Infraestructura
+// 3. Registrar Repositorios de Infraestructura (PocketBase)
 builder.Services.AddScoped<ITurnoRepository, TurnoRepository>();
 builder.Services.AddScoped<IPacienteRepository, PacienteRepository>();
 builder.Services.AddScoped<IProfesionalRepository, ProfesionalRepository>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IObraSocialRepository, ObraSocialRepository>();
 
-// 4. Registrar Servicios de Lógica de Negocio y PDF
+// 4. Registrar Servicios de Lógica de Negocio, PDF y JWT
 builder.Services.AddScoped<ITurnoService, TurnoService>();
 builder.Services.AddScoped<IFacturaPdfService, Facturno.Infrastructure.Services.FacturaPdfService>();
-
+builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddMemoryCache();
 
-// 5. Configurar Autenticación y Autorización (Supabase JWKS / ES256)
+// 5. Configurar Autenticación JWT local simétrica (HMAC-SHA256)
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "Facturno_Local_PocketBase_Migration_Super_Secret_Jwt_Signing_Key_2026";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Facturno.API";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "Facturno.Clients";
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = $"{supabaseUrl}/auth/v1";
         options.RequireHttpsMetadata = false;
         options.SaveToken = true;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = $"{supabaseUrl}/auth/v1",
+            ValidIssuer = jwtIssuer,
             ValidateAudience = true,
-            ValidAudience = "authenticated",
-            ValidateIssuerSigningKey = true
+            ValidAudience = jwtAudience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.Zero
         };
 
         options.Events = new JwtBearerEvents
@@ -89,7 +81,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     if (!string.IsNullOrEmpty(rolString))
                     {
                         var identity = (System.Security.Claims.ClaimsIdentity?)context.Principal?.Identity;
-                        if (identity != null)
+                        if (identity != null && !identity.HasClaim(c => c.Type == System.Security.Claims.ClaimTypes.Role))
                         {
                             identity.AddClaim(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, rolString));
                         }
@@ -98,7 +90,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             }
         };
     });
-
 
 builder.Services.AddAuthorization();
 

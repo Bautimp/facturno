@@ -481,10 +481,13 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-# Ignorar configuraciones locales y credenciales de Supabase
+# Configuraciones locales y secretos de la aplicacion
 appsettings.json
 appsettings.Development.json
 appsettings.*.json
+
+# PocketBase local database & backups
+**/pb_data/
 
 # Documentacion
 DocumentacionFac/

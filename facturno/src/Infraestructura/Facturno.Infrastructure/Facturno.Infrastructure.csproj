@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Facturno.Shared\Facturno.Shared.csproj" />
@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="QuestPDF" Version="2026.9.0" />
-    <PackageReference Include="supabase-csharp" Version="0.16.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.0" />
   </ItemGroup>
 
   <PropertyGroup>

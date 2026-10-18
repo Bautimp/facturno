@@ -4,7 +4,7 @@ using Facturno.Shared.Interfaces;
 using Facturno.Shared.DTOs;
 using Facturno.Shared.Models;
 using Facturno.Shared.Enums;
-using Facturno.Infrastructure.Supabase.Entities;
+using Facturno.Infrastructure.PocketBase;
 
 namespace Facturno.API.Controllers;
 
@@ -15,13 +15,16 @@ public class ProfesionalesController : ControllerBase
 {
     private readonly IProfesionalRepository _profesionalRepository;
     private readonly IUsuarioRepository _usuarioRepository;
-    private readonly global::Supabase.Client _supabaseClient;
+    private readonly PocketBaseClient _pocketBaseClient;
 
-    public ProfesionalesController(IProfesionalRepository profesionalRepository, IUsuarioRepository usuarioRepository, global::Supabase.Client supabaseClient)
+    public ProfesionalesController(
+        IProfesionalRepository profesionalRepository, 
+        IUsuarioRepository usuarioRepository, 
+        PocketBaseClient pocketBaseClient)
     {
         _profesionalRepository = profesionalRepository;
         _usuarioRepository = usuarioRepository;
-        _supabaseClient = supabaseClient;
+        _pocketBaseClient = pocketBaseClient;
     }
 
     [HttpGet]
@@ -52,38 +55,48 @@ public class ProfesionalesController : ControllerBase
 
         try
         {
-            // Verificar si el correo ya existe en nuestro sistema
             var usuarioExistente = !string.IsNullOrEmpty(dto.Correo) ? await _usuarioRepository.ObtenerPorCorreo(dto.Correo) : null;
             if (usuarioExistente != null)
             {
                 return BadRequest(ApiResponse<Profesional>.Error($"El correo '{dto.Correo}' ya se encuentra registrado para otro usuario."));
             }
 
-            Guid nuevoIdUsuario;
+            var nuevoIdUsuario = Guid.NewGuid();
             var passwordAUsar = !string.IsNullOrWhiteSpace(dto.Password) 
                 ? dto.Password 
                 : (!string.IsNullOrWhiteSpace(dto.Correo) ? dto.Correo + "123!" : "Facturno123!");
 
-            // 1. Crear el usuario en auth.users de Supabase Auth
-            try
-            {
-                var signupRes = await _supabaseClient.Auth.SignUp(dto.Correo, passwordAUsar);
-                if (signupRes?.User != null && Guid.TryParse(signupRes.User.Id, out var parsedGuid))
-                {
-                    nuevoIdUsuario = parsedGuid;
-                }
-                else
-                {
-                    nuevoIdUsuario = Guid.NewGuid();
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ApiResponse<Profesional>.Error($"No se pudo crear el acceso en Supabase Auth: {ex.Message}"));
-            }
+            // 1. Resolver id_persona
+            var todasPersonas = await _pocketBaseClient.GetList<PersonaPbRecord>("personas");
+            long nuevoIdPersona = todasPersonas.Any() ? todasPersonas.Max(p => p.IdPersona) + 1 : 1;
 
+            var personaCreada = await _pocketBaseClient.Create<PersonaPbRecord>("personas", new
+            {
+                id_persona = nuevoIdPersona,
+                nombre = dto.Nombre,
+                apellido = dto.Apellido,
+                correo = dto.Correo,
+                telefono = dto.Telefono
+            });
+
+            // 2. Crear usuario en PocketBase Auth
+            var username = !string.IsNullOrWhiteSpace(dto.Correo) 
+                ? dto.Correo.Split('@')[0].Replace(".", "_") 
+                : $"user_{nuevoIdPersona}";
+
+            await _pocketBaseClient.CreateUser(
+                email: dto.Correo,
+                password: passwordAUsar,
+                username: username,
+                rol: "Profesional",
+                idPersona: nuevoIdPersona,
+                idUsuario: nuevoIdUsuario.ToString()
+            );
+
+            // 3. Crear el profesional
             var persona = new Persona
             {
+                IdPersona = nuevoIdPersona,
                 Nombre = dto.Nombre,
                 Apellido = dto.Apellido,
                 Correo = dto.Correo,
@@ -93,8 +106,10 @@ public class ProfesionalesController : ControllerBase
             var usuario = new Usuario
             {
                 IdUsuario = nuevoIdUsuario,
+                IdPersona = nuevoIdPersona,
                 Rol = RolUsuario.Profesional,
-                Activo = true
+                Activo = true,
+                Persona = persona
             };
 
             var profesional = new Profesional
@@ -175,11 +190,11 @@ public class ProfesionalesController : ControllerBase
     {
         try
         {
-            var usuariosRes = await _supabaseClient.From<UsuarioEntity>().Get();
-            var personasRes = await _supabaseClient.From<PersonaEntity>().Get();
-            var personasDict = personasRes.Models.ToDictionary(p => p.IdPersona);
+            var usuarios = await _pocketBaseClient.GetList<PocketBaseUserRecord>("users");
+            var personas = await _pocketBaseClient.GetList<PersonaPbRecord>("personas");
+            var personasDict = personas.DistinctBy(p => p.IdPersona).ToDictionary(p => p.IdPersona);
 
-            var adminList = usuariosRes.Models
+            var adminList = usuarios
                 .Where(u => u.Rol == "Administrativo" || u.Rol == "Operador")
                 .Select(u => new Usuario
                 {
@@ -211,13 +226,13 @@ public class ProfesionalesController : ControllerBase
     {
         try
         {
-            var entity = new AgendaCompartidaEntity
+            var payload = new
             {
-                IdAdministrativo = idAdministrativo,
-                IdProfesional = idProfesional.ToString()
+                id_administrativo = idAdministrativo,
+                id_profesional = idProfesional.ToString()
             };
 
-            await _supabaseClient.From<AgendaCompartidaEntity>().Insert(entity);
+            await _pocketBaseClient.Create<AgendaCompartidaPbRecord>("agendas_compartidas", payload);
             return Ok(ApiResponse<bool>.Ok(true, "Agenda vinculada correctamente."));
         }
         catch (Exception ex)
@@ -242,28 +257,36 @@ public class ProfesionalesController : ControllerBase
                 return BadRequest(ApiResponse<Usuario>.Error($"El correo '{dto.Correo}' ya se encuentra registrado."));
             }
 
-            Guid nuevoIdUsuario;
-            var passwordAUsar = !string.IsNullOrWhiteSpace(dto.Password) ? dto.Password : "Facturno123!";
+            var todasPersonas = await _pocketBaseClient.GetList<PersonaPbRecord>("personas");
+            long nuevoIdPersona = todasPersonas.Any() ? todasPersonas.Max(p => p.IdPersona) + 1 : 1;
 
-            try
+            var nuevoIdUsuario = Guid.NewGuid();
+            var passwordAUsar = !string.IsNullOrWhiteSpace(dto.Password) ? dto.Password : "Facturno123!";
+            var username = !string.IsNullOrWhiteSpace(dto.Correo) 
+                ? dto.Correo.Split('@')[0].Replace(".", "_") 
+                : $"admin_{nuevoIdPersona}";
+
+            await _pocketBaseClient.Create<PersonaPbRecord>("personas", new
             {
-                var signupRes = await _supabaseClient.Auth.SignUp(dto.Correo, passwordAUsar);
-                if (signupRes?.User != null && Guid.TryParse(signupRes.User.Id, out var parsedGuid))
-                {
-                    nuevoIdUsuario = parsedGuid;
-                }
-                else
-                {
-                    nuevoIdUsuario = Guid.NewGuid();
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ApiResponse<Usuario>.Error($"No se pudo crear el acceso en Supabase Auth: {ex.Message}"));
-            }
+                id_persona = nuevoIdPersona,
+                nombre = dto.Nombre,
+                apellido = dto.Apellido,
+                correo = dto.Correo,
+                telefono = dto.Telefono
+            });
+
+            await _pocketBaseClient.CreateUser(
+                email: dto.Correo,
+                password: passwordAUsar,
+                username: username,
+                rol: "Administrativo",
+                idPersona: nuevoIdPersona,
+                idUsuario: nuevoIdUsuario.ToString()
+            );
 
             var persona = new Persona
             {
+                IdPersona = nuevoIdPersona,
                 Nombre = dto.Nombre,
                 Apellido = dto.Apellido,
                 Correo = dto.Correo,
@@ -273,12 +296,13 @@ public class ProfesionalesController : ControllerBase
             var usuario = new Usuario
             {
                 IdUsuario = nuevoIdUsuario,
+                IdPersona = nuevoIdPersona,
                 Rol = RolUsuario.Administrativo,
-                Activo = true
+                Activo = true,
+                Persona = persona
             };
 
-            var creado = await _usuarioRepository.CrearConPersona(usuario, persona);
-            return Ok(ApiResponse<Usuario>.Ok(creado, "Usuario Administrativo creado correctamente."));
+            return Ok(ApiResponse<Usuario>.Ok(usuario, "Usuario Administrativo creado correctamente."));
         }
         catch (Exception ex)
         {

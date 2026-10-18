@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Facturno.Shared.Interfaces;
 using Facturno.Shared.DTOs;
+using Facturno.Infrastructure.PocketBase;
+using Facturno.API.Services;
 
 namespace Facturno.API.Controllers;
 
@@ -9,12 +11,14 @@ namespace Facturno.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IUsuarioRepository _usuarioRepository;
-    private readonly global::Supabase.Client _supabaseClient;
+    private readonly PocketBaseClient _pocketBaseClient;
+    private readonly ITokenService _tokenService;
 
-    public AuthController(IUsuarioRepository usuarioRepository, global::Supabase.Client supabaseClient)
+    public AuthController(IUsuarioRepository usuarioRepository, PocketBaseClient pocketBaseClient, ITokenService tokenService)
     {
         _usuarioRepository = usuarioRepository;
-        _supabaseClient = supabaseClient;
+        _pocketBaseClient = pocketBaseClient;
+        _tokenService = tokenService;
     }
 
     [HttpPost("login")]
@@ -27,39 +31,22 @@ public class AuthController : ControllerBase
 
         try
         {
-            global::Supabase.Gotrue.Session? session = null;
-            try
+            var authRes = await _pocketBaseClient.AuthenticateUser(dto.Correo, dto.Password);
+            if (authRes == null)
             {
-                session = await _supabaseClient.Auth.SignIn(dto.Correo, dto.Password);
-            }
-            catch
-            {
-                // Fallback de migración para usuarios creados previamente con clave generada automáticamente
-                var tempPassword1 = dto.Correo + "123!";
-                var tempPassword2 = "Facturno123!";
+                // Fallback para usuarios con contraseñas por defecto
+                var fallbackPass1 = dto.Correo + "123!";
+                var fallbackPass2 = "Facturno123!";
 
-                try
+                authRes = await _pocketBaseClient.AuthenticateUser(dto.Correo, fallbackPass1);
+                if (authRes == null)
                 {
-                    session = await _supabaseClient.Auth.SignIn(dto.Correo, tempPassword1);
-                    if (session != null && !string.IsNullOrWhiteSpace(dto.Password))
-                    {
-                        await _supabaseClient.Auth.Update(new global::Supabase.Gotrue.UserAttributes { Password = dto.Password });
-                    }
+                    authRes = await _pocketBaseClient.AuthenticateUser(dto.Correo, fallbackPass2);
                 }
-                catch
+
+                if (authRes == null)
                 {
-                    try
-                    {
-                        session = await _supabaseClient.Auth.SignIn(dto.Correo, tempPassword2);
-                        if (session != null && !string.IsNullOrWhiteSpace(dto.Password))
-                        {
-                            await _supabaseClient.Auth.Update(new global::Supabase.Gotrue.UserAttributes { Password = dto.Password });
-                        }
-                    }
-                    catch
-                    {
-                        throw;
-                    }
+                    return Unauthorized(ApiResponse<UsuarioAuthResponseDto>.Error("Credenciales inválidas o usuario no encontrado."));
                 }
             }
 
@@ -70,8 +57,10 @@ public class AuthController : ControllerBase
             }
 
             var nombreCompleto = usuario.Persona != null 
-                ? $"{usuario.Persona.Nombre} {usuario.Persona.Apellido}" 
+                ? $"{usuario.Persona.Nombre} {usuario.Persona.Apellido}".Trim() 
                 : usuario.Persona?.Correo ?? dto.Correo;
+
+            var jwtToken = _tokenService.GenerarToken(usuario);
 
             var authResponse = new UsuarioAuthResponseDto
             {
@@ -79,7 +68,7 @@ public class AuthController : ControllerBase
                 Email = dto.Correo,
                 NombreCompleto = nombreCompleto,
                 Rol = usuario.Rol,
-                TokenJwt = session?.AccessToken ?? string.Empty
+                TokenJwt = jwtToken
             };
 
             return Ok(ApiResponse<UsuarioAuthResponseDto>.Ok(authResponse, "Inicio de sesión exitoso."));
