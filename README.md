@@ -86,7 +86,3 @@ dotnet run
 | **Administrativo** | `marcos.admin@facturno.com` | `marcos123!` | Marcos Benítez — Gestión de agendas compartidas y recepción |
 
 ---
-
-## 📖 Documentación
-
-- **Bitácora de Cambios y Soluciones:** Consulta [`DocumentacionFac/Bitacora_Cambios_y_Soluciones.md`](DocumentacionFac/Bitacora_Cambios_y_Soluciones.md) para detalles de arquitectura, problemas resueltos y el proceso de migración de Supabase a PocketBase.
