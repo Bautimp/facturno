@@ -16,11 +16,11 @@ facturno/
 │   ├── UI/
 │   │   └── Facturno.Blazor/          # Interfaz web rica en Blazor WebAssembly (.NET 10)
 │   ├── API/
-│   │   └── Facturno.API/             # Web API RESTful con autenticación JWT simétrica
+│   │   └── Facturno.API/             # Web API RESTful con autenticación
 │   ├── Core/
 │   │   └── Facturno.Shared/          # Modelos de dominio, DTOs, Enums e Interfaces
 │   └── Infraestructura/
-│       └── Facturno.Infrastructure/  # Repositorios PocketBase y generación de PDF (QuestPDF)
+│       └── Facturno.Infrastructure/  # Repositorios PocketBase y generación de PDF
 tools/
 └── pocketbase/                       # Servidor PocketBase embebido local y migraciones
 start_pocketbase.sh                   # Script de inicio rápido de la base de datos local
