@@ -258,16 +258,95 @@
         <div class="modal-content-custom">
             <h4 class="mb-3 font-bold">Nuevo Turno Médico</h4>
             <EditForm Model="nuevoTurnoDto" OnValidSubmit="GuardarNuevoTurno">
-                <div class="mb-3">
-                    <label class="form-label font-semibold">Paciente</label>
-                    <select class="form-select" @bind="nuevoTurnoDto.IdPaciente">
-                        <option value="0">Seleccionar Paciente...</option>
-                        @foreach (var pac in ListaPacientes)
+                <!-- Selección y Búsqueda Difusa de Paciente -->
+                <div class="mb-3 position-relative">
+                    <label class="form-label font-semibold d-flex justify-content-between align-items-center mb-1">
+                        <span>Paciente <span class="text-danger">*</span></span>
+                        @if (nuevoTurnoDto.IdPaciente > 0)
                         {
-                            var nomPac = pac.Persona != null ? $"{pac.Persona.Nombre} {pac.Persona.Apellido} (DNI {pac.NumDocumento})" : $"Paciente #{pac.IdPaciente}";
-                            <option value="@pac.IdPaciente">@nomPac</option>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                ✓ Seleccionado
+                            </span>
                         }
-                    </select>
+                    </label>
+
+                    <div class="input-group">
+                        <span class="input-group-text bg-white text-muted">🔍</span>
+                        <input type="text" 
+                               class="form-control" 
+                               placeholder="Buscar por nombre, apellido (ej: Gonzales, Matias)..." 
+                               value="@TextoBusquedaPacienteNuevo"
+                               @oninput="OnBusquedaPacienteNuevoInput"
+                               @onfocus="() => MostrarDropdownPacientesNuevo = true" />
+                        @if (!string.IsNullOrWhiteSpace(TextoBusquedaPacienteNuevo) || nuevoTurnoDto.IdPaciente > 0)
+                        {
+                            <button type="button" class="btn btn-outline-secondary" @onclick="LimpiarSeleccionPacienteNuevo" title="Limpiar búsqueda">
+                                ✕
+                            </button>
+                        }
+                    </div>
+
+                    @if (PacienteSeleccionadoNuevo != null)
+                    {
+                        <div class="p-2 mt-2 bg-light border border-success-subtle rounded d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="font-bold text-success">
+                                    👤 @PacienteSeleccionadoNuevo.Persona?.Nombre @PacienteSeleccionadoNuevo.Persona?.Apellido
+                                </div>
+                                <div class="small text-muted">
+                                    DNI: @(PacienteSeleccionadoNuevo.NumDocumento ?? "S/D") | Tel: @(PacienteSeleccionadoNuevo.Persona?.Telefono?.ToString() ?? "S/T")
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-xs btn-outline-secondary" @onclick="LimpiarSeleccionPacienteNuevo">
+                                Cambiar
+                            </button>
+                        </div>
+                    }
+
+                    @if (MostrarDropdownPacientesNuevo)
+                    {
+                        <div class="dropdown-pacientes-list shadow">
+                            @if (PacientesFiltradosNuevo.Any())
+                            {
+                                <div class="p-2 text-muted small bg-light border-bottom d-flex justify-content-between align-items-center">
+                                    <span>Resultados (@PacientesFiltradosNuevo.Count)</span>
+                                    <button type="button" class="btn btn-xs btn-link p-0 text-decoration-none text-muted" @onclick="() => MostrarDropdownPacientesNuevo = false">
+                                        Cerrar ✕
+                                    </button>
+                                </div>
+                                <div class="dropdown-pacientes-scroll">
+                                    @foreach (var pac in PacientesFiltradosNuevo)
+                                    {
+                                        var esSeleccionado = pac.IdPaciente == nuevoTurnoDto.IdPaciente;
+                                        <div class="dropdown-paciente-item p-2 @(esSeleccionado ? "paciente-item-active" : "")" 
+                                             @onclick="() => SeleccionarPacienteNuevo(pac)">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="font-semibold text-dark">
+                                                    @pac.Persona?.Nombre @pac.Persona?.Apellido
+                                                </span>
+                                                <span class="badge bg-light text-secondary border font-normal" style="font-size: 0.7rem;">
+                                                    DNI @(pac.NumDocumento ?? "S/D")
+                                                </span>
+                                            </div>
+                                            @if (pac.Persona?.Telefono != null || !string.IsNullOrWhiteSpace(pac.Persona?.Correo))
+                                            {
+                                                <div class="text-muted micro-text text-truncate">
+                                                    @(pac.Persona?.Correo ?? "") @(pac.Persona?.Telefono != null ? $"· Tel: {pac.Persona.Telefono}" : "")
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="p-3 text-center text-muted small">
+                                    <div>⚠️ No se encontró ningún paciente similar a <strong>"@TextoBusquedaPacienteNuevo"</strong></div>
+                                    <div class="micro-text mt-1 text-secondary">Verifica que el paciente esté dado de alta en la sección Pacientes.</div>
+                                </div>
+                            }
+                        </div>
+                    }
                 </div>
 
                 <div class="row g-2 mb-3">
@@ -339,16 +418,88 @@
         <div class="modal-content-custom">
             <h4 class="mb-3 font-bold">Agendar Turnos Recurrentes</h4>
             <EditForm Model="recurrenteDto" OnValidSubmit="GuardarTurnosRecurrentes">
-                <div class="mb-3">
-                    <label class="form-label font-semibold">Paciente</label>
-                    <select class="form-select" @bind="recurrenteDto.IdPaciente">
-                        <option value="0">Seleccionar Paciente...</option>
-                        @foreach (var pac in ListaPacientes)
+                <!-- Selección y Búsqueda Difusa de Paciente para Turno Recurrente -->
+                <div class="mb-3 position-relative">
+                    <label class="form-label font-semibold d-flex justify-content-between align-items-center mb-1">
+                        <span>Paciente <span class="text-danger">*</span></span>
+                        @if (recurrenteDto.IdPaciente > 0)
                         {
-                            var nomPac = pac.Persona != null ? $"{pac.Persona.Nombre} {pac.Persona.Apellido}" : $"Paciente #{pac.IdPaciente}";
-                            <option value="@pac.IdPaciente">@nomPac</option>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                ✓ Seleccionado
+                            </span>
                         }
-                    </select>
+                    </label>
+
+                    <div class="input-group">
+                        <span class="input-group-text bg-white text-muted">🔍</span>
+                        <input type="text" 
+                               class="form-control" 
+                               placeholder="Buscar por nombre, apellido (ej: Gonzales, Matias)..." 
+                               value="@TextoBusquedaPacienteRecurrente"
+                               @oninput="OnBusquedaPacienteRecurrenteInput"
+                               @onfocus="() => MostrarDropdownPacientesRecurrente = true" />
+                        @if (!string.IsNullOrWhiteSpace(TextoBusquedaPacienteRecurrente) || recurrenteDto.IdPaciente > 0)
+                        {
+                            <button type="button" class="btn btn-outline-secondary" @onclick="LimpiarSeleccionPacienteRecurrente" title="Limpiar búsqueda">
+                                ✕
+                            </button>
+                        }
+                    </div>
+
+                    @if (PacienteSeleccionadoRecurrente != null)
+                    {
+                        <div class="p-2 mt-2 bg-light border border-success-subtle rounded d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="font-bold text-success">
+                                    👤 @PacienteSeleccionadoRecurrente.Persona?.Nombre @PacienteSeleccionadoRecurrente.Persona?.Apellido
+                                </div>
+                                <div class="small text-muted">
+                                    DNI: @(PacienteSeleccionadoRecurrente.NumDocumento ?? "S/D")
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-xs btn-outline-secondary" @onclick="LimpiarSeleccionPacienteRecurrente">
+                                Cambiar
+                            </button>
+                        </div>
+                    }
+
+                    @if (MostrarDropdownPacientesRecurrente)
+                    {
+                        <div class="dropdown-pacientes-list shadow">
+                            @if (PacientesFiltradosRecurrente.Any())
+                            {
+                                <div class="p-2 text-muted small bg-light border-bottom d-flex justify-content-between align-items-center">
+                                    <span>Resultados (@PacientesFiltradosRecurrente.Count)</span>
+                                    <button type="button" class="btn btn-xs btn-link p-0 text-decoration-none text-muted" @onclick="() => MostrarDropdownPacientesRecurrente = false">
+                                        Cerrar ✕
+                                    </button>
+                                </div>
+                                <div class="dropdown-pacientes-scroll">
+                                    @foreach (var pac in PacientesFiltradosRecurrente)
+                                    {
+                                        var esSeleccionado = pac.IdPaciente == recurrenteDto.IdPaciente;
+                                        <div class="dropdown-paciente-item p-2 @(esSeleccionado ? "paciente-item-active" : "")" 
+                                             @onclick="() => SeleccionarPacienteRecurrente(pac)">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="font-semibold text-dark">
+                                                    @pac.Persona?.Nombre @pac.Persona?.Apellido
+                                                </span>
+                                                <span class="badge bg-light text-secondary border font-normal" style="font-size: 0.7rem;">
+                                                    DNI @(pac.NumDocumento ?? "S/D")
+                                                </span>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="p-3 text-center text-muted small">
+                                    <div>⚠️ No se encontró ningún paciente similar a <strong>"@TextoBusquedaPacienteRecurrente"</strong></div>
+                                </div>
+                            }
+                        </div>
+                    }
                 </div>
 
                 <div class="row g-2 mb-3">

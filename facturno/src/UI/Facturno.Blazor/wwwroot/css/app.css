@@ -367,6 +367,47 @@ body {
     animation: modalScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Autocomplete Dropdown para Búsqueda Difusa de Pacientes */
+.dropdown-pacientes-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    z-index: 1060;
+    box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.22), 0 4px 10px -2px rgba(15, 23, 42, 0.1);
+    border: 1px solid #cbd5e1;
+    border-radius: 0.6rem;
+    overflow: hidden;
+    margin-top: 0.25rem;
+    animation: fadeInModal 0.15s ease-out;
+}
+
+.dropdown-pacientes-scroll {
+    max-height: 220px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.dropdown-paciente-item {
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.12s ease;
+}
+
+.dropdown-paciente-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-paciente-item:hover {
+    background-color: #f0fdf4;
+}
+
+.dropdown-paciente-item.paciente-item-active {
+    background-color: #e0f2fe;
+    border-left: 3px solid #0284c7;
+}
+
 /* Buttons */
 .btn-primary-custom {
     background-color: var(--primary);

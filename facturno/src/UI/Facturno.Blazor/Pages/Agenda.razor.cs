@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using Facturno.Shared.Models;
 using Facturno.Shared.DTOs;
 using Facturno.Shared.Enums;
+using Facturno.Shared.Utils;
 
 namespace Facturno.Blazor.Pages;
 
@@ -43,6 +44,65 @@ public partial class Agenda : ComponentBase
     protected TurnoCreateDto nuevoTurnoDto = new();
     protected TurnoRecurrenteCreateDto recurrenteDto = new();
     protected long? PopoverTurnoId = null;
+
+    // Búsqueda difusa de pacientes (Fuzzy Search con tolerancia a errores gramaticales)
+    protected string TextoBusquedaPacienteNuevo = string.Empty;
+    protected bool MostrarDropdownPacientesNuevo = false;
+    protected Paciente? PacienteSeleccionadoNuevo => ListaPacientes.FirstOrDefault(p => p.IdPaciente == nuevoTurnoDto.IdPaciente);
+    protected List<Paciente> PacientesFiltradosNuevo => string.IsNullOrWhiteSpace(TextoBusquedaPacienteNuevo)
+        ? ListaPacientes.Take(25).ToList()
+        : ListaPacientes.Where(p => FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteNuevo)).ToList();
+
+    protected string TextoBusquedaPacienteRecurrente = string.Empty;
+    protected bool MostrarDropdownPacientesRecurrente = false;
+    protected Paciente? PacienteSeleccionadoRecurrente => ListaPacientes.FirstOrDefault(p => p.IdPaciente == recurrenteDto.IdPaciente);
+    protected List<Paciente> PacientesFiltradosRecurrente => string.IsNullOrWhiteSpace(TextoBusquedaPacienteRecurrente)
+        ? ListaPacientes.Take(25).ToList()
+        : ListaPacientes.Where(p => FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteRecurrente)).ToList();
+
+    protected void OnBusquedaPacienteNuevoInput(ChangeEventArgs e)
+    {
+        TextoBusquedaPacienteNuevo = e.Value?.ToString() ?? string.Empty;
+        MostrarDropdownPacientesNuevo = true;
+    }
+
+    protected void SeleccionarPacienteNuevo(Paciente pac)
+    {
+        nuevoTurnoDto.IdPaciente = pac.IdPaciente;
+        TextoBusquedaPacienteNuevo = $"{pac.Persona?.Nombre} {pac.Persona?.Apellido}".Trim();
+        MostrarDropdownPacientesNuevo = false;
+        StateHasChanged();
+    }
+
+    protected void LimpiarSeleccionPacienteNuevo()
+    {
+        nuevoTurnoDto.IdPaciente = 0;
+        TextoBusquedaPacienteNuevo = string.Empty;
+        MostrarDropdownPacientesNuevo = true;
+        StateHasChanged();
+    }
+
+    protected void OnBusquedaPacienteRecurrenteInput(ChangeEventArgs e)
+    {
+        TextoBusquedaPacienteRecurrente = e.Value?.ToString() ?? string.Empty;
+        MostrarDropdownPacientesRecurrente = true;
+    }
+
+    protected void SeleccionarPacienteRecurrente(Paciente pac)
+    {
+        recurrenteDto.IdPaciente = pac.IdPaciente;
+        TextoBusquedaPacienteRecurrente = $"{pac.Persona?.Nombre} {pac.Persona?.Apellido}".Trim();
+        MostrarDropdownPacientesRecurrente = false;
+        StateHasChanged();
+    }
+
+    protected void LimpiarSeleccionPacienteRecurrente()
+    {
+        recurrenteDto.IdPaciente = 0;
+        TextoBusquedaPacienteRecurrente = string.Empty;
+        MostrarDropdownPacientesRecurrente = true;
+        StateHasChanged();
+    }
 
     protected bool EsProfesionalLogueado = false;
     protected string NombreProfesionalLogueado = string.Empty;
@@ -411,6 +471,8 @@ public partial class Agenda : ComponentBase
             Fecha = SelectedFecha,
             Hora = new TimeOnly(9, 0)
         };
+        TextoBusquedaPacienteNuevo = string.Empty;
+        MostrarDropdownPacientesNuevo = false;
         MostrarModalNuevo = true;
     }
 
@@ -422,6 +484,8 @@ public partial class Agenda : ComponentBase
             Fecha = fecha,
             Hora = new TimeOnly(9, 0)
         };
+        TextoBusquedaPacienteNuevo = string.Empty;
+        MostrarDropdownPacientesNuevo = false;
         MostrarModalNuevo = true;
     }
 
@@ -433,6 +497,8 @@ public partial class Agenda : ComponentBase
             Fecha = fecha ?? SelectedFecha,
             Hora = slot
         };
+        TextoBusquedaPacienteNuevo = string.Empty;
+        MostrarDropdownPacientesNuevo = false;
         MostrarModalNuevo = true;
     }
 
@@ -470,6 +536,8 @@ public partial class Agenda : ComponentBase
             FechaInicio = DateOnly.FromDateTime(DateTime.Today),
             FechaFin = DateOnly.FromDateTime(DateTime.Today.AddMonths(1))
         };
+        TextoBusquedaPacienteRecurrente = string.Empty;
+        MostrarDropdownPacientesRecurrente = false;
         MostrarModalRecurrente = true;
     }
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using System.Net.Http.Json;
 using Facturno.Shared.Models;
 using Facturno.Shared.DTOs;
+using Facturno.Shared.Utils;
 
 namespace Facturno.Blazor.Pages;
 
@@ -21,10 +22,7 @@ public partial class Pacientes : ComponentBase
 
     protected IEnumerable<Paciente> PacientesFiltrados => string.IsNullOrWhiteSpace(FiltroBusqueda)
         ? ListaPacientes
-        : ListaPacientes.Where(p =>
-            (p.Persona?.Nombre != null && p.Persona.Nombre.Contains(FiltroBusqueda, StringComparison.OrdinalIgnoreCase)) ||
-            (p.Persona?.Apellido != null && p.Persona.Apellido.Contains(FiltroBusqueda, StringComparison.OrdinalIgnoreCase)) ||
-            (p.NumDocumento != null && p.NumDocumento.Contains(FiltroBusqueda, StringComparison.OrdinalIgnoreCase)));
+        : ListaPacientes.Where(p => FuzzyMatcher.EsCoincidenciaPaciente(p, FiltroBusqueda));
 
     protected bool IsLoading = false;
 
