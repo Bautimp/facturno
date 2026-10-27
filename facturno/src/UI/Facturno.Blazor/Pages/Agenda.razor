@@ -425,6 +425,91 @@
     </div>
 }
 
+<!-- Pop-up Cartel / Modal de Cambio de Estado con Máxima Prioridad -->
+@if (mostrarModalEstado && turnoSeleccionado != null)
+{
+    <div class="modal-overlay-priority" @onclick="CerrarModalEstado">
+        <div class="modal-card-priority" @onclick:stopPropagation="true">
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size: 1.25rem;">📝</span>
+                    <h5 class="m-0 font-bold text-dark">Cambiar Estado del Turno</h5>
+                </div>
+                <button type="button" class="btn-close" @onclick="CerrarModalEstado" title="Cerrar"></button>
+            </div>
+
+            <div class="mb-3">
+                <div class="p-2 mb-3 bg-light rounded border">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">Paciente:</span>
+                        <span class="font-bold text-dark">@GetNombrePaciente(turnoSeleccionado.IdPaciente)</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">Fecha y Hora:</span>
+                        <span class="font-semibold text-secondary">
+                            @turnoSeleccionado.Fecha.ToString("dd/MM/yyyy") - @turnoSeleccionado.Hora.ToString("HH:mm") hs
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small">Estado actual:</span>
+                        <span class="badge-estado @GetBadgeClass(turnoSeleccionado.Estado)">
+                            @GetEstadoTextoConIcono(turnoSeleccionado.Estado)
+                        </span>
+                    </div>
+                </div>
+
+                <label class="form-label font-semibold mb-2">Seleccionar Estado:</label>
+                <select class="form-select mb-3" @bind="estadoSeleccionado">
+                    @foreach (var estado in Enum.GetValues<EstadoTurno>())
+                    {
+                        <option value="@estado">@estado</option>
+                    }
+                </select>
+
+                <div class="d-flex flex-column gap-1">
+                    <button type="button" class="btn-state-item btn-state-activo @(estadoSeleccionado == EstadoTurno.Activo ? "state-current" : "")" @onclick="() => estadoSeleccionado = EstadoTurno.Activo">
+                        <span class="state-icon-circle bg-activo">✓</span>
+                        <span>Activo</span>
+                        @if (estadoSeleccionado == EstadoTurno.Activo)
+                        {
+                            <span class="badge-current-mark ms-auto">Seleccionado</span>
+                        }
+                    </button>
+                    <button type="button" class="btn-state-item btn-state-completo @(estadoSeleccionado == EstadoTurno.Completo ? "state-current" : "")" @onclick="() => estadoSeleccionado = EstadoTurno.Completo">
+                        <span class="state-icon-circle bg-completo">✓</span>
+                        <span>Completo</span>
+                        @if (estadoSeleccionado == EstadoTurno.Completo)
+                        {
+                            <span class="badge-current-mark ms-auto">Seleccionado</span>
+                        }
+                    </button>
+                    <button type="button" class="btn-state-item btn-state-falta @(estadoSeleccionado == EstadoTurno.Falta ? "state-current" : "")" @onclick="() => estadoSeleccionado = EstadoTurno.Falta">
+                        <span class="state-icon-circle bg-falta">⚠</span>
+                        <span>Falta</span>
+                        @if (estadoSeleccionado == EstadoTurno.Falta)
+                        {
+                            <span class="badge-current-mark ms-auto">Seleccionado</span>
+                        }
+                    </button>
+                    <button type="button" class="btn-state-item btn-state-cancelado @(estadoSeleccionado == EstadoTurno.Cancelado ? "state-current" : "")" @onclick="() => estadoSeleccionado = EstadoTurno.Cancelado">
+                        <span class="state-icon-circle bg-cancelado">✕</span>
+                        <span>Cancelado</span>
+                        @if (estadoSeleccionado == EstadoTurno.Cancelado)
+                        {
+                            <span class="badge-current-mark ms-auto">Seleccionado</span>
+                        }
+                    </button>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                <button type="button" class="btn btn-secondary-custom" @onclick="CerrarModalEstado">Cancelar</button>
+                <button type="button" class="btn btn-primary-custom" @onclick="GuardarEstado">Guardar</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private RenderFragment RenderTurnoCard(Turno turno, bool isRightEdge) => __builder =>
     {
@@ -454,20 +539,11 @@
 
             <!-- Fila de Acciones: Videollamada, Comprobante PDF, Estado -->
             <div class="mt-2 d-flex flex-column gap-1">
-                @if (turno.Modalidad == ModalidadTurno.Online)
+                @if (turno.Modalidad == ModalidadTurno.Online && !string.IsNullOrWhiteSpace(turno.EnlaceReunion) && turno.Estado == EstadoTurno.Activo)
                 {
-                    @if (!string.IsNullOrWhiteSpace(turno.EnlaceReunion))
-                    {
-                        <a href="@turno.EnlaceReunion" target="_blank" class="btn btn-xs btn-join-videocall py-1 px-2 w-100 text-center text-truncate" title="Unirse a la videollamada">
-                            <span class="video-icon-pulse">●</span> 📹 Unirse a llamada
-                        </a>
-                    }
-                    else
-                    {
-                        <button type="button" class="btn btn-xs btn-outline-secondary py-1 px-2 w-100 text-center disabled" disabled style="cursor: not-allowed; opacity: 0.65;" title="Sin enlace de videollamada asignado">
-                            📹 Sin enlace
-                        </button>
-                    }
+                    <a href="@turno.EnlaceReunion" target="_blank" class="btn btn-xs btn-join-videocall py-1 px-2 w-100 text-center text-truncate" title="Unirse a la videollamada">
+                        <span class="video-icon-pulse">●</span> 📹 Unirse a llamada
+                    </a>
                 }
 
                 <div class="d-flex gap-1 align-items-center">
@@ -477,56 +553,11 @@
                             📄 PDF
                         </a>
                     }
-                    <button type="button" class="btn btn-xs @(PopoverTurnoId == turno.IdTurno ? "btn-secondary text-white" : "btn-outline-secondary") py-1 px-2 @(turno.Estado == EstadoTurno.Completo ? "" : "w-100") text-center" style="font-size: 0.72rem;" @onclick="() => TogglePopoverEstado(turno.IdTurno)" @onclick:stopPropagation="true" title="Cambiar estado del turno">
-                        Estado @(PopoverTurnoId == turno.IdTurno ? "▲" : "▾")
+                    <button type="button" class="btn btn-xs btn-outline-secondary py-1 px-2 @(turno.Estado == EstadoTurno.Completo ? "" : "w-100") text-center" style="font-size: 0.72rem;" @onclick="() => AbrirModalEstado(turno)" title="Cambiar estado del turno">
+                        Estado &blacktriangledown;
                     </button>
                 </div>
             </div>
-
-            <!-- Menú Desplegable Inline de Estados (Inmune a clipping y overflow) -->
-            @if (PopoverTurnoId == turno.IdTurno)
-            {
-                <div class="inline-estado-panel mt-2 pt-2 border-top" @onclick:stopPropagation="true">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="inline-estado-header-text">Cambiar estado a:</span>
-                        <button type="button" class="btn-close-inline-estado" @onclick="CerrarPopover" title="Cerrar">&times;</button>
-                    </div>
-                    <div class="inline-estado-grid">
-                        <button type="button" class="btn-state-item btn-state-activo @(turno.Estado == EstadoTurno.Activo ? "state-current" : "")" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Activo)" title="Marcar como Activo">
-                            <span class="state-icon-circle bg-activo">✓</span>
-                            <span>Activo</span>
-                            @if (turno.Estado == EstadoTurno.Activo)
-                            {
-                                <span class="badge-current-mark ms-auto">Actual</span>
-                            }
-                        </button>
-                        <button type="button" class="btn-state-item btn-state-completo @(turno.Estado == EstadoTurno.Completo ? "state-current" : "")" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Completo)" title="Marcar como Completo">
-                            <span class="state-icon-circle bg-completo">✓</span>
-                            <span>Completo</span>
-                            @if (turno.Estado == EstadoTurno.Completo)
-                            {
-                                <span class="badge-current-mark ms-auto">Actual</span>
-                            }
-                        </button>
-                        <button type="button" class="btn-state-item btn-state-falta @(turno.Estado == EstadoTurno.Falta ? "state-current" : "")" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Falta)" title="Marcar como Falta / Ausente">
-                            <span class="state-icon-circle bg-falta">⚠</span>
-                            <span>Falta</span>
-                            @if (turno.Estado == EstadoTurno.Falta)
-                            {
-                                <span class="badge-current-mark ms-auto">Actual</span>
-                            }
-                        </button>
-                        <button type="button" class="btn-state-item btn-state-cancelado @(turno.Estado == EstadoTurno.Cancelado ? "state-current" : "")" @onclick="() => CambiarEstadoDirecto(turno, EstadoTurno.Cancelado)" title="Cancelar turno">
-                            <span class="state-icon-circle bg-cancelado">✕</span>
-                            <span>Cancelado</span>
-                            @if (turno.Estado == EstadoTurno.Cancelado)
-                            {
-                                <span class="badge-current-mark ms-auto">Actual</span>
-                            }
-                        </button>
-                    </div>
-                </div>
-            }
         </div>
     };
 }

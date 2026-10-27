@@ -8,7 +8,7 @@ using Facturno.Infrastructure.PocketBase;
 
 namespace Facturno.API.Controllers;
 
-[Authorize(Roles = "Operador")]
+[Authorize(Roles = "Profesional,Administrativo,Operador")]
 [ApiController]
 [Route("api/[controller]")]
 public class ProfesionalesController : ControllerBase
@@ -45,6 +45,7 @@ public class ProfesionalesController : ControllerBase
         return Ok(ApiResponse<Profesional>.Ok(profesional));
     }
 
+    [Authorize(Roles = "Operador")]
     [HttpPost]
     public async Task<ActionResult<ApiResponse<Profesional>>> Crear([FromBody] ProfesionalCreateDto dto)
     {
@@ -172,6 +173,7 @@ public class ProfesionalesController : ControllerBase
         }
     }
 
+    [Authorize(Roles = "Operador")]
     [HttpPatch("{idProfesional:guid}/activo")]
     public async Task<ActionResult<ApiResponse<bool>>> CambiarEstadoActivo(Guid idProfesional, [FromQuery] bool activo)
     {
@@ -185,6 +187,7 @@ public class ProfesionalesController : ControllerBase
         return Ok(ApiResponse<bool>.Ok(true, mensaje));
     }
 
+    [Authorize(Roles = "Operador,Administrativo")]
     [HttpGet("administrativos")]
     public async Task<ActionResult<ApiResponse<List<Usuario>>>> ObtenerAdministrativos()
     {
@@ -221,6 +224,7 @@ public class ProfesionalesController : ControllerBase
         }
     }
 
+    [Authorize(Roles = "Operador,Administrativo")]
     [HttpPost("vincular-agenda")]
     public async Task<ActionResult<ApiResponse<bool>>> VincularAgenda([FromQuery] Guid idProfesional, [FromQuery] string idAdministrativo)
     {
@@ -241,6 +245,7 @@ public class ProfesionalesController : ControllerBase
         }
     }
 
+    [Authorize(Roles = "Operador")]
     [HttpPost("administrativo")]
     public async Task<ActionResult<ApiResponse<Usuario>>> CrearAdministrativo([FromBody] AdministrativoCreateDto dto)
     {

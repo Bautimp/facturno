@@ -72,7 +72,9 @@ public partial class Agenda : ComponentBase
                 EsProfesionalLogueado = user.IsInRole("Profesional");
                 if (EsProfesionalLogueado)
                 {
-                    var idClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    var idClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                               ?? user.FindFirst("id_usuario")?.Value
+                               ?? user.FindFirst("sub")?.Value;
                     if (Guid.TryParse(idClaim, out var profesionalGuid))
                     {
                         SelectedProfesionalId = profesionalGuid;
@@ -164,7 +166,10 @@ public partial class Agenda : ComponentBase
         }
         catch (Exception ex)
         {
-            MensajeAlerta = $"Error al cargar profesionales: {ex.Message}";
+            if (!EsProfesionalLogueado)
+            {
+                MensajeAlerta = $"Error al cargar profesionales: {ex.Message}";
+            }
         }
     }
 
@@ -273,6 +278,68 @@ public partial class Agenda : ComponentBase
         {
             SelectedFecha = date;
             await CargarTurnos();
+        }
+    }
+
+    protected bool mostrarModalEstado = false;
+    protected Turno? turnoSeleccionado;
+    protected EstadoTurno estadoSeleccionado;
+
+    protected void AbrirModalEstado(Turno turno)
+    {
+        turnoSeleccionado = turno;
+        estadoSeleccionado = turno.Estado;
+        mostrarModalEstado = true;
+        StateHasChanged();
+    }
+
+    protected void CerrarModalEstado()
+    {
+        mostrarModalEstado = false;
+        turnoSeleccionado = null;
+        StateHasChanged();
+    }
+
+    protected async Task GuardarEstado()
+    {
+        if (turnoSeleccionado == null) return;
+
+        try
+        {
+            var updateDto = new TurnoUpdateDto
+            {
+                IdTurno = turnoSeleccionado.IdTurno,
+                Fecha = turnoSeleccionado.Fecha,
+                Hora = turnoSeleccionado.Hora,
+                Estado = estadoSeleccionado,
+                Observacion = turnoSeleccionado.Observacion,
+                Modalidad = turnoSeleccionado.Modalidad,
+                EnlaceReunion = turnoSeleccionado.EnlaceReunion
+            };
+
+            var res = await Http.PutAsJsonAsync("api/turnos", updateDto);
+            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Turno>>();
+
+            if (apiResult != null && apiResult.Exito)
+            {
+                turnoSeleccionado.Estado = estadoSeleccionado;
+                var nombrePaciente = GetNombrePaciente(turnoSeleccionado.IdPaciente);
+                MensajeAlerta = $"Estado del turno de {nombrePaciente} actualizado a {estadoSeleccionado}.";
+                CerrarModalEstado();
+                await CargarTurnos();
+            }
+            else
+            {
+                MensajeAlerta = apiResult?.Mensaje ?? "No se pudo actualizar el estado del turno.";
+            }
+        }
+        catch (Exception ex)
+        {
+            MensajeAlerta = $"Error al cambiar estado: {ex.Message}";
+        }
+        finally
+        {
+            StateHasChanged();
         }
     }
 
