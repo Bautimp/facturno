@@ -86,3 +86,27 @@ dotnet run
 | **Administrativo** | `marcos.admin@facturno.com` | `marcos123!` | Marcos Benítez — Gestión de agendas compartidas y recepción |
 
 ---
+
+## ❓ Preguntas Frecuentes y Solución de Problemas (Troubleshooting)
+
+### Error `Connection refused (127.0.0.1:8090)` al Iniciar Sesión
+
+Si la API o la aplicación web reportan:
+```
+System.Net.Http.HttpRequestException: Connection refused (127.0.0.1:8090)
+Error de autenticación: Connection refused (127.0.0.1:8090)
+```
+* **Causa:** El servicio local de base de datos **PocketBase** no está corriendo en segundo plano (por reinicio de la máquina, cierre de terminales o detención del proceso).
+* **Solución:**
+  1. Ejecuta el script de inicio en la raíz del repositorio:
+     ```bash
+     ./start_pocketbase.sh
+     ```
+  2. Verifica que responda correctamente:
+     ```bash
+     curl -s http://127.0.0.1:8090/api/health
+     # {"message":"API is healthy.","code":200,"data":{"canBackup":true}}
+     ```
+  3. Vuelve a iniciar la API con `dotnet run`.
+
+---
