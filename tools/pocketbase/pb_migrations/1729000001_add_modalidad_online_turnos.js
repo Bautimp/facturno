@@ -3,26 +3,65 @@ migrate((db) => {
   const dao = new Dao(db);
   const turnos = dao.findCollectionByNameOrId("turnos");
 
-  turnos.schema.addField(new SchemaField({
-    name: "es_online",
-    type: "bool",
-    required: false
-  }));
+  let modified = false;
+  try {
+    if (!turnos.schema.getFieldByName("es_online")) {
+      turnos.schema.addField(new SchemaField({
+        name: "es_online",
+        type: "bool",
+        required: false
+      }));
+      modified = true;
+    }
+  } catch (e) {
+    turnos.schema.addField(new SchemaField({
+      name: "es_online",
+      type: "bool",
+      required: false
+    }));
+    modified = true;
+  }
 
-  turnos.schema.addField(new SchemaField({
-    name: "modalidad",
-    type: "text",
-    required: false
-  }));
+  try {
+    if (!turnos.schema.getFieldByName("modalidad")) {
+      turnos.schema.addField(new SchemaField({
+        name: "modalidad",
+        type: "text",
+        required: false
+      }));
+      modified = true;
+    }
+  } catch (e) {
+    turnos.schema.addField(new SchemaField({
+      name: "modalidad",
+      type: "text",
+      required: false
+    }));
+    modified = true;
+  }
 
-  turnos.schema.addField(new SchemaField({
-    name: "enlace_reunion",
-    type: "text",
-    required: false
-  }));
+  try {
+    if (!turnos.schema.getFieldByName("enlace_reunion")) {
+      turnos.schema.addField(new SchemaField({
+        name: "enlace_reunion",
+        type: "text",
+        required: false
+      }));
+      modified = true;
+    }
+  } catch (e) {
+    turnos.schema.addField(new SchemaField({
+      name: "enlace_reunion",
+      type: "text",
+      required: false
+    }));
+    modified = true;
+  }
 
-  dao.saveCollection(turnos);
-  console.log("[MIGRATION] Campos 'es_online', 'modalidad' y 'enlace_reunion' agregados a 'turnos'.");
+  if (modified) {
+    dao.saveCollection(turnos);
+  }
+  console.log("[MIGRATION] Campos de modalidad online verificados en 'turnos'.");
 
   try {
     const records = dao.findRecordsByFilter("turnos", "id_turno=1", "", 1);

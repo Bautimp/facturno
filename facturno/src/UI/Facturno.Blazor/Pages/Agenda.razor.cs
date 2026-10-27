@@ -24,14 +24,14 @@ public partial class Agenda : ComponentBase
 
     protected Guid SelectedProfesionalId;
     protected DateOnly SelectedFecha = DateOnly.FromDateTime(DateTime.Today);
-    protected TipoVistaAgenda VistaActual = TipoVistaAgenda.Dia;
+    protected TipoVistaAgenda VistaActual = TipoVistaAgenda.Semana;
 
     protected List<Profesional> ListaProfesionales = new();
     protected List<Paciente> ListaPacientes = new();
     protected List<Turno> ListaTurnos = new();
     protected List<TimeOnly> TimeSlots = new();
 
-    // Vistas Semana y Mes
+    // Vista Semana
     protected List<DateOnly> DiasSemana = new();
     protected List<DateOnly> DiasMes = new();
     protected Dictionary<DateOnly, List<Turno>> TurnosPorFecha = new();
@@ -108,6 +108,46 @@ public partial class Agenda : ComponentBase
         StateHasChanged();
     }
 
+    protected async Task SemanaAnterior()
+    {
+        SelectedFecha = SelectedFecha.AddDays(-7);
+        await CargarTurnos();
+    }
+
+    protected async Task SemanaSiguiente()
+    {
+        SelectedFecha = SelectedFecha.AddDays(7);
+        await CargarTurnos();
+    }
+
+    protected async Task IrSemanaActual()
+    {
+        SelectedFecha = DateOnly.FromDateTime(DateTime.Today);
+        await CargarTurnos();
+    }
+
+    protected string GetTextoRangoSemana()
+    {
+        if (DiasSemana.Count < 7) return string.Empty;
+        var inicio = DiasSemana[0];
+        var fin = DiasSemana[6];
+        var cult = new System.Globalization.CultureInfo("es-ES");
+        if (inicio.Month == fin.Month && inicio.Year == fin.Year)
+        {
+            return $"Semana del {inicio.Day} al {fin.Day} de {fin.ToString("MMMM", cult)} {fin.Year}";
+        }
+        if (inicio.Year == fin.Year)
+        {
+            return $"Semana del {inicio.Day} de {inicio.ToString("MMMM", cult)} al {fin.Day} de {fin.ToString("MMMM", cult)} {fin.Year}";
+        }
+        return $"Semana del {inicio.Day}/{inicio.Month}/{inicio.Year} al {fin.Day}/{fin.Month}/{fin.Year}";
+    }
+
+    protected int GetTotalTurnosSemana()
+    {
+        return TurnosPorFecha.Values.Sum(list => list.Count);
+    }
+
     protected async Task CargarProfesionales()
     {
         try
@@ -162,50 +202,21 @@ public partial class Agenda : ComponentBase
         try
         {
             PopoverTurnoId = null;
+            GenerarDiasSemana();
+            var diasLocales = DiasSemana.ToList();
+            var tempDict = new Dictionary<DateOnly, List<Turno>>();
 
-            if (VistaActual == TipoVistaAgenda.Dia)
+            foreach (var dia in diasLocales)
             {
-                var fechaStr = SelectedFecha.ToString("yyyy-MM-dd");
+                var fechaStr = dia.ToString("yyyy-MM-dd");
                 var url = $"api/turnos/profesional/{SelectedProfesionalId}?fecha={fechaStr}";
                 var res = await Http.GetFromJsonAsync<ApiResponse<List<Turno>>>(url);
-
-                ListaTurnos = (res != null && res.Exito && res.Datos != null) ? res.Datos : new List<Turno>();
+                tempDict[dia] = (res != null && res.Exito && res.Datos != null)
+                    ? res.Datos.OrderBy(t => t.Hora).ToList()
+                    : new List<Turno>();
             }
-            else if (VistaActual == TipoVistaAgenda.Semana)
-            {
-                GenerarDiasSemana();
-                var diasLocales = DiasSemana.ToList();
-                var tempDict = new Dictionary<DateOnly, List<Turno>>();
 
-                foreach (var dia in diasLocales)
-                {
-                    var fechaStr = dia.ToString("yyyy-MM-dd");
-                    var url = $"api/turnos/profesional/{SelectedProfesionalId}?fecha={fechaStr}";
-                    var res = await Http.GetFromJsonAsync<ApiResponse<List<Turno>>>(url);
-                    tempDict[dia] = (res != null && res.Exito && res.Datos != null) ? res.Datos : new List<Turno>();
-                }
-
-                TurnosPorFecha = tempDict;
-            }
-            else if (VistaActual == TipoVistaAgenda.Mes)
-            {
-                GenerarDiasMes();
-                var diasLocales = DiasMes.ToList();
-                var tempDict = new Dictionary<DateOnly, List<Turno>>();
-
-                foreach (var dia in diasLocales)
-                {
-                    var fechaStr = dia.ToString("yyyy-MM-dd");
-                    var url = $"api/turnos/profesional/{SelectedProfesionalId}?fecha={fechaStr}";
-                    var res = await Http.GetFromJsonAsync<ApiResponse<List<Turno>>>(url);
-                    if (res != null && res.Exito && res.Datos != null && res.Datos.Any())
-                    {
-                        tempDict[dia] = res.Datos;
-                    }
-                }
-
-                TurnosPorFecha = tempDict;
-            }
+            TurnosPorFecha = tempDict;
         }
         catch (Exception ex)
         {
@@ -275,11 +286,13 @@ public partial class Agenda : ComponentBase
         {
             PopoverTurnoId = idTurno;
         }
+        StateHasChanged();
     }
 
     protected void CerrarPopover()
     {
         PopoverTurnoId = null;
+        StateHasChanged();
     }
 
     protected async Task CambiarEstadoDirecto(Turno turno, EstadoTurno nuevoEstado)
@@ -316,6 +329,10 @@ public partial class Agenda : ComponentBase
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al cambiar estado: {ex.Message}";
+        }
+        finally
+        {
+            StateHasChanged();
         }
     }
 

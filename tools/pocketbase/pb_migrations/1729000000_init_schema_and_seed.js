@@ -153,7 +153,15 @@ migrate((db) => {
     { id: 4, nombre: "Marcos", apellido: "Benítez", correo: "marcos.admin@facturno.com", tel: 1166778899 },
     { id: 5, nombre: "Juan", apellido: "Pérez", correo: "juan.perez@gmail.com", tel: 1133445566 },
     { id: 6, nombre: "María", apellido: "Fernández", correo: "maria.f@hotmail.com", tel: 1177889900 },
-    { id: 7, nombre: "Lucas", apellido: "Gómez", correo: "lucas.gomez@yahoo.com", tel: 1188990011 }
+    { id: 7, nombre: "Lucas", apellido: "Gómez", correo: "lucas.gomez@yahoo.com", tel: 1188990011 },
+    { id: 8, nombre: "Sofía", apellido: "Martínez", correo: "sofia.martinez@gmail.com", tel: 1199887766 },
+    { id: 9, nombre: "Martín", apellido: "Rodríguez", correo: "martin.rodriguez@outlook.com", tel: 1123456789 },
+    { id: 10, nombre: "Camila", apellido: "López", correo: "camila.lopez@gmail.com", tel: 1134567890 },
+    { id: 11, nombre: "Diego", apellido: "Morales", correo: "diego.morales@yahoo.com", tel: 1145678901 },
+    { id: 12, nombre: "Valentina", apellido: "Herrera", correo: "valen.herrera@hotmail.com", tel: 1156789012 },
+    { id: 13, nombre: "Agustín", apellido: "Castro", correo: "agustin.castro@gmail.com", tel: 1167890123 },
+    { id: 14, nombre: "Lucía", apellido: "Romero", correo: "lucia.romero@gmail.com", tel: 1178901234 },
+    { id: 15, nombre: "Esteban", apellido: "Díaz", correo: "esteban.diaz@outlook.com", tel: 1189012345 }
   ];
 
   for (const p of personasData) {
@@ -217,7 +225,15 @@ migrate((db) => {
   const pacData = [
     { id: 5, dni: "35123456", td: "DNI", os: 2, numOs: "OS-994821", iva: "Exento" },
     { id: 6, dni: "28987654", td: "DNI", os: 3, numOs: "SM-441029", iva: "Exento" },
-    { id: 7, dni: "42111222", td: "DNI", os: 1, numOs: "", iva: "ConsumidorFinal" }
+    { id: 7, dni: "42111222", td: "DNI", os: 1, numOs: "", iva: "ConsumidorFinal" },
+    { id: 8, dni: "38999111", td: "DNI", os: 2, numOs: "OS-112233", iva: "Exento" },
+    { id: 9, dni: "31444555", td: "DNI", os: 4, numOs: "GAL-554433", iva: "Exento" },
+    { id: 10, dni: "44222333", td: "DNI", os: 3, numOs: "SM-778899", iva: "Exento" },
+    { id: 11, dni: "26555666", td: "DNI", os: 5, numOs: "PAM-998877", iva: "Exento" },
+    { id: 12, dni: "39111444", td: "DNI", os: 2, numOs: "OS-665544", iva: "Exento" },
+    { id: 13, dni: "41777888", td: "DNI", os: 1, numOs: "", iva: "ConsumidorFinal" },
+    { id: 14, dni: "33888999", td: "DNI", os: 4, numOs: "GAL-221100", iva: "Exento" },
+    { id: 15, dni: "29333222", td: "DNI", os: 5, numOs: "PAM-443322", iva: "Exento" }
   ];
 
   for (const pac of pacData) {
@@ -237,7 +253,7 @@ migrate((db) => {
   agenda1.set("id_profesional", idLaura);
   dao.saveRecord(agenda1);
 
-  // --- Turnos de Prueba ---
+  // --- Turnos de Prueba calculados para la semana activa actual ---
   const hoy = new Date();
   const formatFecha = (d) => {
     const year = d.getFullYear();
@@ -246,18 +262,68 @@ migrate((db) => {
     return `${year}-${month}-${day}`;
   };
 
-  const manana = new Date(hoy);
-  manana.setDate(hoy.getDate() + 1);
+  const getLunes = (d) => {
+    const copy = new Date(d);
+    const day = copy.getDay();
+    const diff = (day === 0 ? -6 : 1) - day;
+    copy.setDate(copy.getDate() + diff);
+    return copy;
+  };
 
-  const pasadoManana = new Date(hoy);
-  pasadoManana.setDate(hoy.getDate() + 2);
+  const baseLunes = getLunes(hoy);
+  const getFechaSemana = (offsetDias) => {
+    const d = new Date(baseLunes);
+    d.setDate(baseLunes.getDate() + offsetDias);
+    return formatFecha(d);
+  };
+
+  const fLunes = getFechaSemana(0);
+  const fMartes = getFechaSemana(1);
+  const fMiercoles = getFechaSemana(2);
+  const fJueves = getFechaSemana(3);
+  const fViernes = getFechaSemana(4);
+  const fSabado = getFechaSemana(5);
+  const fDomingo = getFechaSemana(6);
 
   const turnosData = [
-    { id: 1, pac: 5, prof: idLaura, fecha: formatFecha(hoy), hora: "09:00:00", estado: "Activo", obs: "Primera consulta de evaluación" },
-    { id: 2, pac: 6, prof: idLaura, fecha: formatFecha(hoy), hora: "10:00:00", estado: "Completo", obs: "Sesión de seguimiento semanal" },
-    { id: 3, pac: 7, prof: idLaura, fecha: formatFecha(hoy), hora: "11:30:00", estado: "Falta", obs: "Paciente avisó tarde" },
-    { id: 4, pac: 5, prof: idCarlos, fecha: formatFecha(manana), hora: "10:00:00", estado: "Activo", obs: "Control de medicación" },
-    { id: 5, pac: 6, prof: idLaura, fecha: formatFecha(pasadoManana), hora: "15:00:00", estado: "Activo", obs: "Sesión quincenal" }
+    // LUNES
+    { id: 1, pac: 5, prof: idLaura, fecha: fLunes, hora: "09:00:00", estado: "Completo", obs: "Primera consulta de evaluación", online: false, mod: "Presencial", enlace: "" },
+    { id: 2, pac: 6, prof: idLaura, fecha: fLunes, hora: "10:30:00", estado: "Completo", obs: "Sesión de psicoterapia", online: true, mod: "Online", enlace: "https://meet.google.com/abc-defg-hij" },
+    { id: 3, pac: 8, prof: idLaura, fecha: fLunes, hora: "12:00:00", estado: "Activo", obs: "Seguimiento quincenal", online: false, mod: "Presencial", enlace: "" },
+    { id: 4, pac: 9, prof: idCarlos, fecha: fLunes, hora: "16:00:00", estado: "Activo", obs: "Evaluación psiquiátrica inicial", online: false, mod: "Presencial", enlace: "" },
+
+    // MARTES (HOY)
+    { id: 5, pac: 10, prof: idLaura, fecha: fMartes, hora: "09:00:00", estado: "Activo", obs: "Consulta online con enlace Zoom", online: true, mod: "Online", enlace: "https://zoom.us/j/1234567890" },
+    { id: 6, pac: 11, prof: idLaura, fecha: fMartes, hora: "10:00:00", estado: "Completo", obs: "Control clínico y emisión de certificado", online: false, mod: "Presencial", enlace: "" },
+    { id: 7, pac: 12, prof: idLaura, fecha: fMartes, hora: "11:30:00", estado: "Falta", obs: "Paciente avisó falta a último momento", online: false, mod: "Presencial", enlace: "" },
+    { id: 8, pac: 7, prof: idLaura, fecha: fMartes, hora: "14:00:00", estado: "Cancelado", obs: "Cancelado por reprogramación", online: false, mod: "Presencial", enlace: "" },
+    { id: 9, pac: 13, prof: idLaura, fecha: fMartes, hora: "15:30:00", estado: "Activo", obs: "Consulta online pendiente de configurar link", online: true, mod: "Online", enlace: "" },
+    { id: 10, pac: 14, prof: idLaura, fecha: fMartes, hora: "17:00:00", estado: "Activo", obs: "Sesión regular", online: false, mod: "Presencial", enlace: "" },
+    { id: 11, pac: 5, prof: idCarlos, fecha: fMartes, hora: "10:30:00", estado: "Completo", obs: "Ajuste de esquema farmacológico", online: false, mod: "Presencial", enlace: "" },
+
+    // MIÉRCOLES
+    { id: 12, pac: 6, prof: idLaura, fecha: fMiercoles, hora: "09:30:00", estado: "Activo", obs: "Seguimiento semanal", online: false, mod: "Presencial", enlace: "" },
+    { id: 13, pac: 9, prof: idLaura, fecha: fMiercoles, hora: "11:00:00", estado: "Activo", obs: "Videollamada médica programada", online: true, mod: "Online", enlace: "https://meet.jit.si/facturno-consulta-9" },
+    { id: 14, pac: 8, prof: idLaura, fecha: fMiercoles, hora: "15:00:00", estado: "Activo", obs: "Terapia de apoyo", online: false, mod: "Presencial", enlace: "" },
+
+    // JUEVES
+    { id: 15, pac: 11, prof: idLaura, fecha: fJueves, hora: "09:00:00", estado: "Activo", obs: "Evaluación psicodiagnóstica", online: false, mod: "Presencial", enlace: "" },
+    { id: 16, pac: 12, prof: idLaura, fecha: fJueves, hora: "10:30:00", estado: "Completo", obs: "Informe y devolución", online: true, mod: "Online", enlace: "https://meet.google.com/xyz-uvwx-rst" },
+    { id: 17, pac: 15, prof: idLaura, fecha: fJueves, hora: "16:00:00", estado: "Activo", obs: "Entrevista de admisión", online: false, mod: "Presencial", enlace: "" },
+
+    // VIERNES
+    { id: 18, pac: 14, prof: idLaura, fecha: fViernes, hora: "09:00:00", estado: "Activo", obs: "Revisión clínica", online: false, mod: "Presencial", enlace: "" },
+    { id: 19, pac: 13, prof: idLaura, fecha: fViernes, hora: "11:00:00", estado: "Activo", obs: "Atención remota", online: true, mod: "Online", enlace: "https://meet.jit.si/facturno-viernes" },
+    { id: 20, pac: 10, prof: idLaura, fecha: fViernes, hora: "14:30:00", estado: "Completo", obs: "Cierre de tratamiento", online: false, mod: "Presencial", enlace: "" },
+
+    // SÁBADO (Sub-tarjeta superior Fin de Semana)
+    { id: 21, pac: 8, prof: idLaura, fecha: fSabado, hora: "09:30:00", estado: "Activo", obs: "Guardia programada de fin de semana", online: false, mod: "Presencial", enlace: "" },
+    { id: 22, pac: 9, prof: idLaura, fecha: fSabado, hora: "11:00:00", estado: "Activo", obs: "Teleconsulta sabatina", online: true, mod: "Online", enlace: "https://meet.google.com/sab-cons-11" },
+    { id: 23, pac: 5, prof: idLaura, fecha: fSabado, hora: "12:30:00", estado: "Completo", obs: "Urgencia menor ambulatoria", online: false, mod: "Presencial", enlace: "" },
+
+    // DOMINGO (Sub-tarjeta inferior Fin de Semana)
+    { id: 24, pac: 11, prof: idLaura, fecha: fDomingo, hora: "10:00:00", estado: "Activo", obs: "Control médico dominical a distancia", online: true, mod: "Online", enlace: "https://meet.jit.si/facturno-domingo-10" },
+    { id: 25, pac: 12, prof: idLaura, fecha: fDomingo, hora: "11:30:00", estado: "Activo", obs: "Atención de soporte emocional", online: false, mod: "Presencial", enlace: "" }
   ];
 
   for (const t of turnosData) {
@@ -269,6 +335,9 @@ migrate((db) => {
     tRec.set("hora", t.hora);
     tRec.set("estado", t.estado);
     tRec.set("observacion", t.obs);
+    tRec.set("es_online", t.online);
+    tRec.set("modalidad", t.mod);
+    tRec.set("enlace_reunion", t.enlace || "");
     dao.saveRecord(tRec);
   }
 
