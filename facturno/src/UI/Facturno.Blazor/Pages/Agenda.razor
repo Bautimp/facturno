@@ -337,15 +337,22 @@
                     }
                 </div>
 
-                <div class="row g-2 mb-3">
+                <div lang="es-AR" class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="form-label font-semibold">Fecha</label>
-                        <input type="date" class="form-control" value="@nuevoTurnoDto.Fecha.ToString("yyyy-MM-dd")" @onchange="(e) => nuevoTurnoDto.Fecha = DateOnly.Parse(e.Value!.ToString()!)" />
+                        <input type="date" 
+                               class="form-control" 
+                               @bind="nuevoTurnoDto.Fecha" 
+                               @bind:format="yyyy-MM-dd" />
                     </div>
                     <div class="col-6">
-                        <label class="form-label font-semibold">Hora (24 hs)</label>
-                        <input type="time" class="form-control" step="60" value="@nuevoTurnoDto.Hora.ToString("HH:mm")" @onchange="(e) => nuevoTurnoDto.Hora = TimeOnly.Parse(e.Value!.ToString()!)" />
-                        <span class="text-muted" style="font-size: 0.72rem;">Formato 24 hs (00:00 - 23:59, ej: 14:30)</span>
+                        <label class="form-label font-semibold">Hora</label>
+                        <input type="time" 
+                               class="form-control" 
+                               step="60" 
+                               @bind="nuevoTurnoDto.Hora" 
+                               @bind:format="HH:mm" />
+                        <span class="text-muted" style="font-size: 0.72rem;">Formato 24 hs</span>
                     </div>
                 </div>
 
@@ -491,7 +498,7 @@
                     }
                 </div>
 
-                <div class="row g-2 mb-3">
+                <div lang="es-AR" class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="form-label font-semibold">Día de la Semana</label>
                         <select class="form-select" @bind="recurrenteDto.DiaSemana">
@@ -503,20 +510,30 @@
                         </select>
                     </div>
                     <div class="col-6">
-                        <label class="form-label font-semibold">Hora (24 hs)</label>
-                        <input type="time" class="form-control" step="60" value="@recurrenteDto.Hora.ToString("HH:mm")" @onchange="(e) => recurrenteDto.Hora = TimeOnly.Parse(e.Value!.ToString()!)" />
-                        <span class="text-muted" style="font-size: 0.72rem;">Formato 24 hs (00:00 - 23:59, ej: 14:30)</span>
+                        <label class="form-label font-semibold">Hora</label>
+                        <input type="time" 
+                               class="form-control" 
+                               step="60" 
+                               @bind="recurrenteDto.Hora" 
+                               @bind:format="HH:mm" />
+                        <span class="text-muted" style="font-size: 0.72rem;">Formato 24 hs</span>
                     </div>
                 </div>
 
-                <div class="row g-2 mb-3">
+                <div lang="es-AR" class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="form-label font-semibold">Fecha Inicio</label>
-                        <input type="date" class="form-control" value="@recurrenteDto.FechaInicio.ToString("yyyy-MM-dd")" @onchange="(e) => recurrenteDto.FechaInicio = DateOnly.Parse(e.Value!.ToString()!)" />
+                        <input type="date" 
+                               class="form-control" 
+                               @bind="recurrenteDto.FechaInicio" 
+                               @bind:format="yyyy-MM-dd" />
                     </div>
                     <div class="col-6">
                         <label class="form-label font-semibold">Fecha Fin</label>
-                        <input type="date" class="form-control" value="@recurrenteDto.FechaFin.ToString("yyyy-MM-dd")" @onchange="(e) => recurrenteDto.FechaFin = DateOnly.Parse(e.Value!.ToString()!)" />
+                        <input type="date" 
+                               class="form-control" 
+                               @bind="recurrenteDto.FechaFin" 
+                               @bind:format="yyyy-MM-dd" />
                     </div>
                 </div>
 

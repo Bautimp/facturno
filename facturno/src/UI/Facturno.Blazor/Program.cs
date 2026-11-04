@@ -1,9 +1,15 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.AspNetCore.Components.Authorization;
+using System.Globalization;
 using Facturno.Blazor;
 using Facturno.Blazor.Services;
 using Facturno.Blazor.Handlers;
+
+// Establecer la cultura en español de Argentina (reloj 24hs y formato dd/MM/yyyy)
+var culture = new CultureInfo("es-AR");
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
