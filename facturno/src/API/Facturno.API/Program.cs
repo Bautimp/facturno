@@ -129,17 +129,27 @@ contentTypeProvider.Mappings[".br"] = "application/x-brotli";
 contentTypeProvider.Mappings[".gz"] = "application/gzip";
 
 app.UseDefaultFiles();
-app.UseStaticFiles(new StaticFileOptions
+var staticFileOptions = new StaticFileOptions
 {
     ContentTypeProvider = contentTypeProvider,
     ServeUnknownFileTypes = true,
-    DefaultContentType = "application/octet-stream"
-});
+    DefaultContentType = "application/octet-stream",
+    // index.html nunca debe cachearse: referencia archivos con huella (fingerprint)
+    // que cambian en cada publicación de Blazor (.NET 10).
+    OnPrepareResponse = ctx =>
+    {
+        if (ctx.File.Name.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Context.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";
+        }
+    }
+};
+app.UseStaticFiles(staticFileOptions);
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapFallbackToFile("index.html");
+app.MapFallbackToFile("index.html", staticFileOptions);
 
 app.Run();
