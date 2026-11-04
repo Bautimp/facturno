@@ -337,7 +337,7 @@
                     }
                 </div>
 
-                <div lang="es-AR" class="row g-2 mb-3">
+                <div class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="form-label font-semibold">Fecha</label>
                         <input type="date" 
@@ -347,12 +347,12 @@
                     </div>
                     <div class="col-6">
                         <label class="form-label font-semibold">Hora</label>
-                        <input type="time" 
+                        <input type="text" 
                                class="form-control" 
-                               step="60" 
-                               @bind="nuevoTurnoDto.Hora" 
-                               @bind:format="HH:mm" />
-                        <span class="text-muted" style="font-size: 0.72rem;">Formato 24 hs</span>
+                               list="lista-horas-24"
+                               placeholder="16:00"
+                               maxlength="5"
+                               @bind="HoraNuevoTexto" />
                     </div>
                 </div>
 
@@ -498,7 +498,7 @@
                     }
                 </div>
 
-                <div lang="es-AR" class="row g-2 mb-3">
+                <div class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="form-label font-semibold">Día de la Semana</label>
                         <select class="form-select" @bind="recurrenteDto.DiaSemana">
@@ -511,16 +511,16 @@
                     </div>
                     <div class="col-6">
                         <label class="form-label font-semibold">Hora</label>
-                        <input type="time" 
+                        <input type="text" 
                                class="form-control" 
-                               step="60" 
-                               @bind="recurrenteDto.Hora" 
-                               @bind:format="HH:mm" />
-                        <span class="text-muted" style="font-size: 0.72rem;">Formato 24 hs</span>
+                               list="lista-horas-24"
+                               placeholder="16:00"
+                               maxlength="5"
+                               @bind="HoraRecurrenteTexto" />
                     </div>
                 </div>
 
-                <div lang="es-AR" class="row g-2 mb-3">
+                <div class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="form-label font-semibold">Fecha Inicio</label>
                         <input type="date" 
@@ -605,7 +605,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <span class="text-muted small">Fecha y Hora:</span>
                         <span class="font-semibold text-secondary">
-                            @turnoSeleccionado.Fecha.ToString("dd/MM/yyyy") - @turnoSeleccionado.Hora.ToString("HH:mm") hs
+                            @turnoSeleccionado.Fecha.ToString("dd/MM/yyyy") - @turnoSeleccionado.Hora.ToString("HH:mm")
                         </span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center mb-1">
@@ -685,6 +685,41 @@
     </div>
 }
 
+<!-- Lista de horarios en formato 24 hs (07:00 a 22:00 sin AM/PM) -->
+<datalist id="lista-horas-24">
+    <option value="07:00"></option>
+    <option value="07:30"></option>
+    <option value="08:00"></option>
+    <option value="08:30"></option>
+    <option value="09:00"></option>
+    <option value="09:30"></option>
+    <option value="10:00"></option>
+    <option value="10:30"></option>
+    <option value="11:00"></option>
+    <option value="11:30"></option>
+    <option value="12:00"></option>
+    <option value="12:30"></option>
+    <option value="13:00"></option>
+    <option value="13:30"></option>
+    <option value="14:00"></option>
+    <option value="14:30"></option>
+    <option value="15:00"></option>
+    <option value="15:30"></option>
+    <option value="16:00"></option>
+    <option value="16:30"></option>
+    <option value="17:00"></option>
+    <option value="17:30"></option>
+    <option value="18:00"></option>
+    <option value="18:30"></option>
+    <option value="19:00"></option>
+    <option value="19:30"></option>
+    <option value="20:00"></option>
+    <option value="20:30"></option>
+    <option value="21:00"></option>
+    <option value="21:30"></option>
+    <option value="22:00"></option>
+</datalist>
+
 @code {
     private RenderFragment RenderTurnoCard(Turno turno, bool isRightEdge) => __builder =>
     {
@@ -701,7 +736,7 @@
                         <span class="badge badge-modalidad-online-sm" title="Turno Online (Videollamada)">📹 Online</span>
                     }
                 </div>
-                <span class="badge bg-light text-dark border font-semibold" style="font-size: 0.72rem;">@turno.Hora.ToString("HH:mm") hs</span>
+                <span class="badge bg-light text-dark border font-semibold" style="font-size: 0.72rem;">@turno.Hora.ToString("HH:mm")</span>
             </div>
 
             <!-- Fila Paciente -->

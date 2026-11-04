@@ -45,6 +45,38 @@ public partial class Agenda : ComponentBase
     protected TurnoRecurrenteCreateDto recurrenteDto = new();
     protected long? PopoverTurnoId = null;
 
+    protected string HoraNuevoTexto
+    {
+        get => nuevoTurnoDto.Hora.ToString("HH:mm");
+        set
+        {
+            if (TimeOnly.TryParse(value, out var t))
+            {
+                nuevoTurnoDto.Hora = t;
+            }
+            else if (!string.IsNullOrWhiteSpace(value) && value.Length == 4 && int.TryParse(value, out _) && TimeOnly.TryParse($"{value[..2]}:{value[2..]}", out var t2))
+            {
+                nuevoTurnoDto.Hora = t2;
+            }
+        }
+    }
+
+    protected string HoraRecurrenteTexto
+    {
+        get => recurrenteDto.Hora.ToString("HH:mm");
+        set
+        {
+            if (TimeOnly.TryParse(value, out var t))
+            {
+                recurrenteDto.Hora = t;
+            }
+            else if (!string.IsNullOrWhiteSpace(value) && value.Length == 4 && int.TryParse(value, out _) && TimeOnly.TryParse($"{value[..2]}:{value[2..]}", out var t2))
+            {
+                recurrenteDto.Hora = t2;
+            }
+        }
+    }
+
     // Búsqueda difusa de pacientes (Fuzzy Search con tolerancia a errores gramaticales)
     protected string TextoBusquedaPacienteNuevo = string.Empty;
     protected bool MostrarDropdownPacientesNuevo = false;
