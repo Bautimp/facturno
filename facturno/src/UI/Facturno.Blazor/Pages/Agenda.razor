@@ -1,6 +1,8 @@
 @page "/agenda"
 @attribute [Authorize]
 
+<SystemPopupMessage Message="@MensajeAlerta" OnClose="() => MensajeAlerta = null" />
+
 <div class="facturno-card" style="position: relative;">
     <LoadingOverlay IsLoading="IsLoading" Text="Cargando agenda de turnos..." />
     @if (PopoverTurnoId != null)
@@ -57,14 +59,6 @@
             </button>
         </div>
     </div>
-
-    @if (!string.IsNullOrWhiteSpace(MensajeAlerta))
-    {
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
-            @MensajeAlerta
-            <button type="button" class="btn-close" @onclick="() => MensajeAlerta = null"></button>
-        </div>
-    }
 
     <!-- Barra Superior de Navegación de Semanas con un solo click -->
     <div class="semana-nav-bar d-flex justify-content-between align-items-center mb-3 p-2 px-3 bg-white rounded border shadow-sm flex-wrap gap-2">
@@ -576,15 +570,15 @@
     </div>
 }
 
-<!-- Pop-up Cartel / Modal de Cambio de Estado con Máxima Prioridad -->
+<!-- Pop-up Cartel / Modal de Detalles y Cambio de Estado con Máxima Prioridad -->
 @if (mostrarModalEstado && turnoSeleccionado != null)
 {
     <div class="modal-overlay-priority" @onclick="CerrarModalEstado">
         <div class="modal-card-priority" @onclick:stopPropagation="true">
             <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
                 <div class="d-flex align-items-center gap-2">
-                    <span style="font-size: 1.25rem;">📝</span>
-                    <h5 class="m-0 font-bold text-dark">Cambiar Estado del Turno</h5>
+                    <span style="font-size: 1.25rem;">📋</span>
+                    <h5 class="m-0 font-bold text-dark">Detalles del Turno</h5>
                 </div>
                 <button type="button" class="btn-close" @onclick="CerrarModalEstado" title="Cerrar"></button>
             </div>
@@ -601,22 +595,39 @@
                             @turnoSeleccionado.Fecha.ToString("dd/MM/yyyy") - @turnoSeleccionado.Hora.ToString("HH:mm") hs
                         </span>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">Modalidad:</span>
+                        <span class="badge @(turnoSeleccionado.Modalidad == ModalidadTurno.Online ? "badge-modalidad-online-sm" : "bg-light text-secondary border")">
+                            @(turnoSeleccionado.Modalidad == ModalidadTurno.Online ? "📹 Online" : "🏥 Presencial")
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
                         <span class="text-muted small">Estado actual:</span>
                         <span class="badge-estado @GetBadgeClass(turnoSeleccionado.Estado)">
                             @GetEstadoTextoConIcono(turnoSeleccionado.Estado)
                         </span>
                     </div>
+
+                    <!-- Observaciones solo visibles en este panel de detalles -->
+                    <div class="mt-2 pt-2 border-top">
+                        <span class="text-muted small font-semibold d-block mb-1">Observaciones:</span>
+                        @if (!string.IsNullOrWhiteSpace(turnoSeleccionado.Observacion))
+                        {
+                            <div class="p-2 bg-white rounded border small text-dark fst-italic">
+                                @turnoSeleccionado.Observacion
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-muted small fst-italic">
+                                Sin observaciones registradas para este turno.
+                            </div>
+                        }
+                    </div>
                 </div>
 
                 <label class="form-label font-semibold mb-2">Seleccionar Estado:</label>
-                <select class="form-select mb-3" @bind="estadoSeleccionado">
-                    @foreach (var estado in Enum.GetValues<EstadoTurno>())
-                    {
-                        <option value="@estado">@estado</option>
-                    }
-                </select>
-
+                <!-- Select ocultado según requerimiento: solo botones Activo, Completo, Falta y Cancelado visibles -->
                 <div class="d-flex flex-column gap-1">
                     <button type="button" class="btn-state-item btn-state-activo @(estadoSeleccionado == EstadoTurno.Activo ? "state-current" : "")" @onclick="() => estadoSeleccionado = EstadoTurno.Activo">
                         <span class="state-icon-circle bg-activo">✓</span>
@@ -677,18 +688,12 @@
                 <span class="badge bg-light text-dark border font-semibold" style="font-size: 0.72rem;">@turno.Hora.ToString("HH:mm") hs</span>
             </div>
 
-            <!-- Fila Paciente y Observación -->
+            <!-- Fila Paciente (Observaciones ocultas en la vista general, visibles en panel de detalles) -->
             <div class="paciente-semana-nombre font-bold text-truncate" title="@GetNombrePaciente(turno.IdPaciente)">
                 @GetNombrePaciente(turno.IdPaciente)
             </div>
-            @if (!string.IsNullOrWhiteSpace(turno.Observacion))
-            {
-                <div class="text-muted text-truncate italic micro-text" title="@turno.Observacion">
-                    @turno.Observacion
-                </div>
-            }
 
-            <!-- Fila de Acciones: Videollamada, Comprobante PDF, Estado -->
+            <!-- Fila de Acciones: Videollamada, Comprobante PDF, Detalles / Estado -->
             <div class="mt-2 d-flex flex-column gap-1">
                 @if (turno.Modalidad == ModalidadTurno.Online && !string.IsNullOrWhiteSpace(turno.EnlaceReunion) && turno.Estado == EstadoTurno.Activo)
                 {
@@ -704,8 +709,8 @@
                             📄 PDF
                         </a>
                     }
-                    <button type="button" class="btn btn-xs btn-outline-secondary py-1 px-2 @(turno.Estado == EstadoTurno.Completo ? "" : "w-100") text-center" style="font-size: 0.72rem;" @onclick="() => AbrirModalEstado(turno)" title="Cambiar estado del turno">
-                        Estado &blacktriangledown;
+                    <button type="button" class="btn btn-xs btn-outline-secondary py-1 px-2 @(turno.Estado == EstadoTurno.Completo ? "" : "w-100") text-center" style="font-size: 0.72rem;" @onclick="() => AbrirModalEstado(turno)" title="Ver detalles y gestionar estado del turno">
+                        Detalles &blacktriangledown;
                     </button>
                 </div>
             </div>

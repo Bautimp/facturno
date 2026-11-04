@@ -1,6 +1,8 @@
 @page "/gestion-personal"
 @attribute [Authorize(Roles = "Operador,Administrativo")]
 
+<SystemPopupMessage Message="@MensajeAlerta" OnClose="() => MensajeAlerta = null" />
+
 <div class="facturno-card" style="position: relative;">
     <LoadingOverlay IsLoading="IsLoading" Text="Cargando información..." />
     
@@ -45,14 +47,6 @@
             </button>
         </li>
     </ul>
-
-    @if (!string.IsNullOrWhiteSpace(MensajeAlerta))
-    {
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
-            @MensajeAlerta
-            <button type="button" class="btn-close" @onclick="() => MensajeAlerta = null"></button>
-        </div>
-    }
 
     @if (TabActiva == "personal")
     {

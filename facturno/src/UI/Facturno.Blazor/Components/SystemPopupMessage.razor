@@ -1,0 +1,85 @@
+@namespace Facturno.Blazor.Components
+
+@if (!string.IsNullOrWhiteSpace(Message))
+{
+    <div class="system-popup-wrapper" role="alert">
+        <div class="system-popup-card @(IsError ? "popup-card-error" : "popup-card-success") shadow-lg">
+            <div class="popup-card-icon">
+                @(IsError ? "⚠️" : "✓")
+            </div>
+            <div class="popup-card-body">
+                <div class="popup-card-title">
+                    @(IsError ? "Aviso del Sistema" : "Operación Exitosa")
+                </div>
+                <div class="popup-card-text">
+                    @Message
+                </div>
+            </div>
+            <button type="button" class="btn-close popup-card-close" @onclick="Cerrar" title="Cerrar aviso"></button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public int AutoDismissSeconds { get; set; } = 6;
+
+    private string? _lastMessage;
+    private CancellationTokenSource? _cts;
+
+    protected bool IsError => !string.IsNullOrWhiteSpace(Message) && 
+        (Message.Contains("error", StringComparison.OrdinalIgnoreCase) ||
+         Message.Contains("no se pudo", StringComparison.OrdinalIgnoreCase) ||
+         Message.Contains("debe ", StringComparison.OrdinalIgnoreCase) ||
+         Message.Contains("falló", StringComparison.OrdinalIgnoreCase) ||
+         Message.Contains("inválid", StringComparison.OrdinalIgnoreCase) ||
+         Message.Contains("solapamiento", StringComparison.OrdinalIgnoreCase));
+
+    protected override void OnParametersSet()
+    {
+        if (Message != _lastMessage)
+        {
+            _lastMessage = Message;
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+
+            if (!string.IsNullOrWhiteSpace(Message) && AutoDismissSeconds > 0)
+            {
+                _cts = new CancellationTokenSource();
+                var token = _cts.Token;
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(AutoDismissSeconds * 1000, token);
+                        if (!token.IsCancellationRequested)
+                        {
+                            await InvokeAsync(Cerrar);
+                        }
+                    }
+                    catch (TaskCanceledException) { }
+                });
+            }
+        }
+    }
+
+    private async Task Cerrar()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = null;
+        _lastMessage = null;
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+}
+
