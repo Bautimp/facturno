@@ -1,6 +1,8 @@
 @page "/pacientes"
 @attribute [Authorize(Roles = "Profesional,Administrativo,Operador")]
 
+<SystemPopupMessage Message="@MensajeAlerta" OnClose="() => MensajeAlerta = null" />
+
 <div class="facturno-card" style="position: relative;">
     <LoadingOverlay IsLoading="IsLoading" Text="Cargando listado de pacientes..." />
     <div class="card-header-custom">
@@ -18,8 +20,6 @@
         <input type="text" class="form-control" placeholder="Buscar paciente por nombre, apellido o DNI..."
                @bind="FiltroBusqueda" @bind:event="oninput" />
     </div>
-
-    <SystemPopupMessage Message="@MensajeAlerta" OnClose="() => MensajeAlerta = null" />
 
     <!-- Tabla de Pacientes -->
     <div class="table-responsive">
