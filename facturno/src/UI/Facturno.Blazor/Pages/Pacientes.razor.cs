@@ -20,9 +20,24 @@ public partial class Pacientes : ComponentBase
     protected bool EsEdicion = false;
     protected PacienteCreateDto pacienteDto = new();
 
-    protected IEnumerable<Paciente> PacientesFiltrados => string.IsNullOrWhiteSpace(FiltroBusqueda)
+    // Paginación
+    protected int PaginaActual = 1;
+    protected int ElementosPorPagina = 8;
+
+    protected List<Paciente> PacientesFiltradosLista => string.IsNullOrWhiteSpace(FiltroBusqueda)
         ? ListaPacientes
-        : ListaPacientes.Where(p => FuzzyMatcher.EsCoincidenciaPaciente(p, FiltroBusqueda));
+        : ListaPacientes.Where(p => FuzzyMatcher.EsCoincidenciaPaciente(p, FiltroBusqueda)).ToList();
+
+    protected int TotalPaginas => Math.Max(1, (int)Math.Ceiling((double)PacientesFiltradosLista.Count / ElementosPorPagina));
+
+    protected List<Paciente> PacientesPaginados => PacientesFiltradosLista
+        .Skip((PaginaActual - 1) * ElementosPorPagina)
+        .Take(ElementosPorPagina)
+        .ToList();
+
+    protected bool EsObraSocialParticular =>
+        pacienteDto.IdObraSocial == 1 ||
+        ListaObrasSociales.FirstOrDefault(os => os.IdObraSocial == pacienteDto.IdObraSocial)?.Nombre.Equals("Particular", StringComparison.OrdinalIgnoreCase) == true;
 
     protected bool IsLoading = false;
 
@@ -30,6 +45,20 @@ public partial class Pacientes : ComponentBase
     {
         await CargarObrasSociales();
         await CargarPacientes();
+    }
+
+    protected void OnFiltroBusquedaInput(ChangeEventArgs e)
+    {
+        FiltroBusqueda = e.Value?.ToString() ?? string.Empty;
+        PaginaActual = 1;
+    }
+
+    protected void CambiarPagina(int nuevaPagina)
+    {
+        if (nuevaPagina >= 1 && nuevaPagina <= TotalPaginas)
+        {
+            PaginaActual = nuevaPagina;
+        }
     }
 
     protected async Task CargarPacientes()
@@ -41,6 +70,10 @@ public partial class Pacientes : ComponentBase
             if (res != null && res.Exito && res.Datos != null)
             {
                 ListaPacientes = res.Datos;
+                if (PaginaActual > TotalPaginas)
+                {
+                    PaginaActual = Math.Max(1, TotalPaginas);
+                }
             }
         }
         catch (Exception ex)
@@ -96,6 +129,18 @@ public partial class Pacientes : ComponentBase
         MostrarModal = true;
     }
 
+    protected void OnObraSocialChanged(ChangeEventArgs e)
+    {
+        if (long.TryParse(e.Value?.ToString(), out var id))
+        {
+            pacienteDto.IdObraSocial = id;
+            if (EsObraSocialParticular)
+            {
+                pacienteDto.NumObraSocial = null;
+            }
+        }
+    }
+
     protected void EditarPaciente(Paciente paciente)
     {
         EsEdicion = true;
@@ -119,9 +164,49 @@ public partial class Pacientes : ComponentBase
     {
         try
         {
-            if (pacienteDto.IdObraSocial == 1)
+            // Validaciones con Expresiones Regulares
+            if (string.IsNullOrWhiteSpace(pacienteDto.Nombre) || string.IsNullOrWhiteSpace(pacienteDto.Apellido))
+            {
+                MensajeAlerta = "El nombre y apellido son obligatorios.";
+                return;
+            }
+
+            if (!FormValidators.EsCorreoValido(pacienteDto.Correo))
+            {
+                MensajeAlerta = "El correo electrónico no tiene un formato válido (ej: usuario@correo.com).";
+                return;
+            }
+
+            if (!FormValidators.EsTelefonoValido(pacienteDto.Telefono))
+            {
+                MensajeAlerta = "El teléfono debe contener entre 7 y 15 dígitos numéricos.";
+                return;
+            }
+
+            if (!FormValidators.EsDocumentoValido(pacienteDto.NumDocumento))
+            {
+                MensajeAlerta = "El número de documento debe contener entre 7 y 11 dígitos numéricos sin puntos ni espacios.";
+                return;
+            }
+
+            // Regla: Solo Particular puede tener Número de Obra Social nulo
+            if (EsObraSocialParticular)
             {
                 pacienteDto.NumObraSocial = null;
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(pacienteDto.NumObraSocial))
+                {
+                    MensajeAlerta = "El número de afiliado de obra social es obligatorio cuando la cobertura no es 'Particular'.";
+                    return;
+                }
+
+                if (!FormValidators.EsNumObraSocialValido(pacienteDto.NumObraSocial))
+                {
+                    MensajeAlerta = "El número de obra social solo puede contener caracteres alfanuméricos, guiones y barras (3 a 30 caracteres).";
+                    return;
+                }
             }
 
             HttpResponseMessage res;

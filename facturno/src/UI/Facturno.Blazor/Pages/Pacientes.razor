@@ -18,10 +18,10 @@
     <!-- Buscador -->
     <div class="mb-4">
         <input type="text" class="form-control" placeholder="Buscar paciente por nombre, apellido o DNI..."
-               @bind="FiltroBusqueda" @bind:event="oninput" />
+               value="@FiltroBusqueda" @oninput="OnFiltroBusquedaInput" />
     </div>
 
-    <!-- Tabla de Pacientes -->
+    <!-- Tabla de Pacientes con Grilla Bootstrap y Paginación -->
     <div class="table-responsive">
         <table class="table table-hover align-middle">
             <thead class="table-light">
@@ -36,27 +36,47 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var pac in PacientesFiltrados)
+                @foreach (var pac in PacientesPaginados)
                 {
                     var nombreCompleto = pac.Persona != null ? $"{pac.Persona.Nombre} {pac.Persona.Apellido}" : "Sin nombre";
                     <tr>
                         <td><strong>#@pac.IdPaciente</strong></td>
                         <td>@nombreCompleto</td>
-                        <td>@(pac.TipoDocumento?.ToString() ?? "DNI") @(pac.NumDocumento ?? "-")</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(pac.NumDocumento))
+                            {
+                                <span>@(pac.TipoDocumento?.ToString() ?? "DOC"): @pac.NumDocumento</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">Sin documento</span>
+                            }
+                        </td>
                         <td>
                             <div>@(pac.Persona?.Correo ?? "-")</div>
-                            <div class="text-muted small">Tel: @(pac.Persona?.Telefono?.ToString() ?? "-")</div>
+                            @if (pac.Persona?.Telefono != null)
+                            {
+                                <small class="text-muted">Tel: @pac.Persona.Telefono</small>
+                            }
                         </td>
-                        <td><span class="badge bg-secondary">@(pac.ObraSocial?.Nombre ?? "Particular")</span></td>
-                        <td>@(pac.NumObraSocial ?? "-")</td>
+                        <td>
+                            @{
+                                var osNombre = ListaObrasSociales.FirstOrDefault(os => os.IdObraSocial == pac.IdObraSocial)?.Nombre ?? "Particular";
+                                var esParticular = osNombre.Equals("Particular", StringComparison.OrdinalIgnoreCase);
+                            }
+                            <span class="badge @(esParticular ? "bg-secondary" : "bg-primary")">
+                                @osNombre
+                            </span>
+                        </td>
+                        <td>@(string.IsNullOrWhiteSpace(pac.NumObraSocial) ? "-" : pac.NumObraSocial)</td>
                         <td class="text-end">
                             <button class="btn btn-sm btn-outline-primary" @onclick="() => EditarPaciente(pac)">
-                                Editar
+                                ✏️ Editar
                             </button>
                         </td>
                     </tr>
                 }
-                @if (!PacientesFiltrados.Any())
+                @if (!PacientesPaginados.Any())
                 {
                     <tr>
                         <td colspan="7" class="text-center py-4 text-muted">
@@ -67,6 +87,35 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Paginación con Grillas de Bootstrap -->
+    @if (PacientesFiltradosLista.Any())
+    {
+        <div class="row align-items-center mt-3 g-2">
+            <div class="col-md-6 text-muted small text-center text-md-start">
+                Mostrando @(((PaginaActual - 1) * ElementosPorPagina) + 1) - @Math.Min(PaginaActual * ElementosPorPagina, PacientesFiltradosLista.Count) de @PacientesFiltradosLista.Count pacientes
+            </div>
+            <div class="col-md-6 d-flex justify-content-center justify-content-md-end">
+                <nav aria-label="Paginación de pacientes">
+                    <ul class="pagination pagination-sm m-0">
+                        <li class="page-item @(PaginaActual <= 1 ? "disabled" : "")">
+                            <button type="button" class="page-link" @onclick="() => CambiarPagina(PaginaActual - 1)">« Anterior</button>
+                        </li>
+                        @for (int p = 1; p <= TotalPaginas; p++)
+                        {
+                            var pageNum = p;
+                            <li class="page-item @(pageNum == PaginaActual ? "active" : "")">
+                                <button type="button" class="page-link" @onclick="() => CambiarPagina(pageNum)">@pageNum</button>
+                            </li>
+                        }
+                        <li class="page-item @(PaginaActual >= TotalPaginas ? "disabled" : "")">
+                            <button type="button" class="page-link" @onclick="() => CambiarPagina(PaginaActual + 1)">Siguiente »</button>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    }
 </div>
 
 <!-- Modal Nuevo / Editar Paciente -->
@@ -78,23 +127,23 @@
             <EditForm Model="pacienteDto" OnValidSubmit="GuardarPaciente">
                 <div class="row g-2 mb-3">
                     <div class="col-6">
-                        <label class="form-label font-semibold">Nombre *</label>
-                        <InputText @bind-Value="pacienteDto.Nombre" class="form-control" required />
+                        <label class="form-label font-semibold">Nombre <span class="text-danger">*</span></label>
+                        <InputText @bind-Value="pacienteDto.Nombre" class="form-control" placeholder="ej: Juan" required />
                     </div>
                     <div class="col-6">
-                        <label class="form-label font-semibold">Apellido *</label>
-                        <InputText @bind-Value="pacienteDto.Apellido" class="form-control" required />
+                        <label class="form-label font-semibold">Apellido <span class="text-danger">*</span></label>
+                        <InputText @bind-Value="pacienteDto.Apellido" class="form-control" placeholder="ej: Pérez" required />
                     </div>
                 </div>
 
                 <div class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="form-label font-semibold">Correo Electrónico</label>
-                        <InputText @bind-Value="pacienteDto.Correo" class="form-control" />
+                        <InputText @bind-Value="pacienteDto.Correo" class="form-control" placeholder="ej: paciente@correo.com" />
                     </div>
                     <div class="col-6">
                         <label class="form-label font-semibold">Teléfono</label>
-                        <input type="number" class="form-control" @bind="pacienteDto.Telefono" />
+                        <input type="number" class="form-control" @bind="pacienteDto.Telefono" placeholder="ej: 1123456789" />
                     </div>
                 </div>
 
@@ -110,14 +159,14 @@
                     </div>
                     <div class="col-6">
                         <label class="form-label font-semibold">Nº Documento</label>
-                        <InputText @bind-Value="pacienteDto.NumDocumento" class="form-control" />
+                        <InputText @bind-Value="pacienteDto.NumDocumento" class="form-control" placeholder="ej: 38123456 (7-11 dígitos)" />
                     </div>
                 </div>
 
                 <div class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="form-label font-semibold">Obra Social</label>
-                        <select class="form-select" @bind="pacienteDto.IdObraSocial">
+                        <select class="form-select" value="@pacienteDto.IdObraSocial" @onchange="OnObraSocialChanged">
                             @foreach (var os in ListaObrasSociales)
                             {
                                 <option value="@os.IdObraSocial">@os.Nombre</option>
@@ -125,8 +174,17 @@
                         </select>
                     </div>
                     <div class="col-6">
-                        <label class="form-label font-semibold">Nº Obra Social</label>
-                        <InputText @bind-Value="pacienteDto.NumObraSocial" class="form-control" />
+                        <label class="form-label font-semibold">
+                            Nº Obra Social @(!EsObraSocialParticular ? "*" : "")
+                        </label>
+                        <InputText @bind-Value="pacienteDto.NumObraSocial" 
+                                   class="form-control" 
+                                   disabled="@EsObraSocialParticular" 
+                                   placeholder="@(EsObraSocialParticular ? "(No aplica a Particular)" : "Nº carnet / afiliado *")" />
+                        @if (!EsObraSocialParticular)
+                        {
+                            <span class="text-muted" style="font-size: 0.72rem;">Requerido para obra social</span>
+                        }
                     </div>
                 </div>
 
