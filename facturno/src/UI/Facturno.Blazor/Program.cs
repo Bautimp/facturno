@@ -18,7 +18,10 @@ builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthStateProvider>());
 
 // Configurar HttpClient apuntando a Facturno.API con el interceptor AuthorizationHandler
-var apiBaseAddress = builder.Configuration["ApiBaseAddress"] ?? "http://localhost:5082";
+var configuredUrl = builder.Configuration["ApiBaseAddress"];
+var apiBaseAddress = !string.IsNullOrWhiteSpace(configuredUrl)
+    ? configuredUrl
+    : builder.HostEnvironment.BaseAddress;
 
 builder.Services.AddScoped(sp =>
 {

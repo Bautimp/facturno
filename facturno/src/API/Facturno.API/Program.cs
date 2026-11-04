@@ -114,9 +114,42 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowBlazorOrigin");
+
+// Configurar tipos MIME completos y soporte para binarios de Blazor WebAssembly (.NET 10)
+var contentTypeProvider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+contentTypeProvider.Mappings[".wasm"] = "application/wasm";
+contentTypeProvider.Mappings[".webcil"] = "application/octet-stream";
+contentTypeProvider.Mappings[".dll"] = "application/octet-stream";
+contentTypeProvider.Mappings[".dat"] = "application/octet-stream";
+contentTypeProvider.Mappings[".blat"] = "application/octet-stream";
+contentTypeProvider.Mappings[".json"] = "application/json";
+contentTypeProvider.Mappings[".js"] = "application/javascript";
+contentTypeProvider.Mappings[".css"] = "text/css";
+contentTypeProvider.Mappings[".br"] = "application/x-brotli";
+contentTypeProvider.Mappings[".gz"] = "application/gzip";
+
+app.UseDefaultFiles();
+var staticFileOptions = new StaticFileOptions
+{
+    ContentTypeProvider = contentTypeProvider,
+    ServeUnknownFileTypes = true,
+    DefaultContentType = "application/octet-stream",
+    // index.html nunca debe cachearse: referencia archivos con huella (fingerprint)
+    // que cambian en cada publicación de Blazor (.NET 10).
+    OnPrepareResponse = ctx =>
+    {
+        if (ctx.File.Name.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Context.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";
+        }
+    }
+};
+app.UseStaticFiles(staticFileOptions);
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapFallbackToFile("index.html", staticFileOptions);
 
 app.Run();
