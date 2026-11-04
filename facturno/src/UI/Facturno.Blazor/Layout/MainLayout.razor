@@ -1,41 +1,41 @@
 @inherits LayoutComponentBase
 
-<div class="app-container">
+<div class="app-layout-top">
     <AuthorizeView>
         <Authorized>
-            <div class="sidebar">
-                <div class="sidebar-brand">
-                    <span class="brand-title">Facturno</span>
+            <header class="top-navbar-header shadow-sm">
+                <div class="navbar-left-section">
+                    <div class="top-brand">
+                        <span class="brand-badge-icon">🩺</span>
+                        <span class="brand-title-top">Facturno</span>
+                        <span class="brand-divider"></span>
+                        <span class="brand-clinic-name">Centro Médico Buen Pastor</span>
+                    </div>
+
+                    <nav class="top-navigation-menu">
+                        <NavMenu />
+                    </nav>
                 </div>
-                <NavMenu />
-            </div>
 
-            <div class="main-content">
-                <header class="header-nav">
-                    <div>
-                        <h5 class="m-0 font-bold header-title">Centro Médico Buen Pastor</h5>
-                    </div>
-
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="user-info-inline d-flex align-items-center gap-2">
-                            <div class="user-avatar-circle">
-                                @GetUserInitials(context.User)
-                            </div>
-                            <div class="d-flex flex-column align-items-start leading-tight">
-                                <span class="user-name font-semibold">@context.User.Identity?.Name</span>
-                                <span class="badge role-badge">@GetUserRole(context.User)</span>
-                            </div>
+                <div class="navbar-right-section">
+                    <div class="user-info-pill">
+                        <div class="user-avatar-circle">
+                            @GetUserInitials(context.User)
                         </div>
-                        <button class="btn btn-outline-danger btn-sm rounded-pill px-3" @onclick="Logout">
-                            Cerrar Sesión
-                        </button>
+                        <div class="user-meta d-none d-md-flex">
+                            <span class="user-name">@context.User.Identity?.Name</span>
+                            <span class="badge role-badge">@GetUserRole(context.User)</span>
+                        </div>
                     </div>
-                </header>
+                    <button class="btn btn-outline-danger btn-sm rounded-pill px-3 btn-logout" @onclick="Logout" title="Cerrar sesión actual">
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </header>
 
-                <main class="page-content">
-                    @Body
-                </main>
-            </div>
+            <main class="top-main-content">
+                @Body
+            </main>
         </Authorized>
 
         <NotAuthorized>

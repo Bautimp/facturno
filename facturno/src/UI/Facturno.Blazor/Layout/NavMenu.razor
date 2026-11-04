@@ -1,19 +1,22 @@
-<ul class="nav-list">
-    <li>
-        <NavLink class="nav-link-custom" href="agenda" Match="NavLinkMatch.Prefix">
+<ul class="top-nav-list">
+    <li class="nav-item">
+        <NavLink class="top-nav-link" href="agenda" Match="NavLinkMatch.Prefix">
+            <span class="nav-icon">📅</span>
             <span>Agenda y Turnos</span>
         </NavLink>
     </li>
-    <li>
-        <NavLink class="nav-link-custom" href="pacientes" Match="NavLinkMatch.Prefix">
+    <li class="nav-item">
+        <NavLink class="top-nav-link" href="pacientes" Match="NavLinkMatch.Prefix">
+            <span class="nav-icon">👥</span>
             <span>Pacientes</span>
         </NavLink>
     </li>
     
     <AuthorizeView Roles="Operador,Administrativo">
         <Authorized>
-            <li>
-                <NavLink class="nav-link-custom" href="gestion-personal" Match="NavLinkMatch.Prefix">
+            <li class="nav-item">
+                <NavLink class="top-nav-link" href="gestion-personal" Match="NavLinkMatch.Prefix">
+                    <span class="nav-icon">⚙️</span>
                     <span>Gestión de Personal</span>
                 </NavLink>
             </li>

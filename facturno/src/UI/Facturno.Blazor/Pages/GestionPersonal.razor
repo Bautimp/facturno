@@ -46,13 +46,7 @@
         </li>
     </ul>
 
-    @if (!string.IsNullOrWhiteSpace(MensajeAlerta))
-    {
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
-            @MensajeAlerta
-            <button type="button" class="btn-close" @onclick="() => MensajeAlerta = null"></button>
-        </div>
-    }
+    <SystemPopupMessage Message="@MensajeAlerta" OnClose="() => MensajeAlerta = null" />
 
     @if (TabActiva == "personal")
     {
