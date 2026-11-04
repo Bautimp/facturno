@@ -485,6 +485,8 @@ $RECYCLE.BIN/
 appsettings.json
 appsettings.Development.json
 appsettings.*.json
+!**/wwwroot/appsettings.json
+!**/wwwroot/appsettings.*.json
 
 # PocketBase local database & backups
 **/pb_data/

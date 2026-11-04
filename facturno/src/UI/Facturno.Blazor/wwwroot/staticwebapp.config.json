@@ -1,0 +1,28 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/css/*",
+      "/images/*",
+      "/_framework/*",
+      "/*.{png,jpg,jpeg,gif,svg,ico,json,wasm,dll,blat,dat}"
+    ]
+  },
+  "mimeTypes": {
+    ".wasm": "application/wasm",
+    ".dll": "application/octet-stream",
+    ".json": "application/json",
+    ".blat": "application/octet-stream",
+    ".dat": "application/octet-stream"
+  },
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/index.html",
+      "statusCode": 200
+    }
+  },
+  "globalHeaders": {
+    "Cache-Control": "public, max-age=3600"
+  }
+}
+
