@@ -344,16 +344,27 @@ public partial class Agenda : ComponentBase
             PopoverTurnoId = null;
             GenerarDiasSemana();
             var diasLocales = DiasSemana.ToList();
+            if (!diasLocales.Any()) return;
+
+            var inicio = diasLocales.First().ToString("yyyy-MM-dd");
+            var fin = diasLocales.Last().ToString("yyyy-MM-dd");
+
+            // Una única petición HTTP optimizada para toda la semana
+            var url = $"api/turnos/profesional/{SelectedProfesionalId}?fechaInicio={inicio}&fechaFin={fin}";
+            var res = await Http.GetFromJsonAsync<ApiResponse<List<Turno>>>(url);
+
             var tempDict = new Dictionary<DateOnly, List<Turno>>();
+            var turnosSemana = (res != null && res.Exito && res.Datos != null)
+                ? res.Datos
+                : new List<Turno>();
+
+            var turnosAgrupados = turnosSemana
+                .GroupBy(t => t.Fecha)
+                .ToDictionary(g => g.Key, g => g.OrderBy(t => t.Hora).ToList());
 
             foreach (var dia in diasLocales)
             {
-                var fechaStr = dia.ToString("yyyy-MM-dd");
-                var url = $"api/turnos/profesional/{SelectedProfesionalId}?fecha={fechaStr}";
-                var res = await Http.GetFromJsonAsync<ApiResponse<List<Turno>>>(url);
-                tempDict[dia] = (res != null && res.Exito && res.Datos != null)
-                    ? res.Datos.OrderBy(t => t.Hora).ToList()
-                    : new List<Turno>();
+                tempDict[dia] = turnosAgrupados.TryGetValue(dia, out var lista) ? lista : new List<Turno>();
             }
 
             TurnosPorFecha = tempDict;

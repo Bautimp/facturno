@@ -8,6 +8,7 @@ public interface ITurnoRepository
 {
     Task<Turno?> ObtenerPorId(long idTurno);
     Task<List<Turno>> ObtenerPorProfesionalYFecha(Guid idProfesional, DateOnly fecha);
+    Task<List<Turno>> ObtenerPorProfesionalYRango(Guid idProfesional, DateOnly fechaInicio, DateOnly fechaFin);
     Task<List<Turno>> ObtenerPorPaciente(long idPaciente);
     Task<Turno> Crear(Turno turno);
     Task<Turno> Actualizar(Turno turno);

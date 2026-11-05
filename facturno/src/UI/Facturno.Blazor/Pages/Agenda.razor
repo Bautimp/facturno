@@ -9,17 +9,17 @@
     {
         <div class="popover-backdrop" @onclick="CerrarPopover"></div>
     }
-    <div class="card-header-custom align-items-center">
-        <div>
+    <div class="card-header-custom">
+        <div class="agenda-title-block">
             <h3 class="m-0 font-bold">Agenda y Turnos Médicos</h3>
             <p class="text-muted m-0 small">Gestión clínica y control asistencial de citas</p>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-primary-custom btn-sm" @onclick="AbrirModalNuevoTurno">
+        <div class="agenda-header-actions">
+            <button class="btn btn-primary-custom btn-sm agenda-action-btn" @onclick="AbrirModalNuevoTurno">
                 + Nuevo Turno
             </button>
 
-            <button class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1" @onclick="AbrirModalTurnoRecurrente">
+            <button class="btn btn-outline-primary btn-sm agenda-action-btn d-inline-flex align-items-center justify-content-center gap-1" @onclick="AbrirModalTurnoRecurrente">
                 <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
                 <span>Turno Recurrente</span>
             </button>
@@ -27,10 +27,10 @@
     </div>
 
     <!-- Barra Unificada y Organizada de Navegación y Filtros -->
-    <div class="semana-nav-bar d-flex justify-content-between align-items-center mb-3 p-2 px-3 bg-white rounded border shadow-sm flex-wrap gap-2">
-        <!-- Navegación por Semanas y Rango -->
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            <div class="btn-group btn-group-sm" role="group">
+    <div class="semana-nav-bar mb-3 p-3 bg-white rounded border shadow-sm">
+        <!-- Fila Superior: Navegación por Semanas y Rango -->
+        <div class="semana-nav-row d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2 pb-2 border-bottom">
+            <div class="btn-group btn-group-sm semana-nav-btn-group" role="group">
                 <button type="button" class="btn btn-outline-primary font-semibold" @onclick="SemanaAnterior" title="Semana anterior">
                     <span class="nav-arrow">&larr;</span> Anterior
                 </button>
@@ -42,21 +42,21 @@
                 </button>
             </div>
 
-            <div class="d-flex align-items-center gap-1 ms-1">
+            <div class="semana-rango-badge d-inline-flex align-items-center gap-2">
                 <i class="bi bi-calendar3 text-primary" aria-hidden="true" style="font-size: 1.1rem;"></i>
-                <span class="font-bold text-primary semana-rango-titulo" style="font-size: 0.98rem;">
+                <span class="font-bold text-primary semana-rango-titulo">
                     @GetTextoRangoSemana()
                 </span>
             </div>
         </div>
 
-        <!-- Filtros Integrados y Contador -->
-        <div class="d-flex align-items-center gap-2 flex-wrap ms-auto">
+        <!-- Fila de Filtros y Contador (En móvil: Grid 2 columnas limpio y proporcionado) -->
+        <div class="semana-filters-container">
             @if (!EsProfesionalLogueado)
             {
-                <div class="d-flex align-items-center gap-1">
-                    <label class="form-label font-semibold small m-0 text-muted">Médico:</label>
-                    <select class="form-select form-select-sm" style="min-width: 190px; max-width: 250px;" @onchange="OnProfesionalChanged">
+                <div class="filter-group filter-group-profesional">
+                    <label class="form-label font-semibold small text-muted mb-1">Médico:</label>
+                    <select class="form-select form-select-sm" @onchange="OnProfesionalChanged">
                         @foreach (var prof in ListaProfesionales)
                         {
                             var nombre = prof.Usuario?.Persona != null ? $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido} ({prof.Especialidad})" : "Profesional";
@@ -67,16 +67,18 @@
             }
             else
             {
-                <span class="badge bg-light text-dark border font-semibold py-2 px-2 d-inline-flex align-items-center gap-1">
-                    <i class="bi bi-person-badge text-primary" aria-hidden="true"></i>
-                    <span>@GetNombreProfesionalSeleccionado()</span>
-                </span>
+                <div class="filter-group filter-group-profesional">
+                    <label class="form-label font-semibold small text-muted mb-1">Médico:</label>
+                    <span class="badge bg-light text-dark border font-semibold py-2 px-2 d-inline-flex align-items-center gap-1 w-100">
+                        <i class="bi bi-person-badge text-primary" aria-hidden="true"></i>
+                        <span>@GetNombreProfesionalSeleccionado()</span>
+                    </span>
+                </div>
             }
 
-            <!-- Filtro en memoria por Estado de Turno (Requerimiento 6) -->
-            <div class="d-flex align-items-center gap-1">
-                <label class="form-label font-semibold small m-0 text-muted">Estado:</label>
-                <select class="form-select form-select-sm" style="width: 125px;" value="@(FiltroEstado?.ToString() ?? "")" @onchange="OnFiltroEstadoChanged">
+            <div class="filter-group filter-group-estado">
+                <label class="form-label font-semibold small text-muted mb-1">Estado:</label>
+                <select class="form-select form-select-sm" value="@(FiltroEstado?.ToString() ?? "")" @onchange="OnFiltroEstadoChanged">
                     <option value="">Todos</option>
                     <option value="@EstadoTurno.Activo">Activo</option>
                     <option value="@EstadoTurno.Completo">Completo</option>
@@ -85,14 +87,17 @@
                 </select>
             </div>
 
-            <div class="d-flex align-items-center gap-1">
-                <label class="form-label font-semibold small m-0 text-muted">Fecha:</label>
-                <input type="date" class="form-control form-control-sm" style="width: 140px;" value="@SelectedFecha.ToString("yyyy-MM-dd")" @onchange="OnFechaChanged" title="Seleccionar fecha" />
+            <div class="filter-group filter-group-fecha">
+                <label class="form-label font-semibold small text-muted mb-1">Fecha:</label>
+                <input type="date" class="form-control form-control-sm" value="@SelectedFecha.ToString("yyyy-MM-dd")" @onchange="OnFechaChanged" title="Seleccionar fecha" />
             </div>
 
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 font-semibold" style="font-size: 0.8rem;" title="Total de citas en la semana">
-                @GetTotalTurnosSemana() citas
-            </span>
+            <div class="filter-group filter-group-contador">
+                <label class="form-label font-semibold small text-muted mb-1 d-none d-md-block">&nbsp;</label>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 font-semibold w-100 text-center d-flex align-items-center justify-content-center" title="Total de citas en la semana">
+                    @GetTotalTurnosSemana() citas agendadas
+                </span>
+            </div>
         </div>
     </div>
 

@@ -166,4 +166,10 @@ public class TurnoService : ITurnoService
         var turnos = await _turnoRepository.ObtenerPorProfesionalYFecha(idProfesional, fecha);
         return ApiResponse<List<Turno>>.Ok(turnos);
     }
+
+    public async Task<ApiResponse<List<Turno>>> ListarPorProfesionalYRango(Guid idProfesional, DateOnly fechaInicio, DateOnly fechaFin)
+    {
+        var turnos = await _turnoRepository.ObtenerPorProfesionalYRango(idProfesional, fechaInicio, fechaFin);
+        return ApiResponse<List<Turno>>.Ok(turnos);
+    }
 }

@@ -19,17 +19,39 @@ public class TurnosController : ControllerBase
     }
 
     [HttpGet("profesional/{idProfesional:guid}")]
-    public async Task<ActionResult<ApiResponse<List<Turno>>>> ObtenerPorProfesionalYFecha(Guid idProfesional, [FromQuery] string fecha)
+    public async Task<ActionResult<ApiResponse<List<Turno>>>> ObtenerPorProfesionalYFecha(
+        Guid idProfesional, 
+        [FromQuery] string? fecha = null,
+        [FromQuery] string? fechaInicio = null,
+        [FromQuery] string? fechaFin = null)
     {
         try
         {
-            if (!DateOnly.TryParse(fecha, out var dateOnly))
+            // Consulta de rango optimizada (1 sola petición para toda la semana/mes)
+            if (!string.IsNullOrWhiteSpace(fechaInicio) && !string.IsNullOrWhiteSpace(fechaFin))
             {
-                return BadRequest(ApiResponse<List<Turno>>.Error("Formato de fecha inválido. Usar YYYY-MM-DD."));
+                if (!DateOnly.TryParse(fechaInicio, out var inicio) || !DateOnly.TryParse(fechaFin, out var fin))
+                {
+                    return BadRequest(ApiResponse<List<Turno>>.Error("Formato de fecha inválido en el rango. Usar YYYY-MM-DD."));
+                }
+
+                var respuestaRango = await _turnoService.ListarPorProfesionalYRango(idProfesional, inicio, fin);
+                return Ok(respuestaRango);
             }
 
-            var respuesta = await _turnoService.ListarPorProfesionalYFecha(idProfesional, dateOnly);
-            return Ok(respuesta);
+            // Consulta por fecha individual
+            if (!string.IsNullOrWhiteSpace(fecha))
+            {
+                if (!DateOnly.TryParse(fecha, out var dateOnly))
+                {
+                    return BadRequest(ApiResponse<List<Turno>>.Error("Formato de fecha inválido. Usar YYYY-MM-DD."));
+                }
+
+                var respuesta = await _turnoService.ListarPorProfesionalYFecha(idProfesional, dateOnly);
+                return Ok(respuesta);
+            }
+
+            return BadRequest(ApiResponse<List<Turno>>.Error("Debe especificar una 'fecha' o un rango con 'fechaInicio' y 'fechaFin'."));
         }
         catch (Exception ex)
         {
