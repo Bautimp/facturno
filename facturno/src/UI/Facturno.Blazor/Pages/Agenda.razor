@@ -677,12 +677,23 @@
                         </div>
                         @if (editandoFechaHora)
                         {
-                            <div class="row g-2 mt-1">
+                            <div class="row g-2 mt-2">
                                 <div class="col-6">
-                                    <input type="date" class="form-control form-control-sm" @bind="editFecha" @bind:format="yyyy-MM-dd" />
+                                    <label class="form-label font-semibold small mb-1">Fecha</label>
+                                    <input type="date" 
+                                           class="form-control form-control-sm" 
+                                           min="@FechaMinimaPermitidaIso"
+                                           @bind="editFecha" 
+                                           @bind:format="yyyy-MM-dd" />
                                 </div>
                                 <div class="col-6">
-                                    <input type="time" class="form-control form-control-sm" step="60" list="lista-horas-24" @bind="editHora" @bind:format="HH:mm" />
+                                    <label class="form-label font-semibold small mb-1">Hora</label>
+                                    <input type="text" 
+                                           class="form-control form-control-sm" 
+                                           list="lista-horas-24"
+                                           placeholder="16:00"
+                                           maxlength="5"
+                                           @bind="HoraEditTexto" />
                                 </div>
                             </div>
                         }

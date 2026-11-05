@@ -451,6 +451,22 @@ public partial class Agenda : ComponentBase
     protected string? editEnlaceReunion;
     protected string? editObservacion;
 
+    protected string HoraEditTexto
+    {
+        get => editHora.ToString("HH:mm");
+        set
+        {
+            if (TimeOnly.TryParse(value, out var t))
+            {
+                editHora = t;
+            }
+            else if (!string.IsNullOrWhiteSpace(value) && value.Length == 4 && int.TryParse(value, out _) && TimeOnly.TryParse($"{value[..2]}:{value[2..]}", out var t2))
+            {
+                editHora = t2;
+            }
+        }
+    }
+
     protected void ToggleEditarFechaHora() => editandoFechaHora = !editandoFechaHora;
     protected void ToggleEditarModalidad() => editandoModalidad = !editandoModalidad;
     protected void ToggleEditarObservacion() => editandoObservacion = !editandoObservacion;
@@ -487,6 +503,21 @@ public partial class Agenda : ComponentBase
 
         try
         {
+            var horaMinima = new TimeOnly(6, 0);
+            var horaMaxima = new TimeOnly(23, 0);
+            if (editHora < horaMinima || editHora > horaMaxima)
+            {
+                MensajeAlerta = "El horario del turno debe estar comprendido entre las 06:00 y las 23:00 hs.";
+                return;
+            }
+
+            var fechaMinima = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+            if (editFecha < fechaMinima)
+            {
+                MensajeAlerta = "No se pueden agendar turnos con más de 30 días de antigüedad respecto al día de hoy.";
+                return;
+            }
+
             var updateDto = new TurnoUpdateDto
             {
                 IdTurno = turnoSeleccionado.IdTurno,
