@@ -19,6 +19,7 @@ public partial class GestionPersonal : ComponentBase
     protected bool EsOperador = false;
     protected bool EsProfesional = false;
     protected Guid IdProfesionalActual = Guid.Empty;
+    protected ConfiguracionSistema ConfigSistema = new();
 
     protected string TabActiva = "personal";
 
@@ -117,10 +118,27 @@ public partial class GestionPersonal : ComponentBase
             // Silencioso
         }
 
+        await CargarConfiguracion();
         await CargarProfesionales();
         await CargarAdministrativos();
         await CargarObrasSociales();
         await CargarVinculosAgendas();
+    }
+
+    private async Task CargarConfiguracion()
+    {
+        try
+        {
+            var res = await Http.GetFromJsonAsync<ApiResponse<ConfiguracionSistema>>("api/configuracion");
+            if (res != null && res.Exito && res.Datos != null)
+            {
+                ConfigSistema = res.Datos;
+            }
+        }
+        catch
+        {
+            // Silencioso
+        }
     }
 
     protected async Task CargarProfesionales()
@@ -211,6 +229,12 @@ public partial class GestionPersonal : ComponentBase
                 return;
             }
 
+            if (profesionalDto.PrecioConsulta.HasValue && profesionalDto.PrecioConsulta.Value > ConfigSistema.PrecioMaximoConsulta)
+            {
+                MensajeAlerta = $"El precio de consulta ($ {profesionalDto.PrecioConsulta.Value:N2}) supera el máximo permitido en el consultorio ($ {ConfigSistema.PrecioMaximoConsulta:N2}).";
+                return;
+            }
+
             var res = await Http.PostAsJsonAsync("api/profesionales", profesionalDto);
             var (exito, mensaje, datos) = await ApiResponseParser.ProcesarRespuestaAsync<Profesional>(res, "No se pudo crear el profesional.");
 
@@ -281,6 +305,12 @@ public partial class GestionPersonal : ComponentBase
             if (!FormValidators.EsMatriculaValida(profesionalEditarDto.Matricula))
             {
                 MensajeAlerta = "La matrícula profesional solo puede contener letras, números y guiones.";
+                return;
+            }
+
+            if (profesionalEditarDto.PrecioConsulta.HasValue && profesionalEditarDto.PrecioConsulta.Value > ConfigSistema.PrecioMaximoConsulta)
+            {
+                MensajeAlerta = $"El precio de consulta ($ {profesionalEditarDto.PrecioConsulta.Value:N2}) supera el máximo permitido en el consultorio ($ {ConfigSistema.PrecioMaximoConsulta:N2}).";
                 return;
             }
 

@@ -148,21 +148,21 @@ migrate((db) => {
 
   // --- Personas ---
   const personasData = [
-    { id: 1, nombre: "Admin", apellido: "Operador", correo: "admin@facturno.com", tel: 1122334455, activo: true },
-    { id: 2, nombre: "Laura", apellido: "Gómez", correo: "laura.gomez@facturno.com", tel: 1144556677, activo: true },
-    { id: 3, nombre: "Carlos", apellido: "Rossi", correo: "carlos.rossi@facturno.com", tel: 1155667788, activo: true },
-    { id: 4, nombre: "Marcos", apellido: "Benítez", correo: "marcos.admin@facturno.com", tel: 1166778899, activo: true },
-    { id: 5, nombre: "Juan", apellido: "Pérez", correo: "juan.perez@gmail.com", tel: 1133445566, activo: true },
-    { id: 6, nombre: "María", apellido: "Fernández", correo: "maria.f@hotmail.com", tel: 1177889900, activo: false },
-    { id: 7, nombre: "Lucas", apellido: "Gómez", correo: "lucas.gomez@yahoo.com", tel: 1188990011, activo: true },
-    { id: 8, nombre: "Sofía", apellido: "Martínez", correo: "sofia.martinez@gmail.com", tel: 1199887766, activo: true },
-    { id: 9, nombre: "Martín", apellido: "Rodríguez", correo: "martin.rodriguez@outlook.com", tel: 1123456789, activo: false },
-    { id: 10, nombre: "Camila", apellido: "López", correo: "camila.lopez@gmail.com", tel: 1134567890, activo: false },
-    { id: 11, nombre: "Diego", apellido: "Morales", correo: "diego.morales@yahoo.com", tel: 1145678901, activo: true },
-    { id: 12, nombre: "Valentina", apellido: "Herrera", correo: "valen.herrera@hotmail.com", tel: 1156789012, activo: true },
-    { id: 13, nombre: "Agustín", apellido: "Castro", correo: "agustin.castro@gmail.com", tel: 1167890123, activo: true },
-    { id: 14, nombre: "Lucía", apellido: "Romero", correo: "lucia.romero@gmail.com", tel: 1178901234, activo: true },
-    { id: 15, nombre: "Esteban", apellido: "Díaz", correo: "esteban.diaz@outlook.com", tel: 1189012345, activo: true }
+    { id: 1, nombre: "Admin", apellido: "Operador", correo: "admin@facturno.com", tel: 1122334455 },
+    { id: 2, nombre: "Laura", apellido: "Gómez", correo: "laura.gomez@facturno.com", tel: 1144556677 },
+    { id: 3, nombre: "Carlos", apellido: "Rossi", correo: "carlos.rossi@facturno.com", tel: 1155667788 },
+    { id: 4, nombre: "Marcos", apellido: "Benítez", correo: "marcos.admin@facturno.com", tel: 1166778899 },
+    { id: 5, nombre: "Juan", apellido: "Pérez", correo: "juan.perez@gmail.com", tel: 1133445566 },
+    { id: 6, nombre: "María", apellido: "Fernández", correo: "maria.f@hotmail.com", tel: 1177889900 },
+    { id: 7, nombre: "Lucas", apellido: "Gómez", correo: "lucas.gomez@yahoo.com", tel: 1188990011 },
+    { id: 8, nombre: "Sofía", apellido: "Martínez", correo: "sofia.martinez@gmail.com", tel: 1199887766 },
+    { id: 9, nombre: "Martín", apellido: "Rodríguez", correo: "martin.rodriguez@outlook.com", tel: 1123456789 },
+    { id: 10, nombre: "Camila", apellido: "López", correo: "camila.lopez@gmail.com", tel: 1134567890 },
+    { id: 11, nombre: "Diego", apellido: "Morales", correo: "diego.morales@yahoo.com", tel: 1145678901 },
+    { id: 12, nombre: "Valentina", apellido: "Herrera", correo: "valen.herrera@hotmail.com", tel: 1156789012 },
+    { id: 13, nombre: "Agustín", apellido: "Castro", correo: "agustin.castro@gmail.com", tel: 1167890123 },
+    { id: 14, nombre: "Lucía", apellido: "Romero", correo: "lucia.romero@gmail.com", tel: 1178901234 },
+    { id: 15, nombre: "Esteban", apellido: "Díaz", correo: "esteban.diaz@outlook.com", tel: 1189012345 }
   ];
 
   for (const p of personasData) {
@@ -224,17 +224,17 @@ migrate((db) => {
 
   // --- Pacientes ---
   const pacData = [
-    { id: 5, dni: "35123456", td: "DNI", os: 2, numOs: "OS-994821", iva: "Exento" },
-    { id: 6, dni: "28987654", td: "DNI", os: 3, numOs: "SM-441029", iva: "Exento" },
-    { id: 7, dni: "42111222", td: "DNI", os: 1, numOs: "", iva: "ConsumidorFinal" },
-    { id: 8, dni: "38999111", td: "DNI", os: 2, numOs: "OS-112233", iva: "Exento" },
-    { id: 9, dni: "31444555", td: "DNI", os: 4, numOs: "GAL-554433", iva: "Exento" },
-    { id: 10, dni: "44222333", td: "DNI", os: 3, numOs: "SM-778899", iva: "Exento" },
-    { id: 11, dni: "26555666", td: "DNI", os: 5, numOs: "PAM-998877", iva: "Exento" },
-    { id: 12, dni: "39111444", td: "DNI", os: 2, numOs: "OS-665544", iva: "Exento" },
-    { id: 13, dni: "41777888", td: "DNI", os: 1, numOs: "", iva: "ConsumidorFinal" },
-    { id: 14, dni: "33888999", td: "DNI", os: 4, numOs: "GAL-221100", iva: "Exento" },
-    { id: 15, dni: "29333222", td: "DNI", os: 5, numOs: "PAM-443322", iva: "Exento" }
+    { id: 5, dni: "35123456", td: "DNI", os: 2, numOs: "OS-994821", iva: "Exento", activo: true },
+    { id: 6, dni: "28987654", td: "DNI", os: 3, numOs: "SM-441029", iva: "Exento", activo: true },
+    { id: 7, dni: "42111222", td: "DNI", os: 1, numOs: "", iva: "ConsumidorFinal", activo: true },
+    { id: 8, dni: "38999111", td: "DNI", os: 2, numOs: "OS-112233", iva: "Exento", activo: true },
+    { id: 9, dni: "31444555", td: "DNI", os: 4, numOs: "GAL-554433", iva: "Exento", activo: true },
+    { id: 10, dni: "44222333", td: "DNI", os: 3, numOs: "SM-778899", iva: "Exento", activo: true },
+    { id: 11, dni: "26555666", td: "DNI", os: 5, numOs: "PAM-998877", iva: "Exento", activo: true },
+    { id: 12, dni: "39111444", td: "DNI", os: 2, numOs: "OS-665544", iva: "Exento", activo: true },
+    { id: 13, dni: "41777888", td: "DNI", os: 1, numOs: "", iva: "ConsumidorFinal", activo: true },
+    { id: 14, dni: "33888999", td: "DNI", os: 4, numOs: "GAL-221100", iva: "Exento", activo: true },
+    { id: 15, dni: "29333222", td: "DNI", os: 5, numOs: "PAM-443322", iva: "Exento", activo: true }
   ];
 
   for (const pac of pacData) {
@@ -293,7 +293,7 @@ migrate((db) => {
     { id: 3, pac: 8, prof: idLaura, fecha: fLunes, hora: "12:00:00", estado: "Activo", obs: "Seguimiento quincenal", online: false, mod: "Presencial", enlace: "" },
     { id: 4, pac: 9, prof: idCarlos, fecha: fLunes, hora: "16:00:00", estado: "Activo", obs: "Evaluación psiquiátrica inicial", online: false, mod: "Presencial", enlace: "" },
 
-    // MARTES (HOY)
+    // MARTES
     { id: 5, pac: 10, prof: idLaura, fecha: fMartes, hora: "09:00:00", estado: "Activo", obs: "Consulta online con enlace Zoom", online: true, mod: "Online", enlace: "https://zoom.us/j/1234567890" },
     { id: 6, pac: 11, prof: idLaura, fecha: fMartes, hora: "10:00:00", estado: "Completo", obs: "Control clínico y emisión de certificado", online: false, mod: "Presencial", enlace: "" },
     { id: 7, pac: 12, prof: idLaura, fecha: fMartes, hora: "11:30:00", estado: "Falta", obs: "Paciente avisó falta a último momento", online: false, mod: "Presencial", enlace: "" },
@@ -317,12 +317,11 @@ migrate((db) => {
     { id: 19, pac: 13, prof: idLaura, fecha: fViernes, hora: "11:00:00", estado: "Activo", obs: "Atención remota", online: true, mod: "Online", enlace: "https://meet.jit.si/facturno-viernes" },
     { id: 20, pac: 10, prof: idLaura, fecha: fViernes, hora: "14:30:00", estado: "Completo", obs: "Cierre de tratamiento", online: false, mod: "Presencial", enlace: "" },
 
-    // SÁBADO (Sub-tarjeta superior Fin de Semana)
+    // SÁBADO
     { id: 21, pac: 8, prof: idLaura, fecha: fSabado, hora: "09:30:00", estado: "Activo", obs: "Guardia programada de fin de semana", online: false, mod: "Presencial", enlace: "" },
-    { id: 22, pac: 9, prof: idLaura, fecha: fSabado, hora: "11:00:00", estado: "Activo", obs: "Teleconsulta sabatina", online: true, mod: "Online", enlace: "https://meet.google.com/sab-cons-11" },
     { id: 23, pac: 5, prof: idLaura, fecha: fSabado, hora: "12:30:00", estado: "Completo", obs: "Urgencia menor ambulatoria", online: false, mod: "Presencial", enlace: "" },
 
-    // DOMINGO (Sub-tarjeta inferior Fin de Semana)
+    // DOMINGO
     { id: 24, pac: 11, prof: idLaura, fecha: fDomingo, hora: "10:00:00", estado: "Activo", obs: "Control médico dominical a distancia", online: true, mod: "Online", enlace: "https://meet.jit.si/facturno-domingo-10" },
     { id: 25, pac: 12, prof: idLaura, fecha: fDomingo, hora: "11:30:00", estado: "Activo", obs: "Atención de soporte emocional", online: false, mod: "Presencial", enlace: "" }
   ];
