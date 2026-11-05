@@ -88,7 +88,8 @@ public class PacientesController : ControllerBase
                 TipoDocumento = dto.TipoDocumento,
                 IdObraSocial = dto.IdObraSocial,
                 NumObraSocial = dto.NumObraSocial,
-                PorcentajeIva = dto.PorcentajeIva
+                PorcentajeIva = dto.PorcentajeIva,
+                Activo = dto.Activo
             };
 
             var pacienteActualizado = await _pacienteRepository.Actualizar(paciente, persona);
@@ -97,6 +98,26 @@ public class PacientesController : ControllerBase
         catch (Exception ex)
         {
             return BadRequest(ApiResponse<Paciente>.Error($"Error al actualizar paciente: {ex.Message}"));
+        }
+    }
+
+    [HttpPatch("{idPaciente:long}/activo")]
+    public async Task<ActionResult<ApiResponse<bool>>> CambiarEstadoActivo(long idPaciente, [FromQuery] bool activo)
+    {
+        try
+        {
+            var exito = await _pacienteRepository.CambiarEstadoActivo(idPaciente, activo);
+            if (!exito)
+            {
+                return NotFound(ApiResponse<bool>.Error("Paciente no encontrado."));
+            }
+
+            string msg = activo ? "Paciente reactivado exitosamente." : "Paciente dado de baja lógica correctamente.";
+            return Ok(ApiResponse<bool>.Ok(true, msg));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<bool>.Error($"Error al cambiar el estado del paciente: {ex.Message}"));
         }
     }
 }

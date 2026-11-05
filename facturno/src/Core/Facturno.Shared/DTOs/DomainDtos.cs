@@ -54,6 +54,7 @@ public class PacienteCreateDto
     public long IdObraSocial { get; set; }
     public string? NumObraSocial { get; set; }
     public string? PorcentajeIva { get; set; }
+    public bool Activo { get; set; } = true;
 }
 
 //Recibe el objeto del paciente a modificar
@@ -121,4 +122,15 @@ public class UsuarioAuthResponseDto
     public string NombreCompleto { get; set; } = string.Empty;
     public RolUsuario Rol { get; set; }
     public string TokenJwt { get; set; } = string.Empty;
+}
+
+// Representa el detalle de una agenda compartida con nombres descriptivos
+public class AgendaCompartidaDetalleDto
+{
+    public string Id { get; set; } = string.Empty;
+    public Guid IdProfesional { get; set; }
+    public string ProfesionalNombre { get; set; } = string.Empty;
+    public string IdAdministrativo { get; set; } = string.Empty;
+    public string AdministrativoNombre { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
 }

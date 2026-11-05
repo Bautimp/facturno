@@ -5,7 +5,14 @@
     <div class="system-popup-wrapper" role="alert">
         <div class="system-popup-card @(IsError ? "popup-card-error" : "popup-card-success") shadow-lg">
             <div class="popup-card-icon">
-                @(IsError ? "⚠️" : "✓")
+                @if (IsError)
+                {
+                    <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                }
+                else
+                {
+                    <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+                }
             </div>
             <div class="popup-card-body">
                 <div class="popup-card-title">

@@ -36,6 +36,9 @@ public partial class Agenda : ComponentBase
     protected List<DateOnly> DiasSemana = new();
     protected List<DateOnly> DiasMes = new();
     protected Dictionary<DateOnly, List<Turno>> TurnosPorFecha = new();
+    protected EstadoTurno? FiltroEstado = null;
+    protected int IndiceDiaMobile = 0;
+    protected string FechaMinimaPermitidaIso => DateOnly.FromDateTime(DateTime.Today.AddDays(-30)).ToString("yyyy-MM-dd");
 
     protected string? MensajeAlerta;
     protected bool MostrarModalNuevo = false;
@@ -45,20 +48,52 @@ public partial class Agenda : ComponentBase
     protected TurnoRecurrenteCreateDto recurrenteDto = new();
     protected long? PopoverTurnoId = null;
 
+    protected string HoraNuevoTexto
+    {
+        get => nuevoTurnoDto.Hora.ToString("HH:mm");
+        set
+        {
+            if (TimeOnly.TryParse(value, out var t))
+            {
+                nuevoTurnoDto.Hora = t;
+            }
+            else if (!string.IsNullOrWhiteSpace(value) && value.Length == 4 && int.TryParse(value, out _) && TimeOnly.TryParse($"{value[..2]}:{value[2..]}", out var t2))
+            {
+                nuevoTurnoDto.Hora = t2;
+            }
+        }
+    }
+
+    protected string HoraRecurrenteTexto
+    {
+        get => recurrenteDto.Hora.ToString("HH:mm");
+        set
+        {
+            if (TimeOnly.TryParse(value, out var t))
+            {
+                recurrenteDto.Hora = t;
+            }
+            else if (!string.IsNullOrWhiteSpace(value) && value.Length == 4 && int.TryParse(value, out _) && TimeOnly.TryParse($"{value[..2]}:{value[2..]}", out var t2))
+            {
+                recurrenteDto.Hora = t2;
+            }
+        }
+    }
+
     // Búsqueda difusa de pacientes (Fuzzy Search con tolerancia a errores gramaticales)
     protected string TextoBusquedaPacienteNuevo = string.Empty;
     protected bool MostrarDropdownPacientesNuevo = false;
     protected Paciente? PacienteSeleccionadoNuevo => ListaPacientes.FirstOrDefault(p => p.IdPaciente == nuevoTurnoDto.IdPaciente);
     protected List<Paciente> PacientesFiltradosNuevo => string.IsNullOrWhiteSpace(TextoBusquedaPacienteNuevo)
-        ? ListaPacientes.Take(25).ToList()
-        : ListaPacientes.Where(p => FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteNuevo)).ToList();
+        ? ListaPacientes.Where(p => p.Activo).Take(25).ToList()
+        : ListaPacientes.Where(p => p.Activo && FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteNuevo)).ToList();
 
     protected string TextoBusquedaPacienteRecurrente = string.Empty;
     protected bool MostrarDropdownPacientesRecurrente = false;
     protected Paciente? PacienteSeleccionadoRecurrente => ListaPacientes.FirstOrDefault(p => p.IdPaciente == recurrenteDto.IdPaciente);
     protected List<Paciente> PacientesFiltradosRecurrente => string.IsNullOrWhiteSpace(TextoBusquedaPacienteRecurrente)
-        ? ListaPacientes.Take(25).ToList()
-        : ListaPacientes.Where(p => FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteRecurrente)).ToList();
+        ? ListaPacientes.Where(p => p.Activo).Take(25).ToList()
+        : ListaPacientes.Where(p => p.Activo && FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteRecurrente)).ToList();
 
     protected void OnBusquedaPacienteNuevoInput(ChangeEventArgs e)
     {
@@ -205,9 +240,49 @@ public partial class Agenda : ComponentBase
         return $"Semana del {inicio.Day}/{inicio.Month}/{inicio.Year} al {fin.Day}/{fin.Month}/{fin.Year}";
     }
 
+    protected void OnFiltroEstadoChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(val) || !Enum.TryParse<EstadoTurno>(val, out var parsed))
+        {
+            FiltroEstado = null;
+        }
+        else
+        {
+            FiltroEstado = parsed;
+        }
+    }
+
+    protected List<Turno> ObtenerTurnosFiltradosPorDia(DateOnly dia)
+    {
+        if (!TurnosPorFecha.TryGetValue(dia, out var lista))
+        {
+            return new List<Turno>();
+        }
+
+        if (FiltroEstado == null)
+        {
+            return lista;
+        }
+
+        return lista.Where(t => t.Estado == FiltroEstado.Value).ToList();
+    }
+
+    protected void SeleccionarDiaMobile(int idx)
+    {
+        if (idx >= 0 && idx < DiasSemana.Count)
+        {
+            IndiceDiaMobile = idx;
+        }
+    }
+
     protected int GetTotalTurnosSemana()
     {
-        return TurnosPorFecha.Values.Sum(list => list.Count);
+        if (FiltroEstado == null)
+        {
+            return TurnosPorFecha.Values.Sum(list => list.Count);
+        }
+        return TurnosPorFecha.Values.Sum(list => list.Count(t => t.Estado == FiltroEstado.Value));
     }
 
     protected async Task CargarProfesionales()
@@ -269,16 +344,27 @@ public partial class Agenda : ComponentBase
             PopoverTurnoId = null;
             GenerarDiasSemana();
             var diasLocales = DiasSemana.ToList();
+            if (!diasLocales.Any()) return;
+
+            var inicio = diasLocales.First().ToString("yyyy-MM-dd");
+            var fin = diasLocales.Last().ToString("yyyy-MM-dd");
+
+            // Una única petición HTTP optimizada para toda la semana
+            var url = $"api/turnos/profesional/{SelectedProfesionalId}?fechaInicio={inicio}&fechaFin={fin}";
+            var res = await Http.GetFromJsonAsync<ApiResponse<List<Turno>>>(url);
+
             var tempDict = new Dictionary<DateOnly, List<Turno>>();
+            var turnosSemana = (res != null && res.Exito && res.Datos != null)
+                ? res.Datos
+                : new List<Turno>();
+
+            var turnosAgrupados = turnosSemana
+                .GroupBy(t => t.Fecha)
+                .ToDictionary(g => g.Key, g => g.OrderBy(t => t.Hora).ToList());
 
             foreach (var dia in diasLocales)
             {
-                var fechaStr = dia.ToString("yyyy-MM-dd");
-                var url = $"api/turnos/profesional/{SelectedProfesionalId}?fecha={fechaStr}";
-                var res = await Http.GetFromJsonAsync<ApiResponse<List<Turno>>>(url);
-                tempDict[dia] = (res != null && res.Exito && res.Datos != null)
-                    ? res.Datos.OrderBy(t => t.Hora).ToList()
-                    : new List<Turno>();
+                tempDict[dia] = turnosAgrupados.TryGetValue(dia, out var lista) ? lista : new List<Turno>();
             }
 
             TurnosPorFecha = tempDict;
@@ -303,6 +389,17 @@ public partial class Agenda : ComponentBase
         for (int i = 0; i < 7; i++)
         {
             DiasSemana.Add(primerDiaSemana.AddDays(i));
+        }
+
+        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        var idxHoy = DiasSemana.IndexOf(hoy);
+        if (idxHoy >= 0)
+        {
+            IndiceDiaMobile = idxHoy;
+        }
+        else if (IndiceDiaMobile >= DiasSemana.Count)
+        {
+            IndiceDiaMobile = 0;
         }
     }
 
@@ -345,10 +442,47 @@ public partial class Agenda : ComponentBase
     protected Turno? turnoSeleccionado;
     protected EstadoTurno estadoSeleccionado;
 
+    protected bool editandoFechaHora = false;
+    protected bool editandoModalidad = false;
+    protected bool editandoObservacion = false;
+    protected DateOnly editFecha;
+    protected TimeOnly editHora;
+    protected ModalidadTurno editModalidad = ModalidadTurno.Presencial;
+    protected string? editEnlaceReunion;
+    protected string? editObservacion;
+
+    protected string HoraEditTexto
+    {
+        get => editHora.ToString("HH:mm");
+        set
+        {
+            if (TimeOnly.TryParse(value, out var t))
+            {
+                editHora = t;
+            }
+            else if (!string.IsNullOrWhiteSpace(value) && value.Length == 4 && int.TryParse(value, out _) && TimeOnly.TryParse($"{value[..2]}:{value[2..]}", out var t2))
+            {
+                editHora = t2;
+            }
+        }
+    }
+
+    protected void ToggleEditarFechaHora() => editandoFechaHora = !editandoFechaHora;
+    protected void ToggleEditarModalidad() => editandoModalidad = !editandoModalidad;
+    protected void ToggleEditarObservacion() => editandoObservacion = !editandoObservacion;
+
     protected void AbrirModalEstado(Turno turno)
     {
         turnoSeleccionado = turno;
         estadoSeleccionado = turno.Estado;
+        editFecha = turno.Fecha;
+        editHora = turno.Hora;
+        editModalidad = turno.Modalidad;
+        editEnlaceReunion = turno.EnlaceReunion;
+        editObservacion = turno.Observacion;
+        editandoFechaHora = false;
+        editandoModalidad = false;
+        editandoObservacion = false;
         mostrarModalEstado = true;
         StateHasChanged();
     }
@@ -357,6 +491,9 @@ public partial class Agenda : ComponentBase
     {
         mostrarModalEstado = false;
         turnoSeleccionado = null;
+        editandoFechaHora = false;
+        editandoModalidad = false;
+        editandoObservacion = false;
         StateHasChanged();
     }
 
@@ -366,36 +503,57 @@ public partial class Agenda : ComponentBase
 
         try
         {
+            var horaMinima = new TimeOnly(6, 0);
+            var horaMaxima = new TimeOnly(23, 0);
+            if (editHora < horaMinima || editHora > horaMaxima)
+            {
+                MensajeAlerta = "El horario del turno debe estar comprendido entre las 06:00 y las 23:00 hs.";
+                return;
+            }
+
+            var fechaMinima = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+            if (editFecha < fechaMinima)
+            {
+                MensajeAlerta = "No se pueden agendar turnos con más de 30 días de antigüedad respecto al día de hoy.";
+                return;
+            }
+
             var updateDto = new TurnoUpdateDto
             {
                 IdTurno = turnoSeleccionado.IdTurno,
-                Fecha = turnoSeleccionado.Fecha,
-                Hora = turnoSeleccionado.Hora,
+                Fecha = editFecha,
+                Hora = editHora,
                 Estado = estadoSeleccionado,
-                Observacion = turnoSeleccionado.Observacion,
-                Modalidad = turnoSeleccionado.Modalidad,
-                EnlaceReunion = turnoSeleccionado.EnlaceReunion
+                Observacion = editObservacion,
+                Modalidad = editModalidad,
+                EnlaceReunion = editEnlaceReunion
             };
 
             var res = await Http.PutAsJsonAsync("api/turnos", updateDto);
-            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Turno>>();
+            var (exito, mensaje, datos) = await ApiResponseParser.ProcesarRespuestaAsync<Turno>(res, "No se pudo actualizar el turno.");
 
-            if (apiResult != null && apiResult.Exito)
+            if (exito)
             {
                 turnoSeleccionado.Estado = estadoSeleccionado;
+                turnoSeleccionado.Fecha = editFecha;
+                turnoSeleccionado.Hora = editHora;
+                turnoSeleccionado.Modalidad = editModalidad;
+                turnoSeleccionado.EnlaceReunion = editEnlaceReunion;
+                turnoSeleccionado.Observacion = editObservacion;
+
                 var nombrePaciente = GetNombrePaciente(turnoSeleccionado.IdPaciente);
-                MensajeAlerta = $"Estado del turno de {nombrePaciente} actualizado a {estadoSeleccionado}.";
+                MensajeAlerta = $"Turno de {nombrePaciente} actualizado correctamente.";
                 CerrarModalEstado();
                 await CargarTurnos();
             }
             else
             {
-                MensajeAlerta = apiResult?.Mensaje ?? "No se pudo actualizar el estado del turno.";
+                MensajeAlerta = mensaje;
             }
         }
         catch (Exception ex)
         {
-            MensajeAlerta = $"Error al cambiar estado: {ex.Message}";
+            MensajeAlerta = $"Error al guardar cambios del turno: {ex.Message}";
         }
         finally
         {
@@ -510,11 +668,26 @@ public partial class Agenda : ComponentBase
             return;
         }
 
+        var horaMinima = new TimeOnly(6, 0);
+        var horaMaxima = new TimeOnly(23, 0);
+        if (nuevoTurnoDto.Hora < horaMinima || nuevoTurnoDto.Hora > horaMaxima)
+        {
+            MensajeAlerta = "El horario del turno debe estar comprendido entre las 06:00 y las 23:00 hs.";
+            return;
+        }
+
+        var fechaMinima = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+        if (nuevoTurnoDto.Fecha < fechaMinima)
+        {
+            MensajeAlerta = "No se pueden agendar turnos con más de 30 días de antigüedad respecto al día de hoy.";
+            return;
+        }
+
         nuevoTurnoDto.IdProfesional = SelectedProfesionalId;
         var res = await Http.PostAsJsonAsync("api/turnos", nuevoTurnoDto);
-        var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Turno>>();
+        var (exito, mensaje, datos) = await ApiResponseParser.ProcesarRespuestaAsync<Turno>(res, "No se pudo agendar el turno. Verifique los solapamientos.");
 
-        if (apiResult != null && apiResult.Exito)
+        if (exito)
         {
             MostrarModalNuevo = false;
             MensajeAlerta = "Turno agendado correctamente.";
@@ -522,7 +695,7 @@ public partial class Agenda : ComponentBase
         }
         else
         {
-            MensajeAlerta = apiResult?.Mensaje ?? "No se pudo agendar el turno. Verifique los solapamientos.";
+            MensajeAlerta = mensaje;
         }
     }
 
@@ -549,19 +722,34 @@ public partial class Agenda : ComponentBase
             return;
         }
 
+        var horaMinima = new TimeOnly(6, 0);
+        var horaMaxima = new TimeOnly(23, 0);
+        if (recurrenteDto.Hora < horaMinima || recurrenteDto.Hora > horaMaxima)
+        {
+            MensajeAlerta = "El horario del turno debe estar comprendido entre las 06:00 y las 23:00 hs.";
+            return;
+        }
+
+        var fechaMinima = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+        if (recurrenteDto.FechaInicio < fechaMinima)
+        {
+            MensajeAlerta = "La fecha de inicio de la serie recurrente no puede superar los 30 días de antigüedad.";
+            return;
+        }
+
         recurrenteDto.IdProfesional = SelectedProfesionalId;
         var res = await Http.PostAsJsonAsync("api/turnos/recurrentes", recurrenteDto);
-        var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<List<Turno>>>();
+        var (exito, mensaje, datos) = await ApiResponseParser.ProcesarRespuestaAsync<List<Turno>>(res, "No se pudieron agendar los turnos recurrentes.");
 
-        if (apiResult != null && apiResult.Exito)
+        if (exito)
         {
             MostrarModalRecurrente = false;
-            MensajeAlerta = apiResult.Mensaje;
+            MensajeAlerta = !string.IsNullOrWhiteSpace(mensaje) ? mensaje : "Serie de turnos recurrentes agendada correctamente.";
             await CargarTurnos();
         }
         else
         {
-            MensajeAlerta = apiResult?.Mensaje ?? "No se pudieron agendar los turnos recurrentes.";
+            MensajeAlerta = mensaje;
         }
     }
 
@@ -586,10 +774,10 @@ public partial class Agenda : ComponentBase
 
     protected string GetEstadoTextoConIcono(EstadoTurno estado) => estado switch
     {
-        EstadoTurno.Activo => "✓ Activo",
-        EstadoTurno.Completo => "✓ Completo",
-        EstadoTurno.Falta => "⚠ Falta",
-        EstadoTurno.Cancelado => "✕ Cancelado",
+        EstadoTurno.Activo => "Activo",
+        EstadoTurno.Completo => "Completo",
+        EstadoTurno.Falta => "Falta",
+        EstadoTurno.Cancelado => "Cancelado",
         _ => estado.ToString()
     };
 

@@ -1,5 +1,5 @@
 @page "/gestion-personal"
-@attribute [Authorize(Roles = "Operador,Administrativo")]
+@attribute [Authorize(Roles = "Operador,Administrativo,Profesional")]
 
 <SystemPopupMessage Message="@MensajeAlerta" OnClose="() => MensajeAlerta = null" />
 
@@ -14,44 +14,50 @@
         <div class="d-flex gap-2">
             @if (TabActiva == "personal")
             {
-                <button class="btn btn-outline-primary" @onclick="AbrirModalNuevoAdmin">
-                    + Nuevo Administrativo
-                </button>
-                <button class="btn btn-primary-custom" @onclick="AbrirModalNuevo">
-                    + Nuevo Profesional
-                </button>
+                @if (EsOperador)
+                {
+                    <button class="btn btn-outline-primary" @onclick="AbrirModalNuevoAdmin">
+                        + Nuevo Administrativo
+                    </button>
+                    <button class="btn btn-primary-custom" @onclick="AbrirModalNuevo">
+                        + Nuevo Profesional
+                    </button>
+                }
             }
             else
             {
-                <button class="btn btn-primary-custom" @onclick="AbrirModalNuevaObraSocial">
-                    + Nueva Obra Social
-                </button>
+                @if (EsOperador)
+                {
+                    <button class="btn btn-primary-custom" @onclick="AbrirModalNuevaObraSocial">
+                        + Nueva Obra Social
+                    </button>
+                }
             }
         </div>
     </div>
 
-    <!-- Navegación por Pestañas -->
-    <ul class="nav nav-tabs mb-4 border-bottom">
+    <!-- Pestañas de Navegación -->
+    <ul class="nav nav-tabs mb-4">
         <li class="nav-item">
             <button class="nav-link @(TabActiva == "personal" ? "active fw-bold border-bottom-0 text-primary" : "text-secondary")" 
                     style="cursor: pointer;"
                     @onclick='() => TabActiva = "personal"'>
-                👨‍⚕️ Personal Médico y Usuarios
+                <i class="bi bi-person-badge me-1" aria-hidden="true"></i> Personal Médico
             </button>
         </li>
         <li class="nav-item">
             <button class="nav-link @(TabActiva == "obrassociales" ? "active fw-bold border-bottom-0 text-primary" : "text-secondary")" 
                     style="cursor: pointer;"
                     @onclick='() => TabActiva = "obrassociales"'>
-                🏥 Obras Sociales
+                <i class="bi bi-hospital me-1" aria-hidden="true"></i> Obras Sociales
             </button>
         </li>
     </ul>
 
     @if (TabActiva == "personal")
     {
-        <!-- Tabla de Profesionales -->
-        <div class="table-responsive mb-4">
+        <!-- Tabla de Profesionales con Paginación y Grillas Bootstrap -->
+        <div class="table-responsive mb-2">
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
@@ -65,7 +71,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var prof in ListaProfesionales)
+                    @foreach (var prof in ProfesionalesPaginados)
                     {
                         var nombreCompleto = prof.Usuario?.Persona != null ? $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido}" : "Sin nombre";
                         var esActivo = prof.Usuario?.Activo ?? true;
@@ -85,8 +91,8 @@
                                 </span>
                             </td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => AbrirModalEditar(prof)">
-                                    ✏️ Editar
+                                <button class="btn btn-sm btn-outline-primary me-2 d-inline-flex align-items-center" @onclick="() => AbrirModalEditar(prof)">
+                                    <i class="bi bi-pencil-square me-1" aria-hidden="true"></i> Editar
                                 </button>
                                 <button class="btn btn-sm @(esActivo ? "btn-outline-danger" : "btn-outline-success")"
                                         @onclick="() => ToggleEstadoActivo(prof, !esActivo)">
@@ -95,7 +101,7 @@
                             </td>
                         </tr>
                     }
-                    @if (!ListaProfesionales.Any())
+                    @if (!ProfesionalesPaginados.Any())
                     {
                         <tr>
                             <td colspan="7" class="text-center py-4 text-muted">
@@ -107,41 +113,136 @@
             </table>
         </div>
 
+        @if (ListaProfesionales.Any())
+        {
+            <div class="row align-items-center mb-4 g-2">
+                <div class="col-md-6 text-muted small text-center text-md-start">
+                    Mostrando @(((PaginaPersonal - 1) * ElementosPorPaginaPersonal) + 1) - @Math.Min(PaginaPersonal * ElementosPorPaginaPersonal, ListaProfesionales.Count) de @ListaProfesionales.Count profesionales
+                </div>
+                <div class="col-md-6 d-flex justify-content-center justify-content-md-end">
+                    <nav aria-label="Paginación de profesionales">
+                        <ul class="pagination pagination-sm m-0">
+                            <li class="page-item @(PaginaPersonal <= 1 ? "disabled" : "")">
+                                <button type="button" class="page-link" @onclick="() => CambiarPaginaPersonal(PaginaPersonal - 1)">« Anterior</button>
+                            </li>
+                            @for (int p = 1; p <= TotalPaginasPersonal; p++)
+                            {
+                                var pageNum = p;
+                                <li class="page-item @(pageNum == PaginaPersonal ? "active" : "")">
+                                    <button type="button" class="page-link" @onclick="() => CambiarPaginaPersonal(pageNum)">@pageNum</button>
+                                </li>
+                            }
+                            <li class="page-item @(PaginaPersonal >= TotalPaginasPersonal ? "disabled" : "")">
+                                <button type="button" class="page-link" @onclick="() => CambiarPaginaPersonal(PaginaPersonal + 1)">Siguiente »</button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        }
+
         <!-- Vinculación de Agendas Compartidas -->
         <div class="border-top pt-4">
-            <h5 class="font-bold mb-2">Vinculación de Agendas Compartidas</h5>
-            <p class="text-muted small mb-3">Conceder permisos a personal administrativo para gestionar la agenda del profesional médico.</p>
+            <h5 class="font-bold mb-2">
+                <i class="bi bi-link-45deg me-1" aria-hidden="true"></i> Vinculación de Agendas Compartidas
+            </h5>
+            <p class="text-muted small mb-3">Conceder o revocar permisos a personal administrativo para gestionar agendas médicas.</p>
 
-            <div class="row g-3">
-                <div class="col-md-5">
-                    <label class="form-label font-semibold">Profesional Médico</label>
-                    <select class="form-select" @bind="IdProfesionalVinculo">
-                        <option value="@Guid.Empty">Seleccionar Profesional...</option>
-                        @foreach (var prof in ListaProfesionales)
+            @if (EsOperador || EsProfesional)
+            {
+                <div class="row g-3 mb-4 p-3 bg-light rounded border">
+                    <div class="col-md-5">
+                        <label class="form-label font-semibold">Profesional Médico</label>
+                        @if (EsProfesional && !EsOperador)
                         {
-                            var nom = prof.Usuario?.Persona != null ? $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido}" : "Profesional";
-                            <option value="@prof.IdProfesional">@nom</option>
+                            var miNombre = ListaProfesionales.FirstOrDefault(p => p.IdProfesional == IdProfesionalActual)?.Usuario?.Persona;
+                            <input type="text" class="form-control bg-white" value="@(miNombre != null ? $"{miNombre.Nombre} {miNombre.Apellido} (Mi Agenda)" : "Mi Agenda")" readonly disabled />
                         }
-                    </select>
-                </div>
-
-                <div class="col-md-5">
-                    <label class="form-label font-semibold">Personal Administrativo</label>
-                    <select class="form-select" @bind="IdAdministrativoVinculoStr">
-                        <option value="">Seleccionar Administrativo...</option>
-                        @foreach (var admin in ListaAdministrativos)
+                        else
                         {
-                            var nomAdmin = admin.Persona != null ? $"{admin.Persona.Nombre} {admin.Persona.Apellido} ({admin.Rol})" : $"Usuario {admin.IdUsuario}";
-                            <option value="@admin.IdUsuario">@nomAdmin</option>
+                            <select class="form-select" @bind="IdProfesionalVinculo">
+                                <option value="@Guid.Empty">Seleccionar Profesional...</option>
+                                @foreach (var prof in ListaProfesionales)
+                                {
+                                    var nom = prof.Usuario?.Persona != null ? $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido}" : "Profesional";
+                                    <option value="@prof.IdProfesional">@nom</option>
+                                }
+                            </select>
                         }
-                    </select>
-                </div>
+                    </div>
 
-                <div class="col-md-2 d-flex align-items-end">
-                    <button class="btn btn-outline-primary w-100" @onclick="VincularAgenda">
-                        Vincular
-                    </button>
+                    <div class="col-md-5">
+                        <label class="form-label font-semibold">Personal Administrativo</label>
+                        <select class="form-select" @bind="IdAdministrativoVinculoStr">
+                            <option value="">Seleccionar Administrativo...</option>
+                            @foreach (var admin in ListaAdministrativos)
+                            {
+                                var nomAdmin = admin.Persona != null ? $"{admin.Persona.Nombre} {admin.Persona.Apellido} ({admin.Rol})" : $"Usuario {admin.IdUsuario}";
+                                <option value="@admin.IdUsuario">@nomAdmin</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-outline-primary w-100 d-inline-flex align-items-center justify-content-center gap-1" @onclick="VincularAgenda">
+                            <i class="bi bi-link" aria-hidden="true"></i>
+                            <span>Vincular</span>
+                        </button>
+                    </div>
                 </div>
+            }
+
+            <!-- Listado de Vinculaciones Activas -->
+            <div class="mt-3">
+                <h6 class="font-semibold text-secondary mb-2">Vínculos de Agenda Registrados:</h6>
+                @if (ListaVinculosAgendas.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered bg-white align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Profesional Médico</th>
+                                    <th>Administrativo Autorizado</th>
+                                    <th>Fecha Vinculación</th>
+                                    <th class="text-end" style="width: 150px;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var vinculo in ListaVinculosAgendas)
+                                {
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-person-badge text-primary me-1" aria-hidden="true"></i>
+                                            <strong>@vinculo.ProfesionalNombre</strong>
+                                        </td>
+                                        <td>
+                                            <i class="bi bi-person-gear text-secondary me-1" aria-hidden="true"></i>
+                                            @vinculo.AdministrativoNombre
+                                        </td>
+                                        <td class="text-muted small">
+                                            @(vinculo.CreatedAt != default ? vinculo.CreatedAt.ToString("dd/MM/yyyy HH:mm") : "-")
+                                        </td>
+                                        <td class="text-end">
+                                            @if (EsOperador || (EsProfesional && vinculo.IdProfesional == IdProfesionalActual))
+                                            {
+                                                <button class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1" @onclick="() => DesvincularAgenda(vinculo.Id)" title="Desvincular administrativo de esta agenda">
+                                                    <i class="bi bi-link-45deg" aria-hidden="true"></i>
+                                                    <span>Desvincular</span>
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-3 bg-light rounded border text-muted small text-center">
+                        <i class="bi bi-info-circle me-1" aria-hidden="true"></i> No hay agendas compartidas vinculadas actualmente.
+                    </div>
+                }
             </div>
         </div>
     }
@@ -151,8 +252,8 @@
         <div class="row mb-3 align-items-center">
             <div class="col-md-6">
                 <div class="input-group">
-                    <span class="input-group-text bg-white">🔍</span>
-                    <input type="text" class="form-control" placeholder="Buscar Obra Social por nombre..." @bind="FiltroObraSocial" @bind:event="oninput" />
+                    <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
+                    <input type="text" class="form-control" placeholder="Buscar Obra Social por nombre..." value="@FiltroObraSocial" @oninput="OnFiltroObraSocialInput" />
                 </div>
             </div>
             <div class="col-md-6 text-end text-muted small">
@@ -160,7 +261,7 @@
             </div>
         </div>
 
-        <div class="table-responsive mb-4">
+        <div class="table-responsive mb-2">
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
@@ -172,7 +273,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var os in ObrasSocialesFiltradas)
+                    @foreach (var os in ObrasSocialesPaginadas)
                     {
                         <tr>
                             <td><code>#@os.IdObraSocial</code></td>
@@ -186,8 +287,8 @@
                                 </span>
                             </td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => AbrirModalEditarObraSocial(os)">
-                                    ✏️ Editar
+                                <button class="btn btn-sm btn-outline-primary me-2 d-inline-flex align-items-center" @onclick="() => AbrirModalEditarObraSocial(os)">
+                                    <i class="bi bi-pencil-square me-1" aria-hidden="true"></i> Editar
                                 </button>
                                 <button class="btn btn-sm @(os.Activo ? "btn-outline-danger" : "btn-outline-success")"
                                         @onclick="() => ToggleEstadoObraSocial(os, !os.Activo)">
@@ -196,7 +297,7 @@
                             </td>
                         </tr>
                     }
-                    @if (!ObrasSocialesFiltradas.Any())
+                    @if (!ObrasSocialesPaginadas.Any())
                     {
                         <tr>
                             <td colspan="5" class="text-center py-4 text-muted">
@@ -207,6 +308,34 @@
                 </tbody>
             </table>
         </div>
+
+        @if (ObrasSocialesFiltradas.Any())
+        {
+            <div class="row align-items-center mb-3 g-2">
+                <div class="col-md-6 text-muted small text-center text-md-start">
+                    Mostrando @(((PaginaObraSocial - 1) * ElementosPorPaginaObraSocial) + 1) - @Math.Min(PaginaObraSocial * ElementosPorPaginaObraSocial, ObrasSocialesFiltradas.Count()) de @ObrasSocialesFiltradas.Count() obras sociales
+                </div>
+                <div class="col-md-6 d-flex justify-content-center justify-content-md-end">
+                    <nav aria-label="Paginación de obras sociales">
+                        <ul class="pagination pagination-sm m-0">
+                            <li class="page-item @(PaginaObraSocial <= 1 ? "disabled" : "")">
+                                <button type="button" class="page-link" @onclick="() => CambiarPaginaObraSocial(PaginaObraSocial - 1)">« Anterior</button>
+                            </li>
+                            @for (int p = 1; p <= TotalPaginasObraSocial; p++)
+                            {
+                                var pageNum = p;
+                                <li class="page-item @(pageNum == PaginaObraSocial ? "active" : "")">
+                                    <button type="button" class="page-link" @onclick="() => CambiarPaginaObraSocial(pageNum)">@pageNum</button>
+                                </li>
+                            }
+                            <li class="page-item @(PaginaObraSocial >= TotalPaginasObraSocial ? "disabled" : "")">
+                                <button type="button" class="page-link" @onclick="() => CambiarPaginaObraSocial(PaginaObraSocial + 1)">Siguiente »</button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        }
     }
 </div>
 
@@ -220,26 +349,30 @@
                 <div class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="form-label font-semibold">Nombre *</label>
-                        <InputText @bind-Value="profesionalDto.Nombre" class="form-control" required />
+                        <InputText @bind-Value="profesionalDto.Nombre" class="form-control" placeholder="ej: Lucas" required />
                     </div>
                     <div class="col-6">
                         <label class="form-label font-semibold">Apellido *</label>
-                        <InputText @bind-Value="profesionalDto.Apellido" class="form-control" required />
+                        <InputText @bind-Value="profesionalDto.Apellido" class="form-control" placeholder="ej: Gómez" required />
                     </div>
                 </div>
 
                 <div class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="form-label font-semibold">Correo Electrónico *</label>
-                        <InputText @bind-Value="profesionalDto.Correo" type="email" class="form-control" required />
+                        <InputText @bind-Value="profesionalDto.Correo" type="email" class="form-control" placeholder="medico@facturno.com" required />
                     </div>
                     <div class="col-6">
                         <label class="form-label font-semibold">Contraseña Inicial *</label>
-                        <InputText @bind-Value="profesionalDto.Password" type="password" class="form-control" required />
+                        <InputText @bind-Value="profesionalDto.Password" type="password" class="form-control" placeholder="••••••••" required />
                     </div>
                 </div>
 
                 <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label font-semibold">Teléfono</label>
+                        <input type="number" class="form-control" @bind="profesionalDto.Telefono" placeholder="ej: 1123456789" />
+                    </div>
                     <div class="col-6">
                         <label class="form-label font-semibold">Especialidad</label>
                         <InputSelect @bind-Value="profesionalDto.Especialidad" class="form-select">
@@ -249,20 +382,23 @@
                             <option value="@TipoEspecialidad.Otro">Otro</option>
                         </InputSelect>
                     </div>
+                </div>
+
+                <div class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="form-label font-semibold">Matrícula</label>
-                        <InputText @bind-Value="profesionalDto.Matricula" class="form-control" />
+                        <InputText @bind-Value="profesionalDto.Matricula" class="form-control" placeholder="ej: MP-12345" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label font-semibold">CUIT</label>
+                        <InputText @bind-Value="profesionalDto.Cuit" class="form-control" placeholder="20-12345678-9" />
                     </div>
                 </div>
 
                 <div class="row g-2 mb-3">
                     <div class="col-6">
-                        <label class="form-label font-semibold">CUIT</label>
-                        <InputText @bind-Value="profesionalDto.Cuit" class="form-control" placeholder="20-12345678-9" />
-                    </div>
-                    <div class="col-6">
                         <label class="form-label font-semibold">Precio Consulta ($)</label>
-                        <input type="number" step="0.01" class="form-control" @bind="profesionalDto.PrecioConsulta" />
+                        <input type="number" step="0.01" class="form-control" @bind="profesionalDto.PrecioConsulta" placeholder="0.00" />
                     </div>
                 </div>
 
@@ -285,28 +421,28 @@
                 <div class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="form-label font-semibold">Nombre *</label>
-                        <InputText @bind-Value="adminDto.Nombre" class="form-control" required />
+                        <InputText @bind-Value="adminDto.Nombre" class="form-control" placeholder="ej: María" required />
                     </div>
                     <div class="col-6">
                         <label class="form-label font-semibold">Apellido *</label>
-                        <InputText @bind-Value="adminDto.Apellido" class="form-control" required />
+                        <InputText @bind-Value="adminDto.Apellido" class="form-control" placeholder="ej: Fernández" required />
                     </div>
                 </div>
 
                 <div class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="form-label font-semibold">Correo Electrónico *</label>
-                        <InputText @bind-Value="adminDto.Correo" type="email" class="form-control" required />
+                        <InputText @bind-Value="adminDto.Correo" type="email" class="form-control" placeholder="admin@facturno.com" required />
                     </div>
                     <div class="col-6">
                         <label class="form-label font-semibold">Contraseña Inicial *</label>
-                        <InputText @bind-Value="adminDto.Password" type="password" class="form-control" required />
+                        <InputText @bind-Value="adminDto.Password" type="password" class="form-control" placeholder="••••••••" required />
                     </div>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label font-semibold">Teléfono</label>
-                    <input type="number" class="form-control" @bind="adminDto.Telefono" />
+                    <input type="number" class="form-control" @bind="adminDto.Telefono" placeholder="ej: 1123456789" />
                 </div>
 
                 <div class="d-flex justify-content-end gap-2">
@@ -359,7 +495,7 @@
                     </div>
                     <div class="col-6">
                         <label class="form-label font-semibold">Matrícula</label>
-                        <InputText @bind-Value="profesionalEditarDto.Matricula" class="form-control" />
+                        <InputText @bind-Value="profesionalEditarDto.Matricula" class="form-control" placeholder="ej: MP-12345" />
                     </div>
                 </div>
 
@@ -383,30 +519,29 @@
     </div>
 }
 
-<!-- Modal Agregar/Editar Obra Social -->
+<!-- Modal Nueva / Editar Obra Social -->
 @if (MostrarModalObraSocial)
 {
     <div class="modal-overlay">
         <div class="modal-content-custom">
-            <h4 class="mb-3 font-bold">@(EsEdicionObraSocial ? "Modificar Obra Social" : "Añadir Nueva Obra Social")</h4>
+            <h4 class="mb-3 font-bold">@(EsEdicionObraSocial ? "Modificar Obra Social" : "Registrar Obra Social")</h4>
             <EditForm Model="ObraSocialModelo" OnValidSubmit="GuardarObraSocial">
                 <div class="mb-3">
-                    <label class="form-label font-semibold">Nombre / Denominación *</label>
-                    <InputText @bind-Value="ObraSocialModelo.Nombre" class="form-control" placeholder="Ej. OSDE, Swiss Medical, Galeno..." required />
+                    <label class="form-label font-semibold">Nombre de la Obra Social / Prepaga *</label>
+                    <InputText @bind-Value="ObraSocialModelo.Nombre" class="form-control" placeholder="ej: OSDE, Swiss Medical, Galeno..." required />
+                    <div class="form-text small text-muted">2 a 60 caracteres alfanuméricos válidos.</div>
                 </div>
 
                 <div class="mb-3 form-check">
-                    <InputCheckbox @bind-Value="ObraSocialModelo.Activo" class="form-check-input" id="checkObraSocialActivo" />
-                    <label class="form-check-label font-semibold" for="checkObraSocialActivo">
-                        Obra Social Activa (Disponible para pacientes)
+                    <InputCheckbox @bind-Value="ObraSocialModelo.Activo" class="form-check-input" id="osActivoCheck" />
+                    <label class="form-check-label font-semibold" for="osActivoCheck">
+                        Obra Social Activa (Habilitada para atención de pacientes)
                     </label>
                 </div>
 
                 <div class="d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-secondary-custom" @onclick="() => MostrarModalObraSocial = false">Cancelar</button>
-                    <button type="submit" class="btn btn-primary-custom">
-                        @(EsEdicionObraSocial ? "Guardar Cambios" : "Crear Obra Social")
-                    </button>
+                    <button type="submit" class="btn btn-primary-custom">@(EsEdicionObraSocial ? "Actualizar" : "Guardar")</button>
                 </div>
             </EditForm>
         </div>

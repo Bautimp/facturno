@@ -65,13 +65,23 @@ public class TurnoRepository : ITurnoRepository
         var profIdStr = idProfesional.ToString();
         var fechaStr = fecha.ToString("yyyy-MM-dd");
 
-        // Obtenemos los turnos del profesional y filtramos por fecha
-        var records = await _client.GetList<TurnoPbRecord>(CollectionName, $"id_profesional='{profIdStr}'");
+        // Filtro a nivel de servidor en PocketBase
+        var records = await _client.GetList<TurnoPbRecord>(CollectionName, $"id_profesional='{profIdStr}' && fecha='{fechaStr}'");
 
-        return records
-            .Where(r => r.Fecha == fechaStr)
-            .Select(MapearATurno)
-            .ToList();
+        return records.Select(MapearATurno).ToList();
+    }
+
+    public async Task<List<Turno>> ObtenerPorProfesionalYRango(Guid idProfesional, DateOnly fechaInicio, DateOnly fechaFin)
+    {
+        var profIdStr = idProfesional.ToString();
+        var inicioStr = fechaInicio.ToString("yyyy-MM-dd");
+        var finStr = fechaFin.ToString("yyyy-MM-dd");
+
+        // Filtro por rango semanal o mensual a nivel de servidor en PocketBase
+        var filter = $"id_profesional='{profIdStr}' && fecha >= '{inicioStr}' && fecha <= '{finStr}'";
+        var records = await _client.GetList<TurnoPbRecord>(CollectionName, filter);
+
+        return records.Select(MapearATurno).ToList();
     }
 
     public async Task<List<Turno>> ObtenerPorPaciente(long idPaciente)

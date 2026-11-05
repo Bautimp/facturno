@@ -11,4 +11,5 @@ public interface ITurnoService
     Task<ApiResponse<Turno>> ActualizarTurno(TurnoUpdateDto dto);
     Task<ApiResponse<bool>> CancelarTurno(long idTurno);
     Task<ApiResponse<List<Turno>>> ListarPorProfesionalYFecha(Guid idProfesional, DateOnly fecha);
+    Task<ApiResponse<List<Turno>>> ListarPorProfesionalYRango(Guid idProfesional, DateOnly fechaInicio, DateOnly fechaFin);
 }
