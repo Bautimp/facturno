@@ -91,7 +91,7 @@ migrate((db) => {
   });
   dao.saveCollection(pacientes);
 
-  // 6. Colección 'turnos'
+  // 6. Colección 'turnos' (Unificada con campos de modalidad presencial/online)
   const turnos = new Collection({
     name: "turnos",
     type: "base",
@@ -123,7 +123,7 @@ migrate((db) => {
   });
   dao.saveCollection(agendasCompartidas);
 
-  console.log("[MIGRATION] Colecciones creadas con éxito.");
+  console.log("[MIGRATION] Colecciones y esquemas creados con éxito.");
 
   // ==========================================
   // SEED DATA
@@ -223,17 +223,18 @@ migrate((db) => {
   dao.saveRecord(prof2);
 
   // --- Pacientes ---
+  // Se establece explícitamente el estado 'activo' para cada paciente en el consultorio
   const pacData = [
     { id: 5, dni: "35123456", td: "DNI", os: 2, numOs: "OS-994821", iva: "Exento", activo: true },
     { id: 6, dni: "28987654", td: "DNI", os: 3, numOs: "SM-441029", iva: "Exento", activo: true },
     { id: 7, dni: "42111222", td: "DNI", os: 1, numOs: "", iva: "ConsumidorFinal", activo: true },
     { id: 8, dni: "38999111", td: "DNI", os: 2, numOs: "OS-112233", iva: "Exento", activo: true },
     { id: 9, dni: "31444555", td: "DNI", os: 4, numOs: "GAL-554433", iva: "Exento", activo: true },
-    { id: 10, dni: "44222333", td: "DNI", os: 3, numOs: "SM-778899", iva: "Exento", activo: true },
+    { id: 10, dni: "44222333", td: "DNI", os: 3, numOs: "SM-778899", iva: "Exento", activo: false },
     { id: 11, dni: "26555666", td: "DNI", os: 5, numOs: "PAM-998877", iva: "Exento", activo: true },
     { id: 12, dni: "39111444", td: "DNI", os: 2, numOs: "OS-665544", iva: "Exento", activo: true },
     { id: 13, dni: "41777888", td: "DNI", os: 1, numOs: "", iva: "ConsumidorFinal", activo: true },
-    { id: 14, dni: "33888999", td: "DNI", os: 4, numOs: "GAL-221100", iva: "Exento", activo: true },
+    { id: 14, dni: "33888999", td: "DNI", os: 4, numOs: "GAL-221100", iva: "Exento", activo: false },
     { id: 15, dni: "29333222", td: "DNI", os: 5, numOs: "PAM-443322", iva: "Exento", activo: true }
   ];
 
@@ -245,6 +246,7 @@ migrate((db) => {
     pacRec.set("id_obra_social", pac.os);
     pacRec.set("num_obra_social", pac.numOs);
     pacRec.set("porcentaje_iva", pac.iva);
+    pacRec.set("activo", pac.activo !== undefined ? pac.activo : true);
     dao.saveRecord(pacRec);
   }
 
@@ -254,94 +256,101 @@ migrate((db) => {
   agenda1.set("id_profesional", idLaura);
   dao.saveRecord(agenda1);
 
-  // --- Turnos de Prueba calculados para la semana activa actual ---
-  const hoy = new Date();
-  const formatFecha = (d) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
-
-  const getLunes = (d) => {
-    const copy = new Date(d);
-    const day = copy.getDay();
-    const diff = (day === 0 ? -6 : 1) - day;
-    copy.setDate(copy.getDate() + diff);
-    return copy;
-  };
-
-  const baseLunes = getLunes(hoy);
-  const getFechaSemana = (offsetDias) => {
-    const d = new Date(baseLunes);
-    d.setDate(baseLunes.getDate() + offsetDias);
-    return formatFecha(d);
-  };
-
-  const fLunes = getFechaSemana(0);
-  const fMartes = getFechaSemana(1);
-  const fMiercoles = getFechaSemana(2);
-  const fJueves = getFechaSemana(3);
-  const fViernes = getFechaSemana(4);
-  const fSabado = getFechaSemana(5);
-  const fDomingo = getFechaSemana(6);
-
-  const turnosData = [
-    // LUNES
-    { id: 1, pac: 5, prof: idLaura, fecha: fLunes, hora: "09:00:00", estado: "Completo", obs: "Primera consulta de evaluación", online: false, mod: "Presencial", enlace: "" },
-    { id: 2, pac: 6, prof: idLaura, fecha: fLunes, hora: "10:30:00", estado: "Completo", obs: "Sesión de psicoterapia", online: true, mod: "Online", enlace: "https://meet.google.com/abc-defg-hij" },
-    { id: 3, pac: 8, prof: idLaura, fecha: fLunes, hora: "12:00:00", estado: "Activo", obs: "Seguimiento quincenal", online: false, mod: "Presencial", enlace: "" },
-    { id: 4, pac: 9, prof: idCarlos, fecha: fLunes, hora: "16:00:00", estado: "Activo", obs: "Evaluación psiquiátrica inicial", online: false, mod: "Presencial", enlace: "" },
-
-    // MARTES
-    { id: 5, pac: 10, prof: idLaura, fecha: fMartes, hora: "09:00:00", estado: "Activo", obs: "Consulta online con enlace Zoom", online: true, mod: "Online", enlace: "https://zoom.us/j/1234567890" },
-    { id: 6, pac: 11, prof: idLaura, fecha: fMartes, hora: "10:00:00", estado: "Completo", obs: "Control clínico y emisión de certificado", online: false, mod: "Presencial", enlace: "" },
-    { id: 7, pac: 12, prof: idLaura, fecha: fMartes, hora: "11:30:00", estado: "Falta", obs: "Paciente avisó falta a último momento", online: false, mod: "Presencial", enlace: "" },
-    { id: 8, pac: 7, prof: idLaura, fecha: fMartes, hora: "14:00:00", estado: "Cancelado", obs: "Cancelado por reprogramación", online: false, mod: "Presencial", enlace: "" },
-    { id: 9, pac: 13, prof: idLaura, fecha: fMartes, hora: "15:30:00", estado: "Activo", obs: "Consulta online pendiente de configurar link", online: true, mod: "Online", enlace: "" },
-    { id: 10, pac: 14, prof: idLaura, fecha: fMartes, hora: "17:00:00", estado: "Activo", obs: "Sesión regular", online: false, mod: "Presencial", enlace: "" },
-    { id: 11, pac: 5, prof: idCarlos, fecha: fMartes, hora: "10:30:00", estado: "Completo", obs: "Ajuste de esquema farmacológico", online: false, mod: "Presencial", enlace: "" },
-
-    // MIÉRCOLES
-    { id: 12, pac: 6, prof: idLaura, fecha: fMiercoles, hora: "09:30:00", estado: "Activo", obs: "Seguimiento semanal", online: false, mod: "Presencial", enlace: "" },
-    { id: 13, pac: 9, prof: idLaura, fecha: fMiercoles, hora: "11:00:00", estado: "Activo", obs: "Videollamada médica programada", online: true, mod: "Online", enlace: "https://meet.jit.si/facturno-consulta-9" },
-    { id: 14, pac: 8, prof: idLaura, fecha: fMiercoles, hora: "15:00:00", estado: "Activo", obs: "Terapia de apoyo", online: false, mod: "Presencial", enlace: "" },
-
-    // JUEVES
-    { id: 15, pac: 11, prof: idLaura, fecha: fJueves, hora: "09:00:00", estado: "Activo", obs: "Evaluación psicodiagnóstica", online: false, mod: "Presencial", enlace: "" },
-    { id: 16, pac: 12, prof: idLaura, fecha: fJueves, hora: "10:30:00", estado: "Completo", obs: "Informe y devolución", online: true, mod: "Online", enlace: "https://meet.google.com/xyz-uvwx-rst" },
-    { id: 17, pac: 15, prof: idLaura, fecha: fJueves, hora: "16:00:00", estado: "Activo", obs: "Entrevista de admisión", online: false, mod: "Presencial", enlace: "" },
-
-    // VIERNES
-    { id: 18, pac: 14, prof: idLaura, fecha: fViernes, hora: "09:00:00", estado: "Activo", obs: "Revisión clínica", online: false, mod: "Presencial", enlace: "" },
-    { id: 19, pac: 13, prof: idLaura, fecha: fViernes, hora: "11:00:00", estado: "Activo", obs: "Atención remota", online: true, mod: "Online", enlace: "https://meet.jit.si/facturno-viernes" },
-    { id: 20, pac: 10, prof: idLaura, fecha: fViernes, hora: "14:30:00", estado: "Completo", obs: "Cierre de tratamiento", online: false, mod: "Presencial", enlace: "" },
-
-    // SÁBADO
-    { id: 21, pac: 8, prof: idLaura, fecha: fSabado, hora: "09:30:00", estado: "Activo", obs: "Guardia programada de fin de semana", online: false, mod: "Presencial", enlace: "" },
-    { id: 23, pac: 5, prof: idLaura, fecha: fSabado, hora: "12:30:00", estado: "Completo", obs: "Urgencia menor ambulatoria", online: false, mod: "Presencial", enlace: "" },
-
-    // DOMINGO
-    { id: 24, pac: 11, prof: idLaura, fecha: fDomingo, hora: "10:00:00", estado: "Activo", obs: "Control médico dominical a distancia", online: true, mod: "Online", enlace: "https://meet.jit.si/facturno-domingo-10" },
-    { id: 25, pac: 12, prof: idLaura, fecha: fDomingo, hora: "11:30:00", estado: "Activo", obs: "Atención de soporte emocional", online: false, mod: "Presencial", enlace: "" }
+  // --- Generación de Turnos de Prueba hasta fines de Noviembre 2026 ---
+  const diasNoviembre = [
+    // Semana 1
+    "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06",
+    // Semana 2
+    "2026-11-09", "2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13",
+    // Semana 3
+    "2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20",
+    // Semana 4
+    "2026-11-23", "2026-11-24", "2026-11-25", "2026-11-26", "2026-11-27",
+    // Semana 5
+    "2026-11-30"
   ];
 
-  for (const t of turnosData) {
-    const tRec = new Record(turnos);
-    tRec.set("id_turno", t.id);
-    tRec.set("id_paciente", t.pac);
-    tRec.set("id_profesional", t.prof);
-    tRec.set("fecha", t.fecha);
-    tRec.set("hora", t.hora);
-    tRec.set("estado", t.estado);
-    tRec.set("observacion", t.obs);
-    tRec.set("es_online", t.online);
-    tRec.set("modalidad", t.mod);
-    tRec.set("enlace_reunion", t.enlace || "");
-    dao.saveRecord(tRec);
+  // Pacientes activos habilitados para asignación de turnos
+  const pacientesActivosPool = [5, 6, 7, 8, 9, 11, 12, 13, 15];
+
+  // Plantillas de turnos para Dra. Laura Gómez (Psicóloga)
+  const slotsLaura = [
+    { hora: "09:00:00", mod: "Presencial", obs: "Sesión de psicoterapia individual" },
+    { hora: "10:30:00", mod: "Online", obs: "Consulta de psicología a distancia", enlace: "https://meet.google.com/fac-psi-laura" },
+    { hora: "14:00:00", mod: "Presencial", obs: "Evaluación psicodiagnóstica" },
+    { hora: "16:00:00", mod: "Presencial", obs: "Seguimiento terapéutico"}
+  ];
+
+  // Plantillas de turnos para Dr. Carlos Rossi (Psiquiatra)
+  const slotsCarlos = [
+    { hora: "11:00:00", mod: "Presencial", obs: "Evaluación y control psiquiátrico" },
+    { hora: "12:30:00", mod: "Presencial", obs: "Consulta psiquiátrica" },
+    { hora: "15:30:00", mod: "Presencial", obs: "Ajuste de esquema psicofarmacológico" }
+  ];
+
+  const fechaHoyStr = "2026-11-05";
+  let idTurnoSeq = 1;
+  let pacIndex = 0;
+
+  for (const fecha of diasNoviembre) {
+    const esPasado = fecha < fechaHoyStr;
+
+    // 1. Citas para Dra. Laura Gómez
+    for (let i = 0; i < slotsLaura.length; i++) {
+      const slot = slotsLaura[i];
+      const pacId = pacientesActivosPool[pacIndex % pacientesActivosPool.length];
+      pacIndex++;
+
+      let estado = "Activo";
+      if (esPasado) {
+        estado = (i === 2 && fecha === "2026-11-03") ? "Falta" : "Completo";
+      } else if (fecha === "2026-11-10" && i === 1) {
+        estado = "Cancelado";
+      }
+
+      const tRec = new Record(turnos);
+      tRec.set("id_turno", idTurnoSeq++);
+      tRec.set("id_paciente", pacId);
+      tRec.set("id_profesional", idLaura);
+      tRec.set("fecha", fecha);
+      tRec.set("hora", slot.hora);
+      tRec.set("estado", estado);
+      tRec.set("observacion", slot.obs);
+      tRec.set("es_online", slot.mod === "Online");
+      tRec.set("modalidad", slot.mod);
+      tRec.set("enlace_reunion", slot.enlace || "");
+      dao.saveRecord(tRec);
+    }
+
+    // 2. Citas para Dr. Carlos Rossi
+    for (let j = 0; j < slotsCarlos.length; j++) {
+      const slot = slotsCarlos[j];
+      const pacId = pacientesActivosPool[pacIndex % pacientesActivosPool.length];
+      pacIndex++;
+
+      let estado = "Activo";
+      if (esPasado) {
+        estado = "Completo";
+      } else if (fecha === "2026-11-17" && j === 0) {
+        estado = "Cancelado";
+      }
+
+      const tRec = new Record(turnos);
+      tRec.set("id_turno", idTurnoSeq++);
+      tRec.set("id_paciente", pacId);
+      tRec.set("id_profesional", idCarlos);
+      tRec.set("fecha", fecha);
+      tRec.set("hora", slot.hora);
+      tRec.set("estado", estado);
+      tRec.set("observacion", slot.obs);
+      tRec.set("es_online", slot.mod === "Online");
+      tRec.set("modalidad", slot.mod);
+      tRec.set("enlace_reunion", slot.enlace || "");
+      dao.saveRecord(tRec);
+    }
   }
 
-  console.log("[MIGRATION] Seed data insertada con éxito.");
+  console.log(`[MIGRATION] Seed data insertada con éxito: ${idTurnoSeq - 1} turnos generados hasta el 30 de noviembre.`);
 }, (db) => {
   // rollback
 });

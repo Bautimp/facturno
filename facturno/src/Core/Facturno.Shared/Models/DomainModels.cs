@@ -82,11 +82,11 @@ public class AgendaCompartida
 
 public class ConfiguracionSistema
 {
-    public string HoraInicioTurnos { get; set; } = "08:00";
-    public string HoraFinTurnos { get; set; } = "20:00";
-    public int MaxPacientesPorDiaPorProfesional { get; set; } = 20;
-    public decimal PrecioMaximoConsulta { get; set; } = 50000m;
-    public int MinutosEntreTurnos { get; set; } = 30;
+    public string HoraInicioTurnos { get; set; } = "07:00";
+    public string HoraFinTurnos { get; set; } = "22:00";
+    public int MaxPacientesPorDiaPorProfesional { get; set; } = 10;
+    public decimal PrecioMaximoConsulta { get; set; } = 100000m;
+    public int MinutosEntreTurnos { get; set; } = 45;
 
     [System.Text.Json.Serialization.JsonIgnore]
     public TimeOnly HoraInicio => TimeOnly.TryParse(HoraInicioTurnos, out var h) ? h : new TimeOnly(8, 0);

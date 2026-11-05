@@ -140,18 +140,18 @@ public class ConfiguracionSistemaDto
 {
     [Required(ErrorMessage = "La hora de inicio es requerida.")]
     [RegularExpression(@"^([01]?[0-9]|2[0-3]):[0-5][0-9]$", ErrorMessage = "Formato de hora inválido (HH:mm).")]
-    public string HoraInicioTurnos { get; set; } = "08:00";
+    public string HoraInicioTurnos { get; set; } = "07:00";
 
     [Required(ErrorMessage = "La hora de fin es requerida.")]
     [RegularExpression(@"^([01]?[0-9]|2[0-3]):[0-5][0-9]$", ErrorMessage = "Formato de hora inválido (HH:mm).")]
-    public string HoraFinTurnos { get; set; } = "20:00";
+    public string HoraFinTurnos { get; set; } = "22:00";
 
     [Range(1, 200, ErrorMessage = "La cantidad máxima de pacientes por día debe ser entre 1 y 200.")]
-    public int MaxPacientesPorDiaPorProfesional { get; set; } = 20;
+    public int MaxPacientesPorDiaPorProfesional { get; set; } = 10;
 
     [Range(0, 100000000, ErrorMessage = "El precio máximo de consulta no puede ser negativo.")]
-    public decimal PrecioMaximoConsulta { get; set; } = 50000m;
+    public decimal PrecioMaximoConsulta { get; set; } = 100000m;
 
     [Range(5, 240, ErrorMessage = "El tiempo entre turnos debe ser entre 5 y 240 minutos.")]
-    public int MinutosEntreTurnos { get; set; } = 30;
+    public int MinutosEntreTurnos { get; set; } = 45;
 }
