@@ -17,15 +17,18 @@ public class ProfesionalesController : ControllerBase
     private readonly IProfesionalRepository _profesionalRepository;
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly PocketBaseClient _pocketBaseClient;
+    private readonly IConfiguracionService _configuracionService;
 
     public ProfesionalesController(
         IProfesionalRepository profesionalRepository, 
         IUsuarioRepository usuarioRepository, 
-        PocketBaseClient pocketBaseClient)
+        PocketBaseClient pocketBaseClient,
+        IConfiguracionService configuracionService)
     {
         _profesionalRepository = profesionalRepository;
         _usuarioRepository = usuarioRepository;
         _pocketBaseClient = pocketBaseClient;
+        _configuracionService = configuracionService;
     }
 
     [HttpGet]
@@ -53,6 +56,12 @@ public class ProfesionalesController : ControllerBase
         if (!ModelState.IsValid)
         {
             return BadRequest(ApiResponse<Profesional>.Error("Datos de entrada inválidos."));
+        }
+
+        var config = _configuracionService.ObtenerConfiguracion();
+        if (dto.PrecioConsulta.HasValue && dto.PrecioConsulta.Value > config.PrecioMaximoConsulta)
+        {
+            return BadRequest(ApiResponse<Profesional>.Error($"El precio de la consulta ($ {dto.PrecioConsulta.Value:N2}) supera el precio máximo permitido en el consultorio ($ {config.PrecioMaximoConsulta:N2})."));
         }
 
         try
@@ -144,6 +153,12 @@ public class ProfesionalesController : ControllerBase
             if (targetId == Guid.Empty)
             {
                 return BadRequest(ApiResponse<Profesional>.Error("Identificador del profesional no especificado."));
+            }
+
+            var config = _configuracionService.ObtenerConfiguracion();
+            if (dto.PrecioConsulta.HasValue && dto.PrecioConsulta.Value > config.PrecioMaximoConsulta)
+            {
+                return BadRequest(ApiResponse<Profesional>.Error($"El precio de la consulta ($ {dto.PrecioConsulta.Value:N2}) supera el precio máximo permitido en el consultorio ($ {config.PrecioMaximoConsulta:N2})."));
             }
 
             var existente = await _profesionalRepository.ObtenerPorId(targetId);

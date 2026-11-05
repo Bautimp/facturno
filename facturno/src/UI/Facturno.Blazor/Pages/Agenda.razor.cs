@@ -141,11 +141,13 @@ public partial class Agenda : ComponentBase
 
     protected bool EsProfesionalLogueado = false;
     protected string NombreProfesionalLogueado = string.Empty;
+    protected ConfiguracionSistema ConfigActual = new();
 
     protected bool IsLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
+        await CargarConfiguracion();
         GenerarSlotsDeTiempo();
         await VerificarRolUsuario();
         await CargarProfesionales();
@@ -153,6 +155,22 @@ public partial class Agenda : ComponentBase
         if (SelectedProfesionalId != Guid.Empty)
         {
             await CargarTurnos();
+        }
+    }
+
+    private async Task CargarConfiguracion()
+    {
+        try
+        {
+            var res = await Http.GetFromJsonAsync<ApiResponse<ConfiguracionSistema>>("api/configuracion");
+            if (res != null && res.Exito && res.Datos != null)
+            {
+                ConfigActual = res.Datos;
+            }
+        }
+        catch
+        {
+            // Usa valores predeterminados
         }
     }
 
@@ -187,13 +205,14 @@ public partial class Agenda : ComponentBase
     private void GenerarSlotsDeTiempo()
     {
         TimeSlots.Clear();
-        var horaInicio = new TimeOnly(8, 0);
-        var horaFin = new TimeOnly(20, 0);
+        var horaInicio = ConfigActual.HoraInicio;
+        var horaFin = ConfigActual.HoraFin;
+        var intervalo = ConfigActual.MinutosEntreTurnos > 0 ? ConfigActual.MinutosEntreTurnos : 30;
 
         while (horaInicio <= horaFin)
         {
             TimeSlots.Add(horaInicio);
-            horaInicio = horaInicio.AddMinutes(30);
+            horaInicio = horaInicio.AddMinutes(intervalo);
         }
     }
 
@@ -503,11 +522,9 @@ public partial class Agenda : ComponentBase
 
         try
         {
-            var horaMinima = new TimeOnly(6, 0);
-            var horaMaxima = new TimeOnly(23, 0);
-            if (editHora < horaMinima || editHora > horaMaxima)
+            if (editHora < ConfigActual.HoraInicio || editHora > ConfigActual.HoraFin)
             {
-                MensajeAlerta = "El horario del turno debe estar comprendido entre las 06:00 y las 23:00 hs.";
+                MensajeAlerta = $"El horario del turno debe estar comprendido entre las {ConfigActual.HoraInicioTurnos} y las {ConfigActual.HoraFinTurnos} hs.";
                 return;
             }
 
@@ -668,11 +685,9 @@ public partial class Agenda : ComponentBase
             return;
         }
 
-        var horaMinima = new TimeOnly(6, 0);
-        var horaMaxima = new TimeOnly(23, 0);
-        if (nuevoTurnoDto.Hora < horaMinima || nuevoTurnoDto.Hora > horaMaxima)
+        if (nuevoTurnoDto.Hora < ConfigActual.HoraInicio || nuevoTurnoDto.Hora > ConfigActual.HoraFin)
         {
-            MensajeAlerta = "El horario del turno debe estar comprendido entre las 06:00 y las 23:00 hs.";
+            MensajeAlerta = $"El horario del turno debe estar comprendido entre las {ConfigActual.HoraInicioTurnos} y las {ConfigActual.HoraFinTurnos} hs.";
             return;
         }
 
@@ -722,11 +737,9 @@ public partial class Agenda : ComponentBase
             return;
         }
 
-        var horaMinima = new TimeOnly(6, 0);
-        var horaMaxima = new TimeOnly(23, 0);
-        if (recurrenteDto.Hora < horaMinima || recurrenteDto.Hora > horaMaxima)
+        if (recurrenteDto.Hora < ConfigActual.HoraInicio || recurrenteDto.Hora > ConfigActual.HoraFin)
         {
-            MensajeAlerta = "El horario del turno debe estar comprendido entre las 06:00 y las 23:00 hs.";
+            MensajeAlerta = $"El horario del turno debe estar comprendido entre las {ConfigActual.HoraInicioTurnos} y las {ConfigActual.HoraFinTurnos} hs.";
             return;
         }
 

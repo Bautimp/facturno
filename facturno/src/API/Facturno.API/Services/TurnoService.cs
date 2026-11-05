@@ -9,28 +9,47 @@ namespace Facturno.API.Services;
 public class TurnoService : ITurnoService
 {
     private readonly ITurnoRepository _turnoRepository;
+    private readonly IConfiguracionService _configService;
 
-    public TurnoService(ITurnoRepository turnoRepository)
+    public TurnoService(ITurnoRepository turnoRepository, IConfiguracionService configService)
     {
         _turnoRepository = turnoRepository;
+        _configService = configService;
     }
 
     public async Task<ApiResponse<Turno>> AgendarTurno(TurnoCreateDto dto)
     {
-        // Validar solapamiento de turnos (30 minutos mínimos)
+        var config = _configService.ObtenerConfiguracion();
+
+        // 1. Validar rango horario de atención
+        var horaTurno = dto.Hora;
+        if (horaTurno < config.HoraInicio || horaTurno > config.HoraFin)
+        {
+            return ApiResponse<Turno>.Error($"El horario del turno ({dto.Hora:HH\\:mm}) está fuera del horario de atención configurado ({config.HoraInicioTurnos} a {config.HoraFinTurnos}).");
+        }
+
         var turnosDelDia = await _turnoRepository.ObtenerPorProfesionalYFecha(dto.IdProfesional, dto.Fecha);
 
+        // 2. Validar límite diario de pacientes por profesional
+        int turnosActivosDelDia = turnosDelDia.Count(t => t.Estado != EstadoTurno.Cancelado);
+        if (turnosActivosDelDia >= config.MaxPacientesPorDiaPorProfesional)
+        {
+            return ApiResponse<Turno>.Error($"Se ha alcanzado el límite máximo diario de pacientes para este profesional ({config.MaxPacientesPorDiaPorProfesional} pacientes).");
+        }
+
+        // 3. Validar solapamiento de turnos según intervalo configurado
+        var intervalo = TimeSpan.FromMinutes(config.MinutosEntreTurnos);
         var horaInicio = dto.Hora;
-        var horaFin = dto.Hora.Add(TimeSpan.FromMinutes(30));
+        var horaFin = dto.Hora.Add(intervalo);
 
         bool existeSolapamiento = turnosDelDia.Any(t =>
             t.Estado != EstadoTurno.Cancelado &&
             ((t.Hora >= horaInicio && t.Hora < horaFin) ||
-             (t.Hora.Add(TimeSpan.FromMinutes(30)) > horaInicio && t.Hora <= horaInicio)));
+             (t.Hora.Add(intervalo) > horaInicio && t.Hora <= horaInicio)));
 
         if (existeSolapamiento)
         {
-            return ApiResponse<Turno>.Error("El profesional ya cuenta con un turno asignado dentro del rango de 30 minutos en dicho horario.");
+            return ApiResponse<Turno>.Error($"El profesional ya cuenta con un turno asignado dentro del rango de {config.MinutosEntreTurnos} minutos en dicho horario.");
         }
 
         string? enlace = null;
@@ -108,22 +127,45 @@ public class TurnoService : ITurnoService
             return ApiResponse<Turno>.Error("El turno especificado no existe.");
         }
 
-        // Si se modifica la fecha u hora y el nuevo estado no es Cancelado, validar solapamientos
-        if (dto.Estado != EstadoTurno.Cancelado && (dto.Fecha != turnoExistente.Fecha || dto.Hora != turnoExistente.Hora))
+        // Si se modifica la fecha u hora y el nuevo estado no es Cancelado, validar solapamientos y límites
+        if (dto.Estado != EstadoTurno.Cancelado)
         {
-            var turnosDelDia = await _turnoRepository.ObtenerPorProfesionalYFecha(turnoExistente.IdProfesional, dto.Fecha);
-            var horaInicio = dto.Hora;
-            var horaFin = dto.Hora.Add(TimeSpan.FromMinutes(30));
+            var config = _configService.ObtenerConfiguracion();
 
-            bool existeSolapamiento = turnosDelDia.Any(t =>
-                t.IdTurno != dto.IdTurno &&
-                t.Estado != EstadoTurno.Cancelado &&
-                ((t.Hora >= horaInicio && t.Hora < horaFin) ||
-                 (t.Hora.Add(TimeSpan.FromMinutes(30)) > horaInicio && t.Hora <= horaInicio)));
-
-            if (existeSolapamiento)
+            var horaTurno = dto.Hora;
+            if (horaTurno < config.HoraInicio || horaTurno > config.HoraFin)
             {
-                return ApiResponse<Turno>.Error("El profesional ya cuenta con un turno asignado dentro del rango de 30 minutos en dicho horario.");
+                return ApiResponse<Turno>.Error($"El horario del turno ({dto.Hora:HH\\:mm}) está fuera del horario de atención configurado ({config.HoraInicioTurnos} a {config.HoraFinTurnos}).");
+            }
+
+            if (dto.Fecha != turnoExistente.Fecha || dto.Hora != turnoExistente.Hora)
+            {
+                var turnosDelDia = await _turnoRepository.ObtenerPorProfesionalYFecha(turnoExistente.IdProfesional, dto.Fecha);
+
+                // Si se cambió de fecha, verificar límite diario de pacientes
+                if (dto.Fecha != turnoExistente.Fecha)
+                {
+                    int turnosActivosDelDia = turnosDelDia.Count(t => t.IdTurno != dto.IdTurno && t.Estado != EstadoTurno.Cancelado);
+                    if (turnosActivosDelDia >= config.MaxPacientesPorDiaPorProfesional)
+                    {
+                        return ApiResponse<Turno>.Error($"Se ha alcanzado el límite máximo diario de pacientes para este profesional ({config.MaxPacientesPorDiaPorProfesional} pacientes) en la fecha seleccionada.");
+                    }
+                }
+
+                var intervalo = TimeSpan.FromMinutes(config.MinutosEntreTurnos);
+                var horaInicio = dto.Hora;
+                var horaFin = dto.Hora.Add(intervalo);
+
+                bool existeSolapamiento = turnosDelDia.Any(t =>
+                    t.IdTurno != dto.IdTurno &&
+                    t.Estado != EstadoTurno.Cancelado &&
+                    ((t.Hora >= horaInicio && t.Hora < horaFin) ||
+                     (t.Hora.Add(intervalo) > horaInicio && t.Hora <= horaInicio)));
+
+                if (existeSolapamiento)
+                {
+                    return ApiResponse<Turno>.Error($"El profesional ya cuenta con un turno asignado dentro del rango de {config.MinutosEntreTurnos} minutos en dicho horario.");
+                }
             }
         }
 

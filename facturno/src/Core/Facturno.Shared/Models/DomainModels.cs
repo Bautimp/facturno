@@ -79,3 +79,18 @@ public class AgendaCompartida
     public Guid IdProfesional { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
+
+public class ConfiguracionSistema
+{
+    public string HoraInicioTurnos { get; set; } = "08:00";
+    public string HoraFinTurnos { get; set; } = "20:00";
+    public int MaxPacientesPorDiaPorProfesional { get; set; } = 20;
+    public decimal PrecioMaximoConsulta { get; set; } = 50000m;
+    public int MinutosEntreTurnos { get; set; } = 30;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public TimeOnly HoraInicio => TimeOnly.TryParse(HoraInicioTurnos, out var h) ? h : new TimeOnly(8, 0);
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public TimeOnly HoraFin => TimeOnly.TryParse(HoraFinTurnos, out var h) ? h : new TimeOnly(20, 0);
+}

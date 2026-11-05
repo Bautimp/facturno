@@ -25,6 +25,7 @@ builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IObraSocialRepository, ObraSocialRepository>();
 
 // 4. Registrar Servicios de Lógica de Negocio, PDF y JWT
+builder.Services.AddSingleton<IConfiguracionService, ConfiguracionService>();
 builder.Services.AddScoped<ITurnoService, TurnoService>();
 builder.Services.AddScoped<IFacturaPdfService, Facturno.Infrastructure.Services.FacturaPdfService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
