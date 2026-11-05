@@ -654,31 +654,78 @@
             </div>
 
             <div class="mb-3">
-                <div class="p-2 mb-3 bg-light rounded border">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
+                <div class="p-3 mb-3 bg-light rounded border">
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                         <span class="text-muted small">Paciente:</span>
                         <span class="font-bold text-dark">@GetNombrePaciente(turnoSeleccionado.IdPaciente)</span>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="text-muted small">Fecha y Hora:</span>
-                        <span class="font-semibold text-secondary">
-                            @turnoSeleccionado.Fecha.ToString("dd/MM/yyyy") - @turnoSeleccionado.Hora.ToString("HH:mm")
-                        </span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="text-muted small">Modalidad:</span>
-                        <span class="badge @(turnoSeleccionado.Modalidad == ModalidadTurno.Online ? "badge-modalidad-online-sm" : "bg-light text-secondary border") d-inline-flex align-items-center gap-1">
-                            @if (turnoSeleccionado.Modalidad == ModalidadTurno.Online)
+
+                    <div class="mb-2 pb-2 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">
+                                Fecha y Hora:
+                                <button type="button" class="btn btn-sm btn-link p-0 text-primary ms-1 align-baseline" @onclick="ToggleEditarFechaHora" title="Editar fecha y hora">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </button>
+                            </span>
+                            @if (!editandoFechaHora)
                             {
-                                <i class="bi bi-camera-video" aria-hidden="true"></i> <span>Online</span>
+                                <span class="font-semibold text-secondary">
+                                    @editFecha.ToString("dd/MM/yyyy") - @editHora.ToString("HH:mm")
+                                </span>
                             }
-                            else
-                            {
-                                <i class="bi bi-hospital" aria-hidden="true"></i> <span>Presencial</span>
-                            }
-                        </span>
+                        </div>
+                        @if (editandoFechaHora)
+                        {
+                            <div class="row g-2 mt-1">
+                                <div class="col-6">
+                                    <input type="date" class="form-control form-control-sm" @bind="editFecha" @bind:format="yyyy-MM-dd" />
+                                </div>
+                                <div class="col-6">
+                                    <input type="time" class="form-control form-control-sm" step="60" list="lista-horas-24" @bind="editHora" @bind:format="HH:mm" />
+                                </div>
+                            </div>
+                        }
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mb-1">
+
+                    <div class="mb-2 pb-2 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">
+                                Modalidad:
+                                <button type="button" class="btn btn-sm btn-link p-0 text-primary ms-1 align-baseline" @onclick="ToggleEditarModalidad" title="Editar modalidad">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </button>
+                            </span>
+                            @if (!editandoModalidad)
+                            {
+                                <span class="badge @(editModalidad == ModalidadTurno.Online ? "badge-modalidad-online-sm" : "bg-light text-secondary border") d-inline-flex align-items-center gap-1">
+                                    @if (editModalidad == ModalidadTurno.Online)
+                                    {
+                                        <i class="bi bi-camera-video" aria-hidden="true"></i> <span>Online</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-hospital" aria-hidden="true"></i> <span>Presencial</span>
+                                    }
+                                </span>
+                            }
+                        </div>
+                        @if (editandoModalidad)
+                        {
+                            <div class="mt-1">
+                                <select class="form-select form-select-sm" @bind="editModalidad">
+                                    <option value="@ModalidadTurno.Presencial">Presencial</option>
+                                    <option value="@ModalidadTurno.Online">Online</option>
+                                </select>
+                                @if (editModalidad == ModalidadTurno.Online)
+                                {
+                                    <input type="url" class="form-control form-control-sm mt-1" placeholder="Enlace de reunión virtual..." @bind="editEnlaceReunion" />
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                         <span class="text-muted small">Estado actual:</span>
                         <span class="badge-estado @GetBadgeClass(turnoSeleccionado.Estado) d-inline-flex align-items-center gap-1">
                             @if (turnoSeleccionado.Estado == EstadoTurno.Activo)
@@ -701,20 +748,34 @@
                         </span>
                     </div>
 
-                    <!-- Observaciones solo visibles en este panel de detalles -->
-                    <div class="mt-2 pt-2 border-top">
-                        <span class="text-muted small font-semibold d-block mb-1">Observaciones:</span>
-                        @if (!string.IsNullOrWhiteSpace(turnoSeleccionado.Observacion))
+                    <!-- Observaciones con icono de lápiz para edición -->
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-muted small font-semibold">
+                                Observaciones:
+                                <button type="button" class="btn btn-sm btn-link p-0 text-primary ms-1 align-baseline" @onclick="ToggleEditarObservacion" title="Editar observaciones">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </button>
+                            </span>
+                        </div>
+                        @if (editandoObservacion)
                         {
-                            <div class="p-2 bg-white rounded border small text-dark fst-italic">
-                                @turnoSeleccionado.Observacion
-                            </div>
+                            <textarea class="form-control form-control-sm" rows="2" placeholder="Escriba las observaciones del turno..." @bind="editObservacion"></textarea>
                         }
                         else
                         {
-                            <div class="text-muted small fst-italic">
-                                Sin observaciones registradas para este turno.
-                            </div>
+                            @if (!string.IsNullOrWhiteSpace(editObservacion))
+                            {
+                                <div class="p-2 bg-white rounded border small text-dark fst-italic">
+                                    @editObservacion
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-muted small fst-italic">
+                                    Sin observaciones registradas para este turno.
+                                </div>
+                            }
                         }
                     </div>
                 </div>

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using Facturno.Shared.Interfaces;
 using Facturno.Shared.DTOs;
 using Facturno.Shared.Models;
@@ -133,12 +134,19 @@ public class ProfesionalesController : ControllerBase
         }
     }
 
+    [HttpPut]
     [HttpPut("{idProfesional:guid}")]
-    public async Task<ActionResult<ApiResponse<Profesional>>> Actualizar(Guid idProfesional, [FromBody] ProfesionalUpdateDto dto)
+    public async Task<ActionResult<ApiResponse<Profesional>>> Actualizar([FromBody] ProfesionalUpdateDto dto, [FromRoute] Guid? idProfesional = null)
     {
         try
         {
-            var existente = await _profesionalRepository.ObtenerPorId(idProfesional);
+            var targetId = idProfesional ?? dto.IdProfesional;
+            if (targetId == Guid.Empty)
+            {
+                return BadRequest(ApiResponse<Profesional>.Error("Identificador del profesional no especificado."));
+            }
+
+            var existente = await _profesionalRepository.ObtenerPorId(targetId);
             if (existente == null)
             {
                 return NotFound(ApiResponse<Profesional>.Error("Profesional no encontrado."));
@@ -155,7 +163,7 @@ public class ProfesionalesController : ControllerBase
 
             var profesional = new Profesional
             {
-                IdProfesional = idProfesional,
+                IdProfesional = targetId,
                 Especialidad = dto.Especialidad ?? existente.Especialidad,
                 Matricula = dto.Matricula ?? existente.Matricula,
                 Cuit = dto.Cuit ?? existente.Cuit,
@@ -187,7 +195,7 @@ public class ProfesionalesController : ControllerBase
         return Ok(ApiResponse<bool>.Ok(true, mensaje));
     }
 
-    [Authorize(Roles = "Operador,Administrativo")]
+    [Authorize(Roles = "Operador,Administrativo,Profesional")]
     [HttpGet("administrativos")]
     public async Task<ActionResult<ApiResponse<List<Usuario>>>> ObtenerAdministrativos()
     {
@@ -224,12 +232,102 @@ public class ProfesionalesController : ControllerBase
         }
     }
 
-    [Authorize(Roles = "Operador,Administrativo")]
+    [Authorize(Roles = "Operador,Profesional")]
+    [HttpGet("agendas-compartidas")]
+    public async Task<ActionResult<ApiResponse<List<AgendaCompartidaDetalleDto>>>> ObtenerAgendasCompartidas([FromQuery] Guid? idProfesional = null)
+    {
+        try
+        {
+            var esOperador = User.IsInRole("Operador");
+            var esProfesional = User.IsInRole("Profesional");
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            Guid.TryParse(userIdClaim, out var currentUserId);
+
+            string filter = "";
+            if (esProfesional && !esOperador)
+            {
+                filter = $"id_profesional='{currentUserId}'";
+            }
+            else if (idProfesional.HasValue && idProfesional.Value != Guid.Empty)
+            {
+                filter = $"id_profesional='{idProfesional.Value}'";
+            }
+
+            var vinculos = await _pocketBaseClient.GetList<AgendaCompartidaPbRecord>("agendas_compartidas", filter);
+            var profesionales = await _profesionalRepository.ObtenerTodos();
+            var usuarios = await _pocketBaseClient.GetList<PocketBaseUserRecord>("users");
+            var personas = await _pocketBaseClient.GetList<PersonaPbRecord>("personas");
+            var personasDict = personas.DistinctBy(p => p.IdPersona).ToDictionary(p => p.IdPersona);
+            var usersDict = usuarios.ToDictionary(u => u.IdUsuario);
+            var profDict = profesionales.ToDictionary(p => p.IdProfesional);
+
+            var resultado = vinculos.Select(v =>
+            {
+                var profNom = "Profesional";
+                if (Guid.TryParse(v.IdProfesional, out var pGuid) && profDict.TryGetValue(pGuid, out var prof))
+                {
+                    profNom = prof.Usuario?.Persona != null ? $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido}" : "Profesional";
+                }
+
+                var adminNom = "Administrativo";
+                if (usersDict.TryGetValue(v.IdAdministrativo, out var uAdmin))
+                {
+                    if (personasDict.TryGetValue(uAdmin.IdPersona, out var pAdmin))
+                    {
+                        adminNom = $"{pAdmin.Nombre} {pAdmin.Apellido}";
+                    }
+                    else
+                    {
+                        adminNom = uAdmin.Email;
+                    }
+                }
+
+                return new AgendaCompartidaDetalleDto
+                {
+                    Id = v.Id,
+                    IdProfesional = Guid.TryParse(v.IdProfesional, out var pg) ? pg : Guid.Empty,
+                    ProfesionalNombre = profNom,
+                    IdAdministrativo = v.IdAdministrativo,
+                    AdministrativoNombre = adminNom,
+                    CreatedAt = v.Created
+                };
+            }).ToList();
+
+            return Ok(ApiResponse<List<AgendaCompartidaDetalleDto>>.Ok(resultado));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<List<AgendaCompartidaDetalleDto>>.Error($"Error al listar agendas compartidas: {ex.Message}"));
+        }
+    }
+
+    [Authorize(Roles = "Operador,Profesional")]
     [HttpPost("vincular-agenda")]
     public async Task<ActionResult<ApiResponse<bool>>> VincularAgenda([FromQuery] Guid idProfesional, [FromQuery] string idAdministrativo)
     {
         try
         {
+            var esOperador = User.IsInRole("Operador");
+            if (!esOperador)
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(userIdClaim, out var currentUserId) || currentUserId != idProfesional)
+                {
+                    return Forbid();
+                }
+            }
+
+            // Verificar si ya existe vínculo
+            var existentes = await _pocketBaseClient.GetList<AgendaCompartidaPbRecord>(
+                "agendas_compartidas", 
+                $"id_profesional='{idProfesional}' && id_administrativo='{idAdministrativo}'");
+
+            if (existentes.Any())
+            {
+                return BadRequest(ApiResponse<bool>.Error("La agenda ya se encuentra vinculada al administrativo seleccionado."));
+            }
+
             var payload = new
             {
                 id_administrativo = idAdministrativo,
@@ -241,7 +339,56 @@ public class ProfesionalesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ApiResponse<bool>.Error($"Error o vinculación ya existente: {ex.Message}"));
+            return BadRequest(ApiResponse<bool>.Error($"Error al vincular agenda: {ex.Message}"));
+        }
+    }
+
+    [Authorize(Roles = "Operador,Profesional")]
+    [HttpDelete("desvincular-agenda")]
+    public async Task<ActionResult<ApiResponse<bool>>> DesvincularAgenda([FromQuery] string? id = null, [FromQuery] Guid? idProfesional = null, [FromQuery] string? idAdministrativo = null)
+    {
+        try
+        {
+            var esOperador = User.IsInRole("Operador");
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            Guid.TryParse(userIdClaim, out var currentUserId);
+
+            AgendaCompartidaPbRecord? vinculo = null;
+            if (!string.IsNullOrWhiteSpace(id))
+            {
+                vinculo = await _pocketBaseClient.GetById<AgendaCompartidaPbRecord>("agendas_compartidas", id);
+            }
+            else if (idProfesional.HasValue && !string.IsNullOrWhiteSpace(idAdministrativo))
+            {
+                vinculo = await _pocketBaseClient.GetFirst<AgendaCompartidaPbRecord>(
+                    "agendas_compartidas", 
+                    $"id_profesional='{idProfesional.Value}' && id_administrativo='{idAdministrativo}'");
+            }
+
+            if (vinculo == null)
+            {
+                return NotFound(ApiResponse<bool>.Error("Vínculo de agenda no encontrado."));
+            }
+
+            if (!esOperador)
+            {
+                if (!Guid.TryParse(vinculo.IdProfesional, out var vinculoProfId) || vinculoProfId != currentUserId)
+                {
+                    return Forbid();
+                }
+            }
+
+            var deleted = await _pocketBaseClient.Delete("agendas_compartidas", vinculo.Id);
+            if (!deleted)
+            {
+                return BadRequest(ApiResponse<bool>.Error("No se pudo desvincular la agenda."));
+            }
+
+            return Ok(ApiResponse<bool>.Ok(true, "Agenda desvinculada exitosamente."));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<bool>.Error($"Error al desvincular agenda: {ex.Message}"));
         }
     }
 

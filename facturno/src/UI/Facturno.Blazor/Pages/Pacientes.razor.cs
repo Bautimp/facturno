@@ -14,6 +14,7 @@ public partial class Pacientes : ComponentBase
     protected List<Paciente> ListaPacientes = new();
     protected List<ObraSocial> ListaObrasSociales = new();
     protected string FiltroBusqueda = string.Empty;
+    protected string FiltroEstado = "todos"; // "todos", "activos", "inactivos"
     protected string? MensajeAlerta;
 
     protected bool MostrarModal = false;
@@ -24,9 +25,29 @@ public partial class Pacientes : ComponentBase
     protected int PaginaActual = 1;
     protected int ElementosPorPagina = 8;
 
-    protected List<Paciente> PacientesFiltradosLista => string.IsNullOrWhiteSpace(FiltroBusqueda)
-        ? ListaPacientes
-        : ListaPacientes.Where(p => FuzzyMatcher.EsCoincidenciaPaciente(p, FiltroBusqueda)).ToList();
+    protected List<Paciente> PacientesFiltradosLista
+    {
+        get
+        {
+            var query = ListaPacientes.AsEnumerable();
+
+            if (FiltroEstado == "activos")
+            {
+                query = query.Where(p => p.Activo);
+            }
+            else if (FiltroEstado == "inactivos")
+            {
+                query = query.Where(p => !p.Activo);
+            }
+
+            if (!string.IsNullOrWhiteSpace(FiltroBusqueda))
+            {
+                query = query.Where(p => FuzzyMatcher.EsCoincidenciaPaciente(p, FiltroBusqueda));
+            }
+
+            return query.ToList();
+        }
+    }
 
     protected int TotalPaginas => Math.Max(1, (int)Math.Ceiling((double)PacientesFiltradosLista.Count / ElementosPorPagina));
 
@@ -50,6 +71,12 @@ public partial class Pacientes : ComponentBase
     protected void OnFiltroBusquedaInput(ChangeEventArgs e)
     {
         FiltroBusqueda = e.Value?.ToString() ?? string.Empty;
+        PaginaActual = 1;
+    }
+
+    protected void OnFiltroEstadoChanged(ChangeEventArgs e)
+    {
+        FiltroEstado = e.Value?.ToString() ?? "todos";
         PaginaActual = 1;
     }
 
@@ -161,9 +188,35 @@ public partial class Pacientes : ComponentBase
             NumDocumento = paciente.NumDocumento,
             IdObraSocial = paciente.IdObraSocial,
             NumObraSocial = paciente.NumObraSocial,
-            PorcentajeIva = paciente.PorcentajeIva
+            PorcentajeIva = paciente.PorcentajeIva,
+            Activo = paciente.Activo
         };
         MostrarModal = true;
+    }
+
+    protected async Task ToggleEstadoActivo(Paciente pac, bool nuevoEstado)
+    {
+        try
+        {
+            var url = $"api/pacientes/{pac.IdPaciente}/activo?activo={nuevoEstado}";
+            var request = new HttpRequestMessage(HttpMethod.Patch, url);
+            var res = await Http.SendAsync(request);
+            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<bool>>();
+
+            if (apiResult != null && apiResult.Exito)
+            {
+                MensajeAlerta = apiResult.Mensaje;
+                await CargarPacientes();
+            }
+            else
+            {
+                MensajeAlerta = apiResult?.Mensaje ?? "Error al cambiar el estado del paciente.";
+            }
+        }
+        catch (Exception ex)
+        {
+            MensajeAlerta = $"Error de comunicación: {ex.Message}";
+        }
     }
 
     protected async Task GuardarPaciente()

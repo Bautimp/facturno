@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
+using System.Security.Claims;
 using System.Net.Http.Json;
 using Facturno.Shared.Models;
 using Facturno.Shared.DTOs;
@@ -11,11 +13,19 @@ public partial class GestionPersonal : ComponentBase
     [Inject]
     public HttpClient Http { get; set; } = default!;
 
+    [Inject]
+    public AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
+
+    protected bool EsOperador = false;
+    protected bool EsProfesional = false;
+    protected Guid IdProfesionalActual = Guid.Empty;
+
     protected string TabActiva = "personal";
 
     protected List<Profesional> ListaProfesionales = new();
     protected List<Usuario> ListaAdministrativos = new();
     protected List<ObraSocial> ListaObrasSociales = new();
+    protected List<AgendaCompartidaDetalleDto> ListaVinculosAgendas = new();
 
     protected string? MensajeAlerta;
 
@@ -83,9 +93,34 @@ public partial class GestionPersonal : ComponentBase
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                EsOperador = user.IsInRole("Operador");
+                EsProfesional = user.IsInRole("Profesional");
+                var idClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (Guid.TryParse(idClaim, out var g))
+                {
+                    IdProfesionalActual = g;
+                    if (EsProfesional && !EsOperador)
+                    {
+                        IdProfesionalVinculo = g;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Silencioso
+        }
+
         await CargarProfesionales();
         await CargarAdministrativos();
         await CargarObrasSociales();
+        await CargarVinculosAgendas();
     }
 
     protected async Task CargarProfesionales()
@@ -249,7 +284,14 @@ public partial class GestionPersonal : ComponentBase
                 return;
             }
 
-            var res = await Http.PutAsJsonAsync("api/profesionales", profesionalEditarDto);
+            var res = await Http.PutAsJsonAsync($"api/profesionales/{profesionalEditarDto.IdProfesional}", profesionalEditarDto);
+            if (!res.IsSuccessStatusCode)
+            {
+                var errStr = await res.Content.ReadAsStringAsync();
+                MensajeAlerta = $"Error al actualizar profesional: {errStr}";
+                return;
+            }
+
             var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Profesional>>();
 
             if (apiResult != null && apiResult.Exito)
@@ -348,6 +390,46 @@ public partial class GestionPersonal : ComponentBase
         }
     }
 
+    protected async Task CargarVinculosAgendas()
+    {
+        try
+        {
+            var res = await Http.GetFromJsonAsync<ApiResponse<List<AgendaCompartidaDetalleDto>>>("api/profesionales/agendas-compartidas");
+            if (res != null && res.Exito && res.Datos != null)
+            {
+                ListaVinculosAgendas = res.Datos;
+            }
+        }
+        catch
+        {
+            // Silencioso
+        }
+    }
+
+    protected async Task DesvincularAgenda(string idVinculo)
+    {
+        try
+        {
+            var url = $"api/profesionales/desvincular-agenda?id={idVinculo}";
+            var res = await Http.DeleteAsync(url);
+            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<bool>>();
+
+            if (apiResult != null && apiResult.Exito)
+            {
+                MensajeAlerta = "Agenda desvinculada exitosamente.";
+                await CargarVinculosAgendas();
+            }
+            else
+            {
+                MensajeAlerta = apiResult?.Mensaje ?? "No se pudo desvincular la agenda.";
+            }
+        }
+        catch (Exception ex)
+        {
+            MensajeAlerta = $"Error al desvincular agenda: {ex.Message}";
+        }
+    }
+
     protected async Task VincularAgenda()
     {
         if (IdProfesionalVinculo == Guid.Empty || string.IsNullOrWhiteSpace(IdAdministrativoVinculoStr))
@@ -365,8 +447,12 @@ public partial class GestionPersonal : ComponentBase
             if (apiResult != null && apiResult.Exito)
             {
                 MensajeAlerta = "Agenda del profesional vinculada correctamente al administrativo seleccionado.";
-                IdProfesionalVinculo = Guid.Empty;
+                if (!EsProfesional || EsOperador)
+                {
+                    IdProfesionalVinculo = Guid.Empty;
+                }
                 IdAdministrativoVinculoStr = string.Empty;
+                await CargarVinculosAgendas();
             }
             else
             {
