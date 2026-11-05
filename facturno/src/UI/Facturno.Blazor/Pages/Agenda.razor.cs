@@ -530,16 +530,9 @@ public partial class Agenda : ComponentBase
             };
 
             var res = await Http.PutAsJsonAsync("api/turnos", updateDto);
-            if (!res.IsSuccessStatusCode)
-            {
-                var errStr = await res.Content.ReadAsStringAsync();
-                MensajeAlerta = $"Error al actualizar turno: {errStr}";
-                return;
-            }
+            var (exito, mensaje, datos) = await ApiResponseParser.ProcesarRespuestaAsync<Turno>(res, "No se pudo actualizar el turno.");
 
-            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Turno>>();
-
-            if (apiResult != null && apiResult.Exito)
+            if (exito)
             {
                 turnoSeleccionado.Estado = estadoSeleccionado;
                 turnoSeleccionado.Fecha = editFecha;
@@ -555,7 +548,7 @@ public partial class Agenda : ComponentBase
             }
             else
             {
-                MensajeAlerta = apiResult?.Mensaje ?? "No se pudo actualizar el estado del turno.";
+                MensajeAlerta = mensaje;
             }
         }
         catch (Exception ex)
@@ -692,9 +685,9 @@ public partial class Agenda : ComponentBase
 
         nuevoTurnoDto.IdProfesional = SelectedProfesionalId;
         var res = await Http.PostAsJsonAsync("api/turnos", nuevoTurnoDto);
-        var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Turno>>();
+        var (exito, mensaje, datos) = await ApiResponseParser.ProcesarRespuestaAsync<Turno>(res, "No se pudo agendar el turno. Verifique los solapamientos.");
 
-        if (apiResult != null && apiResult.Exito)
+        if (exito)
         {
             MostrarModalNuevo = false;
             MensajeAlerta = "Turno agendado correctamente.";
@@ -702,7 +695,7 @@ public partial class Agenda : ComponentBase
         }
         else
         {
-            MensajeAlerta = apiResult?.Mensaje ?? "No se pudo agendar el turno. Verifique los solapamientos.";
+            MensajeAlerta = mensaje;
         }
     }
 
@@ -746,17 +739,17 @@ public partial class Agenda : ComponentBase
 
         recurrenteDto.IdProfesional = SelectedProfesionalId;
         var res = await Http.PostAsJsonAsync("api/turnos/recurrentes", recurrenteDto);
-        var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<List<Turno>>>();
+        var (exito, mensaje, datos) = await ApiResponseParser.ProcesarRespuestaAsync<List<Turno>>(res, "No se pudieron agendar los turnos recurrentes.");
 
-        if (apiResult != null && apiResult.Exito)
+        if (exito)
         {
             MostrarModalRecurrente = false;
-            MensajeAlerta = apiResult.Mensaje;
+            MensajeAlerta = !string.IsNullOrWhiteSpace(mensaje) ? mensaje : "Serie de turnos recurrentes agendada correctamente.";
             await CargarTurnos();
         }
         else
         {
-            MensajeAlerta = apiResult?.Mensaje ?? "No se pudieron agendar los turnos recurrentes.";
+            MensajeAlerta = mensaje;
         }
     }
 

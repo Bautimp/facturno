@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using System.Net.Http.Json;
 using Facturno.Shared.DTOs;
+using Facturno.Shared.Utils;
 using Facturno.Blazor.Services;
 
 namespace Facturno.Blazor.Pages;
@@ -52,16 +53,16 @@ public partial class Login : ComponentBase
         try
         {
             var response = await Http.PostAsJsonAsync("api/auth/login", loginModel);
-            var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<UsuarioAuthResponseDto>>();
+            var (exito, mensaje, datos) = await ApiResponseParser.ProcesarRespuestaAsync<UsuarioAuthResponseDto>(response, "Credenciales inválidas. Por favor intenta de nuevo.");
 
-            if (apiResult != null && apiResult.Exito && apiResult.Datos != null)
+            if (exito && datos != null)
             {
-                await AuthStateProvider.MarkUserAsAuthenticated(apiResult.Datos);
+                await AuthStateProvider.MarkUserAsAuthenticated(datos);
                 NavigationManager.NavigateTo("/agenda");
             }
             else
             {
-                ErrorMessage = apiResult?.Mensaje ?? "Credenciales inválidas. Por favor intenta de nuevo.";
+                ErrorMessage = mensaje;
             }
         }
         catch (Exception ex)

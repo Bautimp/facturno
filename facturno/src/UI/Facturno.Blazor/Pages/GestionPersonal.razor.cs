@@ -212,9 +212,9 @@ public partial class GestionPersonal : ComponentBase
             }
 
             var res = await Http.PostAsJsonAsync("api/profesionales", profesionalDto);
-            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Profesional>>();
+            var (exito, mensaje, datos) = await ApiResponseParser.ProcesarRespuestaAsync<Profesional>(res, "No se pudo crear el profesional.");
 
-            if (apiResult != null && apiResult.Exito)
+            if (exito)
             {
                 MostrarModal = false;
                 MensajeAlerta = "Profesional registrado correctamente.";
@@ -222,7 +222,7 @@ public partial class GestionPersonal : ComponentBase
             }
             else
             {
-                MensajeAlerta = apiResult?.Mensaje ?? "No se pudo crear el profesional.";
+                MensajeAlerta = mensaje;
             }
         }
         catch (Exception ex)
@@ -285,16 +285,9 @@ public partial class GestionPersonal : ComponentBase
             }
 
             var res = await Http.PutAsJsonAsync($"api/profesionales/{profesionalEditarDto.IdProfesional}", profesionalEditarDto);
-            if (!res.IsSuccessStatusCode)
-            {
-                var errStr = await res.Content.ReadAsStringAsync();
-                MensajeAlerta = $"Error al actualizar profesional: {errStr}";
-                return;
-            }
+            var (exito, mensaje, datos) = await ApiResponseParser.ProcesarRespuestaAsync<Profesional>(res, "No se pudo actualizar el profesional.");
 
-            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Profesional>>();
-
-            if (apiResult != null && apiResult.Exito)
+            if (exito)
             {
                 MostrarModalEditar = false;
                 MensajeAlerta = $"Profesional {profesionalEditarDto.Nombre} {profesionalEditarDto.Apellido} actualizado correctamente.";
@@ -302,7 +295,7 @@ public partial class GestionPersonal : ComponentBase
             }
             else
             {
-                MensajeAlerta = apiResult?.Mensaje ?? "No se pudo actualizar el profesional.";
+                MensajeAlerta = mensaje;
             }
         }
         catch (Exception ex)
@@ -346,9 +339,9 @@ public partial class GestionPersonal : ComponentBase
             }
 
             var res = await Http.PostAsJsonAsync("api/profesionales/administrativo", adminDto);
-            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Usuario>>();
+            var (exito, mensaje, datos) = await ApiResponseParser.ProcesarRespuestaAsync<Usuario>(res, "No se pudo crear el usuario administrativo.");
 
-            if (apiResult != null && apiResult.Exito)
+            if (exito)
             {
                 MostrarModalAdmin = false;
                 MensajeAlerta = "Usuario Administrativo registrado correctamente.";
@@ -356,7 +349,7 @@ public partial class GestionPersonal : ComponentBase
             }
             else
             {
-                MensajeAlerta = apiResult?.Mensaje ?? "No se pudo crear el usuario administrativo.";
+                MensajeAlerta = mensaje;
             }
         }
         catch (Exception ex)
@@ -372,16 +365,16 @@ public partial class GestionPersonal : ComponentBase
             var url = $"api/profesionales/{prof.IdProfesional}/activo?activo={nuevoEstado}";
             var request = new HttpRequestMessage(HttpMethod.Patch, url);
             var res = await Http.SendAsync(request);
-            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<bool>>();
+            var (exito, mensaje, _) = await ApiResponseParser.ProcesarRespuestaAsync<bool>(res, "Error al cambiar el estado del profesional.");
 
-            if (apiResult != null && apiResult.Exito)
+            if (exito)
             {
-                MensajeAlerta = apiResult.Mensaje;
+                MensajeAlerta = mensaje;
                 await CargarProfesionales();
             }
             else
             {
-                MensajeAlerta = apiResult?.Mensaje ?? "Error al cambiar el estado del profesional.";
+                MensajeAlerta = mensaje;
             }
         }
         catch (Exception ex)
@@ -412,16 +405,16 @@ public partial class GestionPersonal : ComponentBase
         {
             var url = $"api/profesionales/desvincular-agenda?id={idVinculo}";
             var res = await Http.DeleteAsync(url);
-            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<bool>>();
+            var (exito, mensaje, _) = await ApiResponseParser.ProcesarRespuestaAsync<bool>(res, "No se pudo desvincular la agenda.");
 
-            if (apiResult != null && apiResult.Exito)
+            if (exito)
             {
                 MensajeAlerta = "Agenda desvinculada exitosamente.";
                 await CargarVinculosAgendas();
             }
             else
             {
-                MensajeAlerta = apiResult?.Mensaje ?? "No se pudo desvincular la agenda.";
+                MensajeAlerta = mensaje;
             }
         }
         catch (Exception ex)
@@ -442,9 +435,9 @@ public partial class GestionPersonal : ComponentBase
         {
             var url = $"api/profesionales/vincular-agenda?idProfesional={IdProfesionalVinculo}&idAdministrativo={IdAdministrativoVinculoStr}";
             var res = await Http.PostAsync(url, null);
-            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<bool>>();
+            var (exito, mensaje, _) = await ApiResponseParser.ProcesarRespuestaAsync<bool>(res, "No se pudo vincular la agenda.");
 
-            if (apiResult != null && apiResult.Exito)
+            if (exito)
             {
                 MensajeAlerta = "Agenda del profesional vinculada correctamente al administrativo seleccionado.";
                 if (!EsProfesional || EsOperador)
@@ -456,7 +449,7 @@ public partial class GestionPersonal : ComponentBase
             }
             else
             {
-                MensajeAlerta = apiResult?.Mensaje ?? "No se pudo vincular la agenda.";
+                MensajeAlerta = mensaje;
             }
         }
         catch (Exception ex)
@@ -575,14 +568,10 @@ public partial class GestionPersonal : ComponentBase
                         : "Obra social agregada correctamente.";
                     return;
                 }
-
-                var errStr = await res.Content.ReadAsStringAsync();
-                MensajeAlerta = $"Error al guardar obra social ({res.StatusCode}): {(string.IsNullOrWhiteSpace(errStr) ? res.ReasonPhrase : errStr)}";
-                return;
             }
 
-            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<ObraSocial>>();
-            if (apiResult != null && apiResult.Exito)
+            var (exito, mensaje, datos) = await ApiResponseParser.ProcesarRespuestaAsync<ObraSocial>(res, "Error al guardar la obra social.");
+            if (exito)
             {
                 MostrarModalObraSocial = false;
                 MensajeAlerta = EsEdicionObraSocial ? "Obra social actualizada con éxito." : "Obra social registrada con éxito.";
@@ -590,7 +579,7 @@ public partial class GestionPersonal : ComponentBase
             }
             else
             {
-                MensajeAlerta = apiResult?.Mensaje ?? "Error al guardar la obra social.";
+                MensajeAlerta = mensaje;
             }
         }
         catch (Exception ex)
@@ -607,29 +596,22 @@ public partial class GestionPersonal : ComponentBase
             var request = new HttpRequestMessage(HttpMethod.Patch, url);
             var res = await Http.SendAsync(request);
 
-            if (!res.IsSuccessStatusCode)
+            if (!res.IsSuccessStatusCode && res.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                if (res.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    os.Activo = nuevoEstado;
-                    MensajeAlerta = nuevoEstado ? "Obra Social activada." : "Obra Social dada de baja.";
-                    return;
-                }
-
-                var errStr = await res.Content.ReadAsStringAsync();
-                MensajeAlerta = $"Error al cambiar estado ({res.StatusCode}): {(string.IsNullOrWhiteSpace(errStr) ? res.ReasonPhrase : errStr)}";
+                os.Activo = nuevoEstado;
+                MensajeAlerta = nuevoEstado ? "Obra Social activada." : "Obra Social dada de baja.";
                 return;
             }
 
-            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<bool>>();
-            if (apiResult != null && apiResult.Exito)
+            var (exito, mensaje, _) = await ApiResponseParser.ProcesarRespuestaAsync<bool>(res, "Error al cambiar el estado de la obra social.");
+            if (exito)
             {
-                MensajeAlerta = apiResult.Mensaje;
+                MensajeAlerta = mensaje;
                 await CargarObrasSociales();
             }
             else
             {
-                MensajeAlerta = apiResult?.Mensaje ?? "Error al cambiar el estado de la obra social.";
+                MensajeAlerta = mensaje;
             }
         }
         catch (Exception ex)

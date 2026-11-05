@@ -201,16 +201,16 @@ public partial class Pacientes : ComponentBase
             var url = $"api/pacientes/{pac.IdPaciente}/activo?activo={nuevoEstado}";
             var request = new HttpRequestMessage(HttpMethod.Patch, url);
             var res = await Http.SendAsync(request);
-            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<bool>>();
+            var (exito, mensaje, _) = await ApiResponseParser.ProcesarRespuestaAsync<bool>(res, "Error al cambiar el estado del paciente.");
 
-            if (apiResult != null && apiResult.Exito)
+            if (exito)
             {
-                MensajeAlerta = apiResult.Mensaje;
+                MensajeAlerta = mensaje;
                 await CargarPacientes();
             }
             else
             {
-                MensajeAlerta = apiResult?.Mensaje ?? "Error al cambiar el estado del paciente.";
+                MensajeAlerta = mensaje;
             }
         }
         catch (Exception ex)
@@ -278,9 +278,9 @@ public partial class Pacientes : ComponentBase
                 res = await Http.PostAsJsonAsync("api/pacientes", pacienteDto);
             }
 
-            var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Paciente>>();
+            var (exito, mensaje, datos) = await ApiResponseParser.ProcesarRespuestaAsync<Paciente>(res, "No se pudo guardar el paciente.");
 
-            if (apiResult != null && apiResult.Exito)
+            if (exito)
             {
                 MostrarModal = false;
                 MensajeAlerta = EsEdicion ? "Paciente actualizado con éxito." : "Paciente registrado con éxito.";
@@ -288,7 +288,7 @@ public partial class Pacientes : ComponentBase
             }
             else
             {
-                MensajeAlerta = apiResult?.Mensaje ?? "No se pudo guardar el paciente.";
+                MensajeAlerta = mensaje;
             }
         }
         catch (Exception ex)
