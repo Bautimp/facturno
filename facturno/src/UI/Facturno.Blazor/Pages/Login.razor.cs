@@ -19,6 +19,20 @@ public partial class Login : ComponentBase
     protected UsuarioLoginDto loginModel = new();
     protected string? ErrorMessage;
     protected bool isSubmitting = false;
+    protected bool mostrarPassword = false;
+
+    protected void ToggleMostrarPassword()
+    {
+        mostrarPassword = !mostrarPassword;
+    }
+
+    protected void NormalizarCorreo()
+    {
+        if (!string.IsNullOrWhiteSpace(loginModel.Correo))
+        {
+            loginModel.Correo = loginModel.Correo.Trim().ToLowerInvariant();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -31,6 +45,7 @@ public partial class Login : ComponentBase
 
     protected async Task HandleLogin()
     {
+        NormalizarCorreo();
         ErrorMessage = null;
         isSubmitting = true;
 

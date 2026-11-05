@@ -1,30 +1,36 @@
-/* Facturno Modern CSS Theme */
+/* Facturno Modern CSS Theme - Paleta Corporativa Centro Médico */
 :root {
-    --primary: #4f46e5;
-    --primary-hover: #4338ca;
-    --primary-light: #eef2ff;
-    --secondary: #64748b;
-    --dark-bg: #0f172a;
-    --card-bg: #ffffff;
-    --surface: #f8fafc;
-    --border-color: #e2e8f0;
-    --text-main: #1e293b;
-    --text-muted: #64748b;
+    --primary: #0F52BA;
+    --primary-hover: #0B3C8A;
+    --primary-light: #EBF3FC;
+    --secondary: #64748B;
+    --dark-bg: #0F172A;
+    --card-bg: #FFFFFF;
+    --surface: #F8FAFC;
+    --border-color: #E2E8F0;
+    --text-main: #1E293B;
+    --text-muted: #64748B;
+
+    /* Colores Sólidos de Estado */
+    --color-activo: #198754;
+    --color-completo: #0F52BA;
+    --color-falta: #D97706;
+    --color-cancelado: #DC3545;
 
     /* Estado Badges */
-    --badge-activo-bg: #dcfce7;
+    --badge-activo-bg: #DCFCE7;
     --badge-activo-text: #166534;
-    --badge-completo-bg: #dbeafe;
-    --badge-completo-text: #1e40af;
-    --badge-falta-bg: #fef3c7;
-    --badge-falta-text: #92400e;
-    --badge-cancelado-bg: #ffe4e6;
-    --badge-cancelado-text: #9f1239;
+    --badge-completo-bg: #EBF3FC;
+    --badge-completo-text: #0F52BA;
+    --badge-falta-bg: #FEF3C7;
+    --badge-falta-text: #92400E;
+    --badge-cancelado-bg: #FEE2E2;
+    --badge-cancelado-text: #991B1B;
 }
 
 body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background-color: #f1f5f9;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--surface);
     color: var(--text-main);
     margin: 0;
     padding: 0;
@@ -200,14 +206,14 @@ body {
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+    background-color: var(--primary);
     color: #ffffff;
     font-weight: 700;
     font-size: 0.85rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 1px 3px rgba(15, 82, 186, 0.2);
 }
 
 .user-name {
@@ -216,7 +222,7 @@ body {
 }
 
 .role-badge {
-    background-color: #4f46e5 !important;
+    background-color: var(--primary) !important;
     color: #ffffff;
     padding: 0.25rem 0.6rem;
     border-radius: 0.375rem;
@@ -364,7 +370,6 @@ body {
     width: 100vw;
     height: 100vh;
     background-color: rgba(15, 23, 42, 0.65);
-    backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -375,8 +380,9 @@ body {
 .modal-card-priority {
     background-color: #ffffff;
     padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.35);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
     max-width: 480px;
     width: 90%;
     position: relative;
@@ -406,21 +412,21 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(15, 23, 42, 0.5);
+    background-color: rgba(15, 23, 42, 0.55);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1050;
-    backdrop-filter: blur(6px);
 }
 
 .modal-content-custom {
     background: #ffffff;
-    border-radius: 1.25rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
     width: 100%;
     max-width: 560px;
     padding: 2rem;
-    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+    box-shadow: 0 15px 35px -5px rgba(15, 23, 42, 0.2);
     animation: modalScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -494,23 +500,44 @@ body {
     background-color: #cbd5e1;
 }
 
-/* Auth Login Container */
+/* Auth Login & Unauthorized Container */
 .login-bg {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-    padding: 1rem;
+    background-color: var(--surface);
+    padding: 1.5rem;
 }
 
 .login-card {
     background: #ffffff;
     width: 100%;
-    max-width: 420px;
-    border-radius: 1.25rem;
+    max-width: 440px;
+    border-radius: 0.75rem;
     padding: 2.5rem;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+}
+
+.unauthorized-container,
+.not-found-container {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.unauthorized-card {
+    background: #ffffff;
+    width: 100%;
+    max-width: 460px;
+    border-radius: 0.75rem;
+    padding: 2.5rem;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+    text-align: center;
 }
 
 /* Turno Popover & Switcher */
@@ -1015,7 +1042,7 @@ body {
 
 /* Modalidad Online (Videollamada) Styles */
 .badge-modalidad-online {
-    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    background-color: var(--primary);
     color: #ffffff !important;
     padding: 0.28rem 0.65rem;
     border-radius: 9999px;
@@ -1024,14 +1051,13 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25);
     letter-spacing: 0.2px;
 }
 
 .badge-modalidad-online-sm {
-    background-color: #e0f2fe;
-    color: #0369a1;
-    border: 1px solid #bae6fd;
+    background-color: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid #bfdbfe;
     border-radius: 9999px;
     padding: 0.15rem 0.4rem;
     font-size: 0.7rem;
@@ -1039,7 +1065,7 @@ body {
 }
 
 .btn-join-videocall {
-    background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+    background-color: var(--primary);
     color: #ffffff !important;
     border: none;
     font-size: 0.8rem;
@@ -1049,14 +1075,12 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease;
     text-decoration: none;
 }
 
 .btn-join-videocall:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    background-color: var(--primary-hover);
     color: #ffffff !important;
 }
 
@@ -1100,14 +1124,14 @@ body {
 }
 
 .modal-check-btn.active {
-    border-color: #0284c7;
-    background-color: #f0f9ff;
-    box-shadow: 0 0 0 1px #0284c7;
+    border-color: var(--primary);
+    background-color: var(--primary-light);
+    box-shadow: 0 0 0 1px var(--primary);
 }
 
 .online-config-box {
-    background: linear-gradient(to bottom, #f0fdf4, #ffffff);
-    border: 1px solid #bbf7d0 !important;
+    background-color: #f8fafc;
+    border: 1px solid var(--border-color) !important;
 }
 
 /* Popups Flotantes para Errores y Mensajes del Sistema (Z-Index Máximo sobre Modales) */
@@ -1204,4 +1228,100 @@ body {
         opacity: 1;
         transform: translateY(0) scale(1);
     }
+}
+
+/* Responsive Mobile Styles & Touch Target Enhancements (Requerimiento 7) */
+@media (max-width: 767.98px) {
+    /* Touch Target Mínimo de 44x44px */
+    .btn,
+    .btn-state-item,
+    .modal-check-btn,
+    .top-nav-link,
+    .form-control,
+    .form-select,
+    .page-link {
+        min-height: 44px;
+    }
+
+    .btn-xs {
+        min-height: 38px;
+    }
+
+    /* Modales adaptados a pantallas móviles (95% ancho) */
+    .modal-content-custom,
+    .modal-card-priority {
+        width: 95vw !important;
+        max-width: 95vw !important;
+        padding: 1.25rem !important;
+        margin: 1rem auto;
+    }
+
+    /* Top Navbar en Móvil */
+    .top-navbar-header {
+        height: auto;
+        padding: 0.75rem 1rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .navbar-left-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .top-navigation-menu {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .top-nav-list {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .navbar-right-section {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .top-main-content {
+        padding: 1rem 0.75rem;
+    }
+
+    /* Agenda en Pantallas Pequeñas: Grid a flujo de bloque para el día activo */
+    .semana-grid-container {
+        display: block !important;
+        overflow-x: visible !important;
+        padding-bottom: 0;
+    }
+
+    .col-dia-semana,
+    .col-finde-semana {
+        min-width: 100% !important;
+        width: 100% !important;
+    }
+
+    .card-dia-finde {
+        min-height: auto;
+    }
+}
+
+/* Selector de Días en Móvil */
+.mobile-days-scroller {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.4rem;
+}
+
+.mobile-day-tab {
+    min-width: 72px;
+    text-align: center;
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.8rem;
+    line-height: 1.2;
 }

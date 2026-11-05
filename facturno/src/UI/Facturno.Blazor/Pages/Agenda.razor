@@ -19,13 +19,14 @@
                 + Nuevo Turno
             </button>
 
-            <button class="btn btn-outline-primary btn-sm" @onclick="AbrirModalTurnoRecurrente">
-                🔄 Turno Recurrente
+            <button class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1" @onclick="AbrirModalTurnoRecurrente">
+                <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+                <span>Turno Recurrente</span>
             </button>
         </div>
     </div>
 
-    <!-- Barra Unificada y Organizada de Navegación y Filtros (Sin botón redundante de buscar) -->
+    <!-- Barra Unificada y Organizada de Navegación y Filtros -->
     <div class="semana-nav-bar d-flex justify-content-between align-items-center mb-3 p-2 px-3 bg-white rounded border shadow-sm flex-wrap gap-2">
         <!-- Navegación por Semanas y Rango -->
         <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -42,7 +43,7 @@
             </div>
 
             <div class="d-flex align-items-center gap-1 ms-1">
-                <span style="font-size: 1.15rem;">📅</span>
+                <i class="bi bi-calendar3 text-primary" aria-hidden="true" style="font-size: 1.1rem;"></i>
                 <span class="font-bold text-primary semana-rango-titulo" style="font-size: 0.98rem;">
                     @GetTextoRangoSemana()
                 </span>
@@ -66,10 +67,23 @@
             }
             else
             {
-                <span class="badge bg-light text-dark border font-semibold py-2 px-2">
-                    👨‍⚕️ @GetNombreProfesionalSeleccionado()
+                <span class="badge bg-light text-dark border font-semibold py-2 px-2 d-inline-flex align-items-center gap-1">
+                    <i class="bi bi-person-badge text-primary" aria-hidden="true"></i>
+                    <span>@GetNombreProfesionalSeleccionado()</span>
                 </span>
             }
+
+            <!-- Filtro en memoria por Estado de Turno (Requerimiento 6) -->
+            <div class="d-flex align-items-center gap-1">
+                <label class="form-label font-semibold small m-0 text-muted">Estado:</label>
+                <select class="form-select form-select-sm" style="width: 125px;" value="@(FiltroEstado?.ToString() ?? "")" @onchange="OnFiltroEstadoChanged">
+                    <option value="">Todos</option>
+                    <option value="@EstadoTurno.Activo">Activo</option>
+                    <option value="@EstadoTurno.Completo">Completo</option>
+                    <option value="@EstadoTurno.Falta">Falta</option>
+                    <option value="@EstadoTurno.Cancelado">Cancelado</option>
+                </select>
+            </div>
 
             <div class="d-flex align-items-center gap-1">
                 <label class="form-label font-semibold small m-0 text-muted">Fecha:</label>
@@ -82,17 +96,41 @@
         </div>
     </div>
 
-    <!-- VISTA SEMANAL (6 Columnas: Lunes a Viernes + Sábado y Domingo compartiendo espacio vertical) -->
+    <!-- Selector de Día en Móviles (< 768px, Requerimiento 7) -->
+    <div class="d-md-none mb-3">
+        <div class="mobile-days-scroller">
+            @for (int i = 0; i < DiasSemana.Count; i++)
+            {
+                var idx = i;
+                var d = DiasSemana[idx];
+                var esHoy = d == DateOnly.FromDateTime(DateTime.Today);
+                var esActivo = idx == IndiceDiaMobile;
+                var cantidad = ObtenerTurnosFiltradosPorDia(d).Count;
+                <button type="button" 
+                        class="btn btn-sm flex-fill text-nowrap mobile-day-tab @(esActivo ? "btn-primary text-white" : "btn-light border")"
+                        @onclick="() => SeleccionarDiaMobile(idx)">
+                    <div class="font-bold">@d.ToString("ddd", new System.Globalization.CultureInfo("es-ES")).ToUpper()</div>
+                    <div class="small">@d.ToString("dd/MM")</div>
+                    @if (cantidad > 0)
+                    {
+                        <span class="badge @(esActivo ? "bg-white text-primary" : "bg-primary text-white") rounded-pill mt-1">@cantidad</span>
+                    }
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- VISTA SEMANAL (6 Columnas en Desktop; 1 Día activo responsivo en Móvil) -->
     <div class="semana-grid-container">
         @for (int i = 0; i < Math.Min(5, DiasSemana.Count); i++)
         {
             var dia = DiasSemana[i];
-            var turnosDelDia = TurnosPorFecha.ContainsKey(dia) ? TurnosPorFecha[dia] : new List<Turno>();
+            var turnosDelDia = ObtenerTurnosFiltradosPorDia(dia);
             var esHoy = dia == DateOnly.FromDateTime(DateTime.Today);
             var isRightEdge = i >= 3;
             var diaNombre = dia.ToString("dddd", new System.Globalization.CultureInfo("es-ES")).ToUpper();
 
-            <div class="col-dia-semana">
+            <div class="col-dia-semana @(i == IndiceDiaMobile ? "d-block" : "d-none d-md-block")">
                 <div class="card card-dia-semana @(esHoy ? "border-primary shadow-sm" : "")">
                     <div class="card-header-semana p-2 d-flex align-items-center justify-content-between @(esHoy ? "bg-primary text-white" : "bg-light")">
                         <div>
@@ -137,19 +175,19 @@
             </div>
         }
 
-        <!-- Columna 6: Sábado y Domingo compartiendo un único espacio vertical (uno abajo del otro) -->
+        <!-- Columna 6: Sábado y Domingo compartiendo un único espacio vertical (uno abajo del otro en Desktop) -->
         @if (DiasSemana.Count >= 7)
         {
             var sabado = DiasSemana[5];
             var domingo = DiasSemana[6];
-            var turnosSabado = TurnosPorFecha.ContainsKey(sabado) ? TurnosPorFecha[sabado] : new List<Turno>();
-            var turnosDomingo = TurnosPorFecha.ContainsKey(domingo) ? TurnosPorFecha[domingo] : new List<Turno>();
+            var turnosSabado = ObtenerTurnosFiltradosPorDia(sabado);
+            var turnosDomingo = ObtenerTurnosFiltradosPorDia(domingo);
             var esSabadoHoy = sabado == DateOnly.FromDateTime(DateTime.Today);
             var esDomingoHoy = domingo == DateOnly.FromDateTime(DateTime.Today);
 
-            <div class="col-finde-semana">
+            <div class="col-finde-semana @(IndiceDiaMobile >= 5 ? "d-block" : "d-none d-md-flex")">
                 <!-- Sub-tarjeta SÁBADO (arriba) -->
-                <div class="card card-dia-semana card-dia-finde @(esSabadoHoy ? "border-primary shadow-sm" : "")">
+                <div class="card card-dia-semana card-dia-finde @(esSabadoHoy ? "border-primary shadow-sm" : "") @(IndiceDiaMobile == 6 ? "d-none d-md-flex" : "d-flex")">
                     <div class="card-header-semana p-2 d-flex align-items-center justify-content-between @(esSabadoHoy ? "bg-primary text-white" : "bg-light")">
                         <div>
                             <div class="font-bold dia-titulo">
@@ -192,7 +230,7 @@
                 </div>
 
                 <!-- Sub-tarjeta DOMINGO (abajo) -->
-                <div class="card card-dia-semana card-dia-finde @(esDomingoHoy ? "border-primary shadow-sm" : "")">
+                <div class="card card-dia-semana card-dia-finde @(esDomingoHoy ? "border-primary shadow-sm" : "") @(IndiceDiaMobile == 5 ? "d-none d-md-flex" : "d-flex")">
                     <div class="card-header-semana p-2 d-flex align-items-center justify-content-between @(esDomingoHoy ? "bg-primary text-white" : "bg-light")">
                         <div>
                             <div class="font-bold dia-titulo">
@@ -252,14 +290,16 @@
                         <span>Paciente <span class="text-danger">*</span></span>
                         @if (nuevoTurnoDto.IdPaciente > 0)
                         {
-                            <span class="badge bg-success-subtle text-success border border-success-subtle">
-                                ✓ Seleccionado
+                            <span class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1">
+                                <i class="bi bi-check2" aria-hidden="true"></i> Seleccionado
                             </span>
                         }
                     </label>
 
                     <div class="input-group">
-                        <span class="input-group-text bg-white text-muted">🔍</span>
+                        <span class="input-group-text bg-white text-muted">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                        </span>
                         <input type="text" 
                                class="form-control" 
                                placeholder="Buscar por nombre, apellido (ej: Gonzales, Matias)..." 
@@ -269,7 +309,7 @@
                         @if (!string.IsNullOrWhiteSpace(TextoBusquedaPacienteNuevo) || nuevoTurnoDto.IdPaciente > 0)
                         {
                             <button type="button" class="btn btn-outline-secondary" @onclick="LimpiarSeleccionPacienteNuevo" title="Limpiar búsqueda">
-                                ✕
+                                <i class="bi bi-x-lg" aria-hidden="true"></i>
                             </button>
                         }
                     </div>
@@ -278,8 +318,8 @@
                     {
                         <div class="p-2 mt-2 bg-light border border-success-subtle rounded d-flex justify-content-between align-items-center">
                             <div>
-                                <div class="font-bold text-success">
-                                    👤 @PacienteSeleccionadoNuevo.Persona?.Nombre @PacienteSeleccionadoNuevo.Persona?.Apellido
+                                <div class="font-bold text-success d-inline-flex align-items-center gap-1">
+                                    <i class="bi bi-person-fill" aria-hidden="true"></i> @PacienteSeleccionadoNuevo.Persona?.Nombre @PacienteSeleccionadoNuevo.Persona?.Apellido
                                 </div>
                                 <div class="small text-muted">
                                     DNI: @(PacienteSeleccionadoNuevo.NumDocumento ?? "S/D") | Tel: @(PacienteSeleccionadoNuevo.Persona?.Telefono?.ToString() ?? "S/T")
@@ -298,8 +338,8 @@
                             {
                                 <div class="p-2 text-muted small bg-light border-bottom d-flex justify-content-between align-items-center">
                                     <span>Resultados (@PacientesFiltradosNuevo.Count)</span>
-                                    <button type="button" class="btn btn-xs btn-link p-0 text-decoration-none text-muted" @onclick="() => MostrarDropdownPacientesNuevo = false">
-                                        Cerrar ✕
+                                    <button type="button" class="btn btn-xs btn-link p-0 text-decoration-none text-muted d-inline-flex align-items-center gap-1" @onclick="() => MostrarDropdownPacientesNuevo = false">
+                                        <span>Cerrar</span> <i class="bi bi-x-lg" aria-hidden="true"></i>
                                     </button>
                                 </div>
                                 <div class="dropdown-pacientes-scroll">
@@ -329,7 +369,10 @@
                             else
                             {
                                 <div class="p-3 text-center text-muted small">
-                                    <div>⚠️ No se encontró ningún paciente similar a <strong>"@TextoBusquedaPacienteNuevo"</strong></div>
+                                    <div class="d-inline-flex align-items-center gap-1">
+                                        <i class="bi bi-exclamation-triangle-fill text-warning" aria-hidden="true"></i>
+                                        <span>No se encontró ningún paciente similar a <strong>"@TextoBusquedaPacienteNuevo"</strong></span>
+                                    </div>
                                     <div class="micro-text mt-1 text-secondary">Verifica que el paciente esté dado de alta en la sección Pacientes.</div>
                                 </div>
                             }
@@ -342,6 +385,7 @@
                         <label class="form-label font-semibold">Fecha</label>
                         <input type="date" 
                                class="form-control" 
+                               min="@FechaMinimaPermitidaIso"
                                @bind="nuevoTurnoDto.Fecha" 
                                @bind:format="yyyy-MM-dd" />
                     </div>
@@ -363,16 +407,16 @@
                             <input class="form-check-input mt-0" type="radio" name="modalidadNuevo" id="modNuevoPresencial" 
                                    checked="@(nuevoTurnoDto.Modalidad == ModalidadTurno.Presencial)"
                                    @onchange="() => nuevoTurnoDto.Modalidad = ModalidadTurno.Presencial" />
-                            <label class="form-check-label mb-0 cursor-pointer" for="modNuevoPresencial">
-                                🏥 Presencial (Consultorio)
+                            <label class="form-check-label mb-0 cursor-pointer d-inline-flex align-items-center gap-1" for="modNuevoPresencial">
+                                <i class="bi bi-hospital" aria-hidden="true"></i> Presencial (Consultorio)
                             </label>
                         </div>
                         <div class="modal-check-btn @(nuevoTurnoDto.Modalidad == ModalidadTurno.Online ? "active" : "")" @onclick="() => nuevoTurnoDto.Modalidad = ModalidadTurno.Online">
                             <input class="form-check-input mt-0" type="radio" name="modalidadNuevo" id="modNuevoOnline" 
                                    checked="@(nuevoTurnoDto.Modalidad == ModalidadTurno.Online)"
                                    @onchange="() => nuevoTurnoDto.Modalidad = ModalidadTurno.Online" />
-                            <label class="form-check-label mb-0 cursor-pointer" for="modNuevoOnline">
-                                📹 Online (Videollamada)
+                            <label class="form-check-label mb-0 cursor-pointer d-inline-flex align-items-center gap-1" for="modNuevoOnline">
+                                <i class="bi bi-camera-video" aria-hidden="true"></i> Online (Videollamada)
                             </label>
                         </div>
                     </div>
@@ -387,8 +431,9 @@
                         </div>
                         <input type="url" class="form-control" @bind="nuevoTurnoDto.EnlaceReunion" 
                                placeholder="https://meet.google.com/... o https://zoom.us/... (opcional)" />
-                        <div class="form-text small text-muted mt-1">
-                            💡 Opcional. Si no ingresas un enlace, el turno se registrará sin enlace y el botón de acceso permanecerá inhabilitado.
+                        <div class="form-text small text-muted mt-1 d-inline-flex align-items-center gap-1">
+                            <i class="bi bi-info-circle" aria-hidden="true"></i>
+                            <span>Opcional. Si no ingresas un enlace, el turno se registrará sin enlace y el botón de acceso permanecerá inhabilitado.</span>
                         </div>
                     </div>
                 }
@@ -420,14 +465,16 @@
                         <span>Paciente <span class="text-danger">*</span></span>
                         @if (recurrenteDto.IdPaciente > 0)
                         {
-                            <span class="badge bg-success-subtle text-success border border-success-subtle">
-                                ✓ Seleccionado
+                            <span class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1">
+                                <i class="bi bi-check2" aria-hidden="true"></i> Seleccionado
                             </span>
                         }
                     </label>
 
                     <div class="input-group">
-                        <span class="input-group-text bg-white text-muted">🔍</span>
+                        <span class="input-group-text bg-white text-muted">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                        </span>
                         <input type="text" 
                                class="form-control" 
                                placeholder="Buscar por nombre, apellido (ej: Gonzales, Matias)..." 
@@ -437,7 +484,7 @@
                         @if (!string.IsNullOrWhiteSpace(TextoBusquedaPacienteRecurrente) || recurrenteDto.IdPaciente > 0)
                         {
                             <button type="button" class="btn btn-outline-secondary" @onclick="LimpiarSeleccionPacienteRecurrente" title="Limpiar búsqueda">
-                                ✕
+                                <i class="bi bi-x-lg" aria-hidden="true"></i>
                             </button>
                         }
                     </div>
@@ -446,8 +493,8 @@
                     {
                         <div class="p-2 mt-2 bg-light border border-success-subtle rounded d-flex justify-content-between align-items-center">
                             <div>
-                                <div class="font-bold text-success">
-                                    👤 @PacienteSeleccionadoRecurrente.Persona?.Nombre @PacienteSeleccionadoRecurrente.Persona?.Apellido
+                                <div class="font-bold text-success d-inline-flex align-items-center gap-1">
+                                    <i class="bi bi-person-fill" aria-hidden="true"></i> @PacienteSeleccionadoRecurrente.Persona?.Nombre @PacienteSeleccionadoRecurrente.Persona?.Apellido
                                 </div>
                                 <div class="small text-muted">
                                     DNI: @(PacienteSeleccionadoRecurrente.NumDocumento ?? "S/D")
@@ -466,8 +513,8 @@
                             {
                                 <div class="p-2 text-muted small bg-light border-bottom d-flex justify-content-between align-items-center">
                                     <span>Resultados (@PacientesFiltradosRecurrente.Count)</span>
-                                    <button type="button" class="btn btn-xs btn-link p-0 text-decoration-none text-muted" @onclick="() => MostrarDropdownPacientesRecurrente = false">
-                                        Cerrar ✕
+                                    <button type="button" class="btn btn-xs btn-link p-0 text-decoration-none text-muted d-inline-flex align-items-center gap-1" @onclick="() => MostrarDropdownPacientesRecurrente = false">
+                                        <span>Cerrar</span> <i class="bi bi-x-lg" aria-hidden="true"></i>
                                     </button>
                                 </div>
                                 <div class="dropdown-pacientes-scroll">
@@ -491,7 +538,10 @@
                             else
                             {
                                 <div class="p-3 text-center text-muted small">
-                                    <div>⚠️ No se encontró ningún paciente similar a <strong>"@TextoBusquedaPacienteRecurrente"</strong></div>
+                                    <div class="d-inline-flex align-items-center gap-1">
+                                        <i class="bi bi-exclamation-triangle-fill text-warning" aria-hidden="true"></i>
+                                        <span>No se encontró ningún paciente similar a <strong>"@TextoBusquedaPacienteRecurrente"</strong></span>
+                                    </div>
                                 </div>
                             }
                         </div>
@@ -525,6 +575,7 @@
                         <label class="form-label font-semibold">Fecha Inicio</label>
                         <input type="date" 
                                class="form-control" 
+                               min="@FechaMinimaPermitidaIso"
                                @bind="recurrenteDto.FechaInicio" 
                                @bind:format="yyyy-MM-dd" />
                     </div>
@@ -544,16 +595,16 @@
                             <input class="form-check-input mt-0" type="radio" name="modalidadRecurrente" id="modRecPresencial" 
                                    checked="@(recurrenteDto.Modalidad == ModalidadTurno.Presencial)"
                                    @onchange="() => recurrenteDto.Modalidad = ModalidadTurno.Presencial" />
-                            <label class="form-check-label mb-0 cursor-pointer" for="modRecPresencial">
-                                🏥 Presencial (Consultorio)
+                            <label class="form-check-label mb-0 cursor-pointer d-inline-flex align-items-center gap-1" for="modRecPresencial">
+                                <i class="bi bi-hospital" aria-hidden="true"></i> Presencial (Consultorio)
                             </label>
                         </div>
                         <div class="modal-check-btn @(recurrenteDto.Modalidad == ModalidadTurno.Online ? "active" : "")" @onclick="() => recurrenteDto.Modalidad = ModalidadTurno.Online">
                             <input class="form-check-input mt-0" type="radio" name="modalidadRecurrente" id="modRecOnline" 
                                    checked="@(recurrenteDto.Modalidad == ModalidadTurno.Online)"
                                    @onchange="() => recurrenteDto.Modalidad = ModalidadTurno.Online" />
-                            <label class="form-check-label mb-0 cursor-pointer" for="modRecOnline">
-                                📹 Online (Videollamada)
+                            <label class="form-check-label mb-0 cursor-pointer d-inline-flex align-items-center gap-1" for="modRecOnline">
+                                <i class="bi bi-camera-video" aria-hidden="true"></i> Online (Videollamada)
                             </label>
                         </div>
                     </div>
@@ -568,8 +619,9 @@
                         </div>
                         <input type="url" class="form-control" @bind="recurrenteDto.EnlaceReunion" 
                                placeholder="https://meet.google.com/... o https://zoom.us/... (opcional)" />
-                        <div class="form-text small text-muted mt-1">
-                            💡 Opcional. Si no ingresas un enlace, el turno se registrará sin enlace y el botón de acceso permanecerá inhabilitado.
+                        <div class="form-text small text-muted mt-1 d-inline-flex align-items-center gap-1">
+                            <i class="bi bi-info-circle" aria-hidden="true"></i>
+                            <span>Opcional. Si no ingresas un enlace, el turno se registrará sin enlace y el botón de acceso permanecerá inhabilitado.</span>
                         </div>
                     </div>
                 }
@@ -590,7 +642,7 @@
         <div class="modal-card-priority" @onclick:stopPropagation="true">
             <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
                 <div class="d-flex align-items-center gap-2">
-                    <span style="font-size: 1.25rem;">📋</span>
+                    <i class="bi bi-file-earmark-medical text-primary fs-5" aria-hidden="true"></i>
                     <h5 class="m-0 font-bold text-dark">Detalles del Turno</h5>
                 </div>
                 <button type="button" class="btn-close" @onclick="CerrarModalEstado" title="Cerrar"></button>
@@ -610,14 +662,37 @@
                     </div>
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <span class="text-muted small">Modalidad:</span>
-                        <span class="badge @(turnoSeleccionado.Modalidad == ModalidadTurno.Online ? "badge-modalidad-online-sm" : "bg-light text-secondary border")">
-                            @(turnoSeleccionado.Modalidad == ModalidadTurno.Online ? "📹 Online" : "🏥 Presencial")
+                        <span class="badge @(turnoSeleccionado.Modalidad == ModalidadTurno.Online ? "badge-modalidad-online-sm" : "bg-light text-secondary border") d-inline-flex align-items-center gap-1">
+                            @if (turnoSeleccionado.Modalidad == ModalidadTurno.Online)
+                            {
+                                <i class="bi bi-camera-video" aria-hidden="true"></i> <span>Online</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-hospital" aria-hidden="true"></i> <span>Presencial</span>
+                            }
                         </span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <span class="text-muted small">Estado actual:</span>
-                        <span class="badge-estado @GetBadgeClass(turnoSeleccionado.Estado)">
-                            @GetEstadoTextoConIcono(turnoSeleccionado.Estado)
+                        <span class="badge-estado @GetBadgeClass(turnoSeleccionado.Estado) d-inline-flex align-items-center gap-1">
+                            @if (turnoSeleccionado.Estado == EstadoTurno.Activo)
+                            {
+                                <i class="bi bi-check-circle" aria-hidden="true"></i>
+                            }
+                            else if (turnoSeleccionado.Estado == EstadoTurno.Completo)
+                            {
+                                <i class="bi bi-check-all" aria-hidden="true"></i>
+                            }
+                            else if (turnoSeleccionado.Estado == EstadoTurno.Falta)
+                            {
+                                <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                            }
+                            else if (turnoSeleccionado.Estado == EstadoTurno.Cancelado)
+                            {
+                                <i class="bi bi-x-circle" aria-hidden="true"></i>
+                            }
+                            <span>@GetEstadoTextoConIcono(turnoSeleccionado.Estado)</span>
                         </span>
                     </div>
 
@@ -640,10 +715,12 @@
                 </div>
 
                 <label class="form-label font-semibold mb-2">Seleccionar Estado:</label>
-                <!-- Select ocultado según requerimiento: solo botones Activo, Completo, Falta y Cancelado visibles -->
+                <!-- Opciones interactivas de cambio de estado -->
                 <div class="d-flex flex-column gap-1">
                     <button type="button" class="btn-state-item btn-state-activo @(estadoSeleccionado == EstadoTurno.Activo ? "state-current" : "")" @onclick="() => estadoSeleccionado = EstadoTurno.Activo">
-                        <span class="state-icon-circle bg-activo">✓</span>
+                        <span class="state-icon-circle bg-activo d-inline-flex align-items-center justify-content-center">
+                            <i class="bi bi-check-lg" aria-hidden="true"></i>
+                        </span>
                         <span>Activo</span>
                         @if (estadoSeleccionado == EstadoTurno.Activo)
                         {
@@ -651,7 +728,9 @@
                         }
                     </button>
                     <button type="button" class="btn-state-item btn-state-completo @(estadoSeleccionado == EstadoTurno.Completo ? "state-current" : "")" @onclick="() => estadoSeleccionado = EstadoTurno.Completo">
-                        <span class="state-icon-circle bg-completo">✓</span>
+                        <span class="state-icon-circle bg-completo d-inline-flex align-items-center justify-content-center">
+                            <i class="bi bi-check-all" aria-hidden="true"></i>
+                        </span>
                         <span>Completo</span>
                         @if (estadoSeleccionado == EstadoTurno.Completo)
                         {
@@ -659,7 +738,9 @@
                         }
                     </button>
                     <button type="button" class="btn-state-item btn-state-falta @(estadoSeleccionado == EstadoTurno.Falta ? "state-current" : "")" @onclick="() => estadoSeleccionado = EstadoTurno.Falta">
-                        <span class="state-icon-circle bg-falta">⚠</span>
+                        <span class="state-icon-circle bg-falta d-inline-flex align-items-center justify-content-center">
+                            <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                        </span>
                         <span>Falta</span>
                         @if (estadoSeleccionado == EstadoTurno.Falta)
                         {
@@ -667,7 +748,9 @@
                         }
                     </button>
                     <button type="button" class="btn-state-item btn-state-cancelado @(estadoSeleccionado == EstadoTurno.Cancelado ? "state-current" : "")" @onclick="() => estadoSeleccionado = EstadoTurno.Cancelado">
-                        <span class="state-icon-circle bg-cancelado">✕</span>
+                        <span class="state-icon-circle bg-cancelado d-inline-flex align-items-center justify-content-center">
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                        </span>
                         <span>Cancelado</span>
                         @if (estadoSeleccionado == EstadoTurno.Cancelado)
                         {
@@ -730,10 +813,31 @@
             <!-- Fila Superior: Badges y Hora -->
             <div class="d-flex justify-content-between align-items-center mb-1">
                 <div class="d-flex align-items-center gap-1 flex-wrap">
-                    <span class="badge-estado @GetBadgeClass(turno.Estado)">@GetEstadoTextoConIcono(turno.Estado)</span>
+                    <span class="badge-estado @GetBadgeClass(turno.Estado) d-inline-flex align-items-center gap-1">
+                        @if (turno.Estado == EstadoTurno.Activo)
+                        {
+                            <i class="bi bi-check-circle" aria-hidden="true"></i>
+                        }
+                        else if (turno.Estado == EstadoTurno.Completo)
+                        {
+                            <i class="bi bi-check-all" aria-hidden="true"></i>
+                        }
+                        else if (turno.Estado == EstadoTurno.Falta)
+                        {
+                            <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                        }
+                        else if (turno.Estado == EstadoTurno.Cancelado)
+                        {
+                            <i class="bi bi-x-circle" aria-hidden="true"></i>
+                        }
+                        <span>@GetEstadoTextoConIcono(turno.Estado)</span>
+                    </span>
                     @if (turno.Modalidad == ModalidadTurno.Online)
                     {
-                        <span class="badge badge-modalidad-online-sm" title="Turno Online (Videollamada)">📹 Online</span>
+                        <span class="badge badge-modalidad-online-sm d-inline-flex align-items-center gap-1" title="Turno Online (Videollamada)">
+                            <i class="bi bi-camera-video" aria-hidden="true"></i>
+                            <span>Online</span>
+                        </span>
                     }
                 </div>
                 <span class="badge bg-light text-dark border font-semibold" style="font-size: 0.72rem;">@turno.Hora.ToString("HH:mm")</span>
@@ -751,14 +855,17 @@
                     @if (turno.Modalidad == ModalidadTurno.Online && !string.IsNullOrWhiteSpace(turno.EnlaceReunion) && turno.Estado == EstadoTurno.Activo)
                     {
                         <a href="@turno.EnlaceReunion" target="_blank" class="btn btn-xs btn-join-videocall py-1 px-2 w-100 text-center text-truncate" title="Unirse a la videollamada">
-                            <span class="video-icon-pulse">●</span> 📹 Unirse a llamada
+                            <span class="video-icon-pulse">●</span>
+                            <i class="bi bi-camera-video-fill ms-1 me-1" aria-hidden="true"></i>
+                            <span>Unirse a llamada</span>
                         </a>
                     }
 
                     @if (turno.Estado == EstadoTurno.Completo)
                     {
-                        <a href="@GetPdfUrl(turno.IdTurno)" target="_blank" class="btn btn-xs btn-outline-success py-1 px-2 w-100 text-center text-truncate" style="font-size: 0.72rem;" title="Descargar comprobante de atención en PDF">
-                            📄 PDF Comprobante
+                        <a href="@GetPdfUrl(turno.IdTurno)" target="_blank" class="btn btn-xs btn-outline-success py-1 px-2 w-100 text-center text-truncate d-inline-flex align-items-center justify-content-center gap-1" style="font-size: 0.72rem;" title="Descargar comprobante de atención en PDF">
+                            <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+                            <span>Comprobante PDF</span>
                         </a>
                     }
                 </div>

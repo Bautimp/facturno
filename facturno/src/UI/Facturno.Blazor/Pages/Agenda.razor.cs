@@ -36,6 +36,9 @@ public partial class Agenda : ComponentBase
     protected List<DateOnly> DiasSemana = new();
     protected List<DateOnly> DiasMes = new();
     protected Dictionary<DateOnly, List<Turno>> TurnosPorFecha = new();
+    protected EstadoTurno? FiltroEstado = null;
+    protected int IndiceDiaMobile = 0;
+    protected string FechaMinimaPermitidaIso => DateOnly.FromDateTime(DateTime.Today.AddDays(-30)).ToString("yyyy-MM-dd");
 
     protected string? MensajeAlerta;
     protected bool MostrarModalNuevo = false;
@@ -237,9 +240,49 @@ public partial class Agenda : ComponentBase
         return $"Semana del {inicio.Day}/{inicio.Month}/{inicio.Year} al {fin.Day}/{fin.Month}/{fin.Year}";
     }
 
+    protected void OnFiltroEstadoChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(val) || !Enum.TryParse<EstadoTurno>(val, out var parsed))
+        {
+            FiltroEstado = null;
+        }
+        else
+        {
+            FiltroEstado = parsed;
+        }
+    }
+
+    protected List<Turno> ObtenerTurnosFiltradosPorDia(DateOnly dia)
+    {
+        if (!TurnosPorFecha.TryGetValue(dia, out var lista))
+        {
+            return new List<Turno>();
+        }
+
+        if (FiltroEstado == null)
+        {
+            return lista;
+        }
+
+        return lista.Where(t => t.Estado == FiltroEstado.Value).ToList();
+    }
+
+    protected void SeleccionarDiaMobile(int idx)
+    {
+        if (idx >= 0 && idx < DiasSemana.Count)
+        {
+            IndiceDiaMobile = idx;
+        }
+    }
+
     protected int GetTotalTurnosSemana()
     {
-        return TurnosPorFecha.Values.Sum(list => list.Count);
+        if (FiltroEstado == null)
+        {
+            return TurnosPorFecha.Values.Sum(list => list.Count);
+        }
+        return TurnosPorFecha.Values.Sum(list => list.Count(t => t.Estado == FiltroEstado.Value));
     }
 
     protected async Task CargarProfesionales()
@@ -335,6 +378,17 @@ public partial class Agenda : ComponentBase
         for (int i = 0; i < 7; i++)
         {
             DiasSemana.Add(primerDiaSemana.AddDays(i));
+        }
+
+        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        var idxHoy = DiasSemana.IndexOf(hoy);
+        if (idxHoy >= 0)
+        {
+            IndiceDiaMobile = idxHoy;
+        }
+        else if (IndiceDiaMobile >= DiasSemana.Count)
+        {
+            IndiceDiaMobile = 0;
         }
     }
 
@@ -542,6 +596,21 @@ public partial class Agenda : ComponentBase
             return;
         }
 
+        var horaMinima = new TimeOnly(6, 0);
+        var horaMaxima = new TimeOnly(23, 0);
+        if (nuevoTurnoDto.Hora < horaMinima || nuevoTurnoDto.Hora > horaMaxima)
+        {
+            MensajeAlerta = "El horario del turno debe estar comprendido entre las 06:00 y las 23:00 hs.";
+            return;
+        }
+
+        var fechaMinima = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+        if (nuevoTurnoDto.Fecha < fechaMinima)
+        {
+            MensajeAlerta = "No se pueden agendar turnos con más de 30 días de antigüedad respecto al día de hoy.";
+            return;
+        }
+
         nuevoTurnoDto.IdProfesional = SelectedProfesionalId;
         var res = await Http.PostAsJsonAsync("api/turnos", nuevoTurnoDto);
         var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Turno>>();
@@ -578,6 +647,21 @@ public partial class Agenda : ComponentBase
         if (recurrenteDto.IdPaciente == 0)
         {
             MensajeAlerta = "Debe seleccionar un paciente.";
+            return;
+        }
+
+        var horaMinima = new TimeOnly(6, 0);
+        var horaMaxima = new TimeOnly(23, 0);
+        if (recurrenteDto.Hora < horaMinima || recurrenteDto.Hora > horaMaxima)
+        {
+            MensajeAlerta = "El horario del turno debe estar comprendido entre las 06:00 y las 23:00 hs.";
+            return;
+        }
+
+        var fechaMinima = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+        if (recurrenteDto.FechaInicio < fechaMinima)
+        {
+            MensajeAlerta = "La fecha de inicio de la serie recurrente no puede superar los 30 días de antigüedad.";
             return;
         }
 
@@ -618,10 +702,10 @@ public partial class Agenda : ComponentBase
 
     protected string GetEstadoTextoConIcono(EstadoTurno estado) => estado switch
     {
-        EstadoTurno.Activo => "✓ Activo",
-        EstadoTurno.Completo => "✓ Completo",
-        EstadoTurno.Falta => "⚠ Falta",
-        EstadoTurno.Cancelado => "✕ Cancelado",
+        EstadoTurno.Activo => "Activo",
+        EstadoTurno.Completo => "Completo",
+        EstadoTurno.Falta => "Falta",
+        EstadoTurno.Cancelado => "Cancelado",
         _ => estado.ToString()
     };
 

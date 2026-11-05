@@ -6,7 +6,7 @@
             <header class="top-navbar-header shadow-sm">
                 <div class="navbar-left-section">
                     <div class="top-brand">
-                        <span class="brand-badge-icon">🩺</span>
+                        <i class="bi bi-hospital fs-4 text-primary" aria-hidden="true"></i>
                         <span class="brand-title-top">Facturno</span>
                         <span class="brand-divider"></span>
                         <span class="brand-clinic-name">Centro Médico Buen Pastor</span>
@@ -27,8 +27,9 @@
                             <span class="badge role-badge">@GetUserRole(context.User)</span>
                         </div>
                     </div>
-                    <button class="btn btn-outline-danger btn-sm rounded-pill px-3 btn-logout" @onclick="Logout" title="Cerrar sesión actual">
-                        Cerrar Sesión
+                    <button class="btn btn-outline-danger btn-sm rounded-pill px-3 btn-logout d-inline-flex align-items-center gap-1" @onclick="ConfirmarYDesloguear" title="Cerrar sesión actual">
+                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                        <span>Cerrar Sesión</span>
                     </button>
                 </div>
             </header>

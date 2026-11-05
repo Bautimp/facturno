@@ -36,14 +36,14 @@
             <button class="nav-link @(TabActiva == "personal" ? "active fw-bold border-bottom-0 text-primary" : "text-secondary")" 
                     style="cursor: pointer;"
                     @onclick='() => TabActiva = "personal"'>
-                👨‍⚕️ Personal Médico
+                <i class="bi bi-person-badge me-1" aria-hidden="true"></i> Personal Médico
             </button>
         </li>
         <li class="nav-item">
             <button class="nav-link @(TabActiva == "obrassociales" ? "active fw-bold border-bottom-0 text-primary" : "text-secondary")" 
                     style="cursor: pointer;"
                     @onclick='() => TabActiva = "obrassociales"'>
-                🏥 Obras Sociales
+                <i class="bi bi-hospital me-1" aria-hidden="true"></i> Obras Sociales
             </button>
         </li>
     </ul>
@@ -85,8 +85,8 @@
                                 </span>
                             </td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => AbrirModalEditar(prof)">
-                                    ✏️ Editar
+                                <button class="btn btn-sm btn-outline-primary me-2 d-inline-flex align-items-center" @onclick="() => AbrirModalEditar(prof)">
+                                    <i class="bi bi-pencil-square me-1" aria-hidden="true"></i> Editar
                                 </button>
                                 <button class="btn btn-sm @(esActivo ? "btn-outline-danger" : "btn-outline-success")"
                                         @onclick="() => ToggleEstadoActivo(prof, !esActivo)">
@@ -179,7 +179,7 @@
         <div class="row mb-3 align-items-center">
             <div class="col-md-6">
                 <div class="input-group">
-                    <span class="input-group-text bg-white">🔍</span>
+                    <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
                     <input type="text" class="form-control" placeholder="Buscar Obra Social por nombre..." value="@FiltroObraSocial" @oninput="OnFiltroObraSocialInput" />
                 </div>
             </div>
@@ -214,8 +214,8 @@
                                 </span>
                             </td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => AbrirModalEditarObraSocial(os)">
-                                    ✏️ Editar
+                                <button class="btn btn-sm btn-outline-primary me-2 d-inline-flex align-items-center" @onclick="() => AbrirModalEditarObraSocial(os)">
+                                    <i class="bi bi-pencil-square me-1" aria-hidden="true"></i> Editar
                                 </button>
                                 <button class="btn btn-sm @(os.Activo ? "btn-outline-danger" : "btn-outline-success")"
                                         @onclick="() => ToggleEstadoObraSocial(os, !os.Activo)">

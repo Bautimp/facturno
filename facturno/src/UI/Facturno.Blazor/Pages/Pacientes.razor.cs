@@ -53,6 +53,12 @@ public partial class Pacientes : ComponentBase
         PaginaActual = 1;
     }
 
+    protected void OnNumDocumentoInput(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString() ?? string.Empty;
+        pacienteDto.NumDocumento = new string(raw.Where(char.IsDigit).Take(11).ToArray());
+    }
+
     protected void CambiarPagina(int nuevaPagina)
     {
         if (nuevaPagina >= 1 && nuevaPagina <= TotalPaginas)

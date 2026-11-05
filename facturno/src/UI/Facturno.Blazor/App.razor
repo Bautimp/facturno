@@ -4,9 +4,17 @@
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
                 <NotAuthorized>
                     <div class="unauthorized-container">
-                        <h2>Acceso No Autorizado</h2>
-                        <p>Por favor inicia sesión con una cuenta permitida para acceder a este módulo.</p>
-                        <a href="/login" class="btn btn-primary">Ir a Iniciar Sesión</a>
+                        <div class="unauthorized-card">
+                            <i class="bi bi-shield-lock text-primary fs-1 mb-3 d-inline-block" aria-hidden="true"></i>
+                            <h3 class="font-bold text-dark mb-2">Acceso Restringido</h3>
+                            <p class="text-muted small mb-4">
+                                Se requiere una sesión activa con permisos autorizados para acceder al módulo clínico solicitado.
+                            </p>
+                            <a href="/login" class="btn btn-primary-custom w-100 d-inline-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
+                                <span>Iniciar Sesión en Facturno</span>
+                            </a>
+                        </div>
                     </div>
                 </NotAuthorized>
             </AuthorizeRouteView>
@@ -15,9 +23,17 @@
         <NotFound>
             <LayoutView Layout="@typeof(MainLayout)">
                 <div class="not-found-container">
-                    <h2>Página No Encontrada</h2>
-                    <p>La dirección especificada no existe en Facturno.</p>
-                    <a href="/agenda" class="btn btn-primary">Volver a la Agenda</a>
+                    <div class="unauthorized-card">
+                        <i class="bi bi-file-earmark-x text-secondary fs-1 mb-3 d-inline-block" aria-hidden="true"></i>
+                        <h3 class="font-bold text-dark mb-2">Página No Encontrada</h3>
+                        <p class="text-muted small mb-4">
+                            La dirección ingresada no existe o fue reubicada en el sistema Facturno.
+                        </p>
+                        <a href="/agenda" class="btn btn-primary-custom w-100 d-inline-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-calendar3" aria-hidden="true"></i>
+                            <span>Ir a la Agenda Principal</span>
+                        </a>
+                    </div>
                 </div>
             </LayoutView>
         </NotFound>

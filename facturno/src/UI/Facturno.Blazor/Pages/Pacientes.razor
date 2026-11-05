@@ -70,8 +70,9 @@
                         </td>
                         <td>@(string.IsNullOrWhiteSpace(pac.NumObraSocial) ? "-" : pac.NumObraSocial)</td>
                         <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary" @onclick="() => EditarPaciente(pac)">
-                                ✏️ Editar
+                            <button class="btn btn-sm btn-outline-primary d-inline-flex align-items-center" @onclick="() => EditarPaciente(pac)">
+                                <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>
+                                <span>Editar</span>
                             </button>
                         </td>
                     </tr>
@@ -159,7 +160,15 @@
                     </div>
                     <div class="col-6">
                         <label class="form-label font-semibold">Nº Documento</label>
-                        <InputText @bind-Value="pacienteDto.NumDocumento" class="form-control" placeholder="ej: 38123456 (7-11 dígitos)" />
+                        <input type="text" 
+                               class="form-control" 
+                               inputmode="numeric"
+                               pattern="[0-9]*"
+                               maxlength="11"
+                               onkeypress="return /[0-9]/.test(event.key)"
+                               value="@pacienteDto.NumDocumento"
+                               @oninput="OnNumDocumentoInput"
+                               placeholder="ej: 38123456 (solo dígitos)" />
                     </div>
                 </div>
 
