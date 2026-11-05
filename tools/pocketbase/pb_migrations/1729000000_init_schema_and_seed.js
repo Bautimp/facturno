@@ -148,21 +148,21 @@ migrate((db) => {
 
   // --- Personas ---
   const personasData = [
-    { id: 1, nombre: "Admin", apellido: "Operador", correo: "admin@facturno.com", tel: 1122334455 },
-    { id: 2, nombre: "Laura", apellido: "Gómez", correo: "laura.gomez@facturno.com", tel: 1144556677 },
-    { id: 3, nombre: "Carlos", apellido: "Rossi", correo: "carlos.rossi@facturno.com", tel: 1155667788 },
-    { id: 4, nombre: "Marcos", apellido: "Benítez", correo: "marcos.admin@facturno.com", tel: 1166778899 },
-    { id: 5, nombre: "Juan", apellido: "Pérez", correo: "juan.perez@gmail.com", tel: 1133445566 },
-    { id: 6, nombre: "María", apellido: "Fernández", correo: "maria.f@hotmail.com", tel: 1177889900 },
-    { id: 7, nombre: "Lucas", apellido: "Gómez", correo: "lucas.gomez@yahoo.com", tel: 1188990011 },
-    { id: 8, nombre: "Sofía", apellido: "Martínez", correo: "sofia.martinez@gmail.com", tel: 1199887766 },
-    { id: 9, nombre: "Martín", apellido: "Rodríguez", correo: "martin.rodriguez@outlook.com", tel: 1123456789 },
-    { id: 10, nombre: "Camila", apellido: "López", correo: "camila.lopez@gmail.com", tel: 1134567890 },
-    { id: 11, nombre: "Diego", apellido: "Morales", correo: "diego.morales@yahoo.com", tel: 1145678901 },
-    { id: 12, nombre: "Valentina", apellido: "Herrera", correo: "valen.herrera@hotmail.com", tel: 1156789012 },
-    { id: 13, nombre: "Agustín", apellido: "Castro", correo: "agustin.castro@gmail.com", tel: 1167890123 },
-    { id: 14, nombre: "Lucía", apellido: "Romero", correo: "lucia.romero@gmail.com", tel: 1178901234 },
-    { id: 15, nombre: "Esteban", apellido: "Díaz", correo: "esteban.diaz@outlook.com", tel: 1189012345 }
+    { id: 1, nombre: "Admin", apellido: "Operador", correo: "admin@facturno.com", tel: 1122334455, activo: true },
+    { id: 2, nombre: "Laura", apellido: "Gómez", correo: "laura.gomez@facturno.com", tel: 1144556677, activo: true },
+    { id: 3, nombre: "Carlos", apellido: "Rossi", correo: "carlos.rossi@facturno.com", tel: 1155667788, activo: true },
+    { id: 4, nombre: "Marcos", apellido: "Benítez", correo: "marcos.admin@facturno.com", tel: 1166778899, activo: true },
+    { id: 5, nombre: "Juan", apellido: "Pérez", correo: "juan.perez@gmail.com", tel: 1133445566, activo: true },
+    { id: 6, nombre: "María", apellido: "Fernández", correo: "maria.f@hotmail.com", tel: 1177889900, activo: false },
+    { id: 7, nombre: "Lucas", apellido: "Gómez", correo: "lucas.gomez@yahoo.com", tel: 1188990011, activo: true },
+    { id: 8, nombre: "Sofía", apellido: "Martínez", correo: "sofia.martinez@gmail.com", tel: 1199887766, activo: true },
+    { id: 9, nombre: "Martín", apellido: "Rodríguez", correo: "martin.rodriguez@outlook.com", tel: 1123456789, activo: false },
+    { id: 10, nombre: "Camila", apellido: "López", correo: "camila.lopez@gmail.com", tel: 1134567890, activo: false },
+    { id: 11, nombre: "Diego", apellido: "Morales", correo: "diego.morales@yahoo.com", tel: 1145678901, activo: true },
+    { id: 12, nombre: "Valentina", apellido: "Herrera", correo: "valen.herrera@hotmail.com", tel: 1156789012, activo: true },
+    { id: 13, nombre: "Agustín", apellido: "Castro", correo: "agustin.castro@gmail.com", tel: 1167890123, activo: true },
+    { id: 14, nombre: "Lucía", apellido: "Romero", correo: "lucia.romero@gmail.com", tel: 1178901234, activo: true },
+    { id: 15, nombre: "Esteban", apellido: "Díaz", correo: "esteban.diaz@outlook.com", tel: 1189012345, activo: true }
   ];
 
   for (const p of personasData) {
