@@ -12,12 +12,7 @@
                 <i class="bi bi-sliders text-primary" aria-hidden="true"></i>
                 Panel de Configuración del Sistema
             </h3>
-            <p class="text-muted m-0">Parámetros del entorno y reglas operativas del consultorio (Acceso exclusivo: Rol Operador)</p>
-        </div>
-        <div>
-            <span class="badge bg-primary px-3 py-2 fs-6">
-                <i class="bi bi-shield-lock-fill me-1"></i> Rol: Operador
-            </span>
+            <p class="text-muted m-0">Parámetros del entorno y reglas operativas del consultorio</p>
         </div>
     </div>
 
@@ -31,7 +26,7 @@
     }
 
     <div class="row g-4 mt-1">
-        <!-- 1. Horario de Carga de Turnos -->
+        <!-- Horario de Carga de Turnos -->
         <div class="col-12 col-lg-6">
             <div class="border rounded-3 p-3 h-100 bg-light shadow-sm">
                 <div class="d-flex align-items-center gap-2 mb-2">
@@ -51,13 +46,10 @@
                         <input type="time" class="form-control" @bind="HoraFinInput" />
                     </div>
                 </div>
-                <div class="mt-2 text-muted small">
-                    <i class="bi bi-info-circle me-1"></i> Variable de entorno: <code>FACTURNO_HORA_INICIO_TURNOS</code> / <code>FACTURNO_HORA_FIN_TURNOS</code>
-                </div>
             </div>
         </div>
 
-        <!-- 2. Pacientes por día por profesional -->
+        <!-- Pacientes por día por profesional -->
         <div class="col-12 col-lg-6">
             <div class="border rounded-3 p-3 h-100 bg-light shadow-sm">
                 <div class="d-flex align-items-center gap-2 mb-2">
@@ -74,13 +66,10 @@
                         <span class="input-group-text">pacientes/día</span>
                     </div>
                 </div>
-                <div class="mt-2 text-muted small">
-                    <i class="bi bi-info-circle me-1"></i> Variable de entorno: <code>FACTURNO_MAX_PACIENTES_DIA</code>
-                </div>
             </div>
         </div>
 
-        <!-- 3. Precio máximo de consulta -->
+        <!-- Precio máximo de consulta -->
         <div class="col-12 col-lg-6">
             <div class="border rounded-3 p-3 h-100 bg-light shadow-sm">
                 <div class="d-flex align-items-center gap-2 mb-2">
@@ -97,13 +86,10 @@
                         <input type="number" step="100" min="0" class="form-control" @bind="Model.PrecioMaximoConsulta" />
                     </div>
                 </div>
-                <div class="mt-2 text-muted small">
-                    <i class="bi bi-info-circle me-1"></i> Variable de entorno: <code>FACTURNO_PRECIO_MAXIMO_CONSULTA</code>
-                </div>
             </div>
         </div>
 
-        <!-- 4. Tiempo entre turnos (Generalización de los 30 min) -->
+        <!-- Tiempo entre turnos (Generalización de los 30 min) -->
         <div class="col-12 col-lg-6">
             <div class="border rounded-3 p-3 h-100 bg-light shadow-sm">
                 <div class="d-flex align-items-center gap-2 mb-2">
@@ -126,60 +112,6 @@
                     <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => Model.MinutosEntreTurnos = 30">30 min</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => Model.MinutosEntreTurnos = 45">45 min</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => Model.MinutosEntreTurnos = 60">60 min</button>
-                </div>
-                <div class="mt-2 text-muted small">
-                    <i class="bi bi-info-circle me-1"></i> Variable de entorno: <code>FACTURNO_MINUTOS_ENTRE_TURNOS</code>
-                </div>
-            </div>
-        </div>
-
-        <!-- Resumen de Variables de Entorno del Entorno de Ejecución -->
-        <div class="col-12">
-            <div class="card border-0 bg-light-subtle shadow-sm p-3 rounded-3">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <h6 class="m-0 font-bold text-dark d-flex align-items-center gap-2">
-                        <i class="bi bi-terminal-fill text-secondary"></i>
-                        Variables de Entorno Activas del Sistema
-                    </h6>
-                    <span class="badge bg-secondary">Runtime</span>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered bg-white mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Variable</th>
-                                <th>Valor Configurado</th>
-                                <th>Descripción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>FACTURNO_HORA_INICIO_TURNOS</code></td>
-                                <td><span class="badge bg-primary">@Model.HoraInicioTurnos</span></td>
-                                <td>Hora mínima para carga y visualización de turnos</td>
-                            </tr>
-                            <tr>
-                                <td><code>FACTURNO_HORA_FIN_TURNOS</code></td>
-                                <td><span class="badge bg-primary">@Model.HoraFinTurnos</span></td>
-                                <td>Hora máxima para carga y visualización de turnos</td>
-                            </tr>
-                            <tr>
-                                <td><code>FACTURNO_MAX_PACIENTES_DIA</code></td>
-                                <td><span class="badge bg-success">@Model.MaxPacientesPorDiaPorProfesional</span></td>
-                                <td>Límite máximo de citas diarias por profesional</td>
-                            </tr>
-                            <tr>
-                                <td><code>FACTURNO_PRECIO_MAXIMO_CONSULTA</code></td>
-                                <td><span class="badge bg-warning text-dark">$ @Model.PrecioMaximoConsulta.ToString("N2")</span></td>
-                                <td>Precio máximo admisible para consultas médicas</td>
-                            </tr>
-                            <tr>
-                                <td><code>FACTURNO_MINUTOS_ENTRE_TURNOS</code></td>
-                                <td><span class="badge bg-danger">@Model.MinutosEntreTurnos min</span></td>
-                                <td>Separación mínima entre turnos consecutivos</td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>
