@@ -54,6 +54,7 @@ public class Paciente
     public ObraSocial? ObraSocial { get; set; }
     public string? NumObraSocial { get; set; }
     public string? PorcentajeIva { get; set; }
+    public bool Activo { get; set; } = true;
 }
 
 public class Turno

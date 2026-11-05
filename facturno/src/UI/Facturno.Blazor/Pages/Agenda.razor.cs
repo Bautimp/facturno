@@ -85,15 +85,15 @@ public partial class Agenda : ComponentBase
     protected bool MostrarDropdownPacientesNuevo = false;
     protected Paciente? PacienteSeleccionadoNuevo => ListaPacientes.FirstOrDefault(p => p.IdPaciente == nuevoTurnoDto.IdPaciente);
     protected List<Paciente> PacientesFiltradosNuevo => string.IsNullOrWhiteSpace(TextoBusquedaPacienteNuevo)
-        ? ListaPacientes.Take(25).ToList()
-        : ListaPacientes.Where(p => FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteNuevo)).ToList();
+        ? ListaPacientes.Where(p => p.Activo).Take(25).ToList()
+        : ListaPacientes.Where(p => p.Activo && FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteNuevo)).ToList();
 
     protected string TextoBusquedaPacienteRecurrente = string.Empty;
     protected bool MostrarDropdownPacientesRecurrente = false;
     protected Paciente? PacienteSeleccionadoRecurrente => ListaPacientes.FirstOrDefault(p => p.IdPaciente == recurrenteDto.IdPaciente);
     protected List<Paciente> PacientesFiltradosRecurrente => string.IsNullOrWhiteSpace(TextoBusquedaPacienteRecurrente)
-        ? ListaPacientes.Take(25).ToList()
-        : ListaPacientes.Where(p => FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteRecurrente)).ToList();
+        ? ListaPacientes.Where(p => p.Activo).Take(25).ToList()
+        : ListaPacientes.Where(p => p.Activo && FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteRecurrente)).ToList();
 
     protected void OnBusquedaPacienteNuevoInput(ChangeEventArgs e)
     {
@@ -442,10 +442,31 @@ public partial class Agenda : ComponentBase
     protected Turno? turnoSeleccionado;
     protected EstadoTurno estadoSeleccionado;
 
+    protected bool editandoFechaHora = false;
+    protected bool editandoModalidad = false;
+    protected bool editandoObservacion = false;
+    protected DateOnly editFecha;
+    protected TimeOnly editHora;
+    protected ModalidadTurno editModalidad = ModalidadTurno.Presencial;
+    protected string? editEnlaceReunion;
+    protected string? editObservacion;
+
+    protected void ToggleEditarFechaHora() => editandoFechaHora = !editandoFechaHora;
+    protected void ToggleEditarModalidad() => editandoModalidad = !editandoModalidad;
+    protected void ToggleEditarObservacion() => editandoObservacion = !editandoObservacion;
+
     protected void AbrirModalEstado(Turno turno)
     {
         turnoSeleccionado = turno;
         estadoSeleccionado = turno.Estado;
+        editFecha = turno.Fecha;
+        editHora = turno.Hora;
+        editModalidad = turno.Modalidad;
+        editEnlaceReunion = turno.EnlaceReunion;
+        editObservacion = turno.Observacion;
+        editandoFechaHora = false;
+        editandoModalidad = false;
+        editandoObservacion = false;
         mostrarModalEstado = true;
         StateHasChanged();
     }
@@ -454,6 +475,9 @@ public partial class Agenda : ComponentBase
     {
         mostrarModalEstado = false;
         turnoSeleccionado = null;
+        editandoFechaHora = false;
+        editandoModalidad = false;
+        editandoObservacion = false;
         StateHasChanged();
     }
 
@@ -466,22 +490,35 @@ public partial class Agenda : ComponentBase
             var updateDto = new TurnoUpdateDto
             {
                 IdTurno = turnoSeleccionado.IdTurno,
-                Fecha = turnoSeleccionado.Fecha,
-                Hora = turnoSeleccionado.Hora,
+                Fecha = editFecha,
+                Hora = editHora,
                 Estado = estadoSeleccionado,
-                Observacion = turnoSeleccionado.Observacion,
-                Modalidad = turnoSeleccionado.Modalidad,
-                EnlaceReunion = turnoSeleccionado.EnlaceReunion
+                Observacion = editObservacion,
+                Modalidad = editModalidad,
+                EnlaceReunion = editEnlaceReunion
             };
 
             var res = await Http.PutAsJsonAsync("api/turnos", updateDto);
+            if (!res.IsSuccessStatusCode)
+            {
+                var errStr = await res.Content.ReadAsStringAsync();
+                MensajeAlerta = $"Error al actualizar turno: {errStr}";
+                return;
+            }
+
             var apiResult = await res.Content.ReadFromJsonAsync<ApiResponse<Turno>>();
 
             if (apiResult != null && apiResult.Exito)
             {
                 turnoSeleccionado.Estado = estadoSeleccionado;
+                turnoSeleccionado.Fecha = editFecha;
+                turnoSeleccionado.Hora = editHora;
+                turnoSeleccionado.Modalidad = editModalidad;
+                turnoSeleccionado.EnlaceReunion = editEnlaceReunion;
+                turnoSeleccionado.Observacion = editObservacion;
+
                 var nombrePaciente = GetNombrePaciente(turnoSeleccionado.IdPaciente);
-                MensajeAlerta = $"Estado del turno de {nombrePaciente} actualizado a {estadoSeleccionado}.";
+                MensajeAlerta = $"Turno de {nombrePaciente} actualizado correctamente.";
                 CerrarModalEstado();
                 await CargarTurnos();
             }
@@ -492,7 +529,7 @@ public partial class Agenda : ComponentBase
         }
         catch (Exception ex)
         {
-            MensajeAlerta = $"Error al cambiar estado: {ex.Message}";
+            MensajeAlerta = $"Error al guardar cambios del turno: {ex.Message}";
         }
         finally
         {

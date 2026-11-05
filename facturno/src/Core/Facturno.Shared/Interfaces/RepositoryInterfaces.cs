@@ -22,6 +22,7 @@ public interface IPacienteRepository
     Task<List<Paciente>> ObtenerTodos();
     Task<Paciente> Crear(Paciente paciente, Persona persona);
     Task<Paciente> Actualizar(Paciente paciente, Persona persona);
+    Task<bool> CambiarEstadoActivo(long idPaciente, bool activo);
 }
 
 // Interfaz de repositorio para los profesionales

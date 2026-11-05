@@ -84,7 +84,8 @@ migrate((db) => {
       new SchemaField({ name: "tipo_documento", type: "text" }),
       new SchemaField({ name: "id_obra_social", type: "number" }),
       new SchemaField({ name: "num_obra_social", type: "text" }),
-      new SchemaField({ name: "porcentaje_iva", type: "text" })
+      new SchemaField({ name: "porcentaje_iva", type: "text" }),
+      new SchemaField({ name: "activo", type: "bool" })
     ],
     listRule: "", viewRule: "", createRule: "", updateRule: "", deleteRule: ""
   });
