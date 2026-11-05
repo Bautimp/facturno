@@ -4,7 +4,7 @@
     <AuthorizeView>
         <Authorized>
             <header class="top-navbar-header shadow-sm">
-                <div class="navbar-left-section">
+                <div class="navbar-header-main-row">
                     <div class="top-brand">
                         <i class="bi bi-hospital fs-4 text-primary" aria-hidden="true"></i>
                         <span class="brand-title-top">Facturno</span>
@@ -12,26 +12,27 @@
                         <span class="brand-clinic-name">Centro Médico Buen Pastor</span>
                     </div>
 
-                    <nav class="top-navigation-menu">
-                        <NavMenu />
-                    </nav>
+                    <div class="navbar-right-section">
+                        <div class="user-info-pill">
+                            <div class="user-avatar-circle">
+                                @GetUserInitials(context.User)
+                            </div>
+                            <div class="user-meta d-none d-md-flex">
+                                <span class="user-name">@context.User.Identity?.Name</span>
+                                <span class="badge role-badge">@GetUserRole(context.User)</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm rounded-pill px-2 px-md-3 btn-logout d-inline-flex align-items-center gap-1" @onclick="ConfirmarYDesloguear" title="Cerrar sesión actual">
+                            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                            <span class="d-none d-sm-inline">Cerrar Sesión</span>
+                            <span class="d-inline d-sm-none">Salir</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div class="navbar-right-section">
-                    <div class="user-info-pill">
-                        <div class="user-avatar-circle">
-                            @GetUserInitials(context.User)
-                        </div>
-                        <div class="user-meta d-none d-md-flex">
-                            <span class="user-name">@context.User.Identity?.Name</span>
-                            <span class="badge role-badge">@GetUserRole(context.User)</span>
-                        </div>
-                    </div>
-                    <button class="btn btn-outline-danger btn-sm rounded-pill px-3 btn-logout d-inline-flex align-items-center gap-1" @onclick="ConfirmarYDesloguear" title="Cerrar sesión actual">
-                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
-                        <span>Cerrar Sesión</span>
-                    </button>
-                </div>
+                <nav class="top-navigation-menu">
+                    <NavMenu />
+                </nav>
             </header>
 
             <main class="top-main-content">

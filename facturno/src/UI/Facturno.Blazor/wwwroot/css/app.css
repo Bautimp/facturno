@@ -70,11 +70,12 @@ body {
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
 }
 
+.navbar-header-main-row {
+    display: contents;
+}
+
 .navbar-left-section {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-    flex: 1;
+    display: contents;
 }
 
 .top-brand {
@@ -82,6 +83,7 @@ body {
     align-items: center;
     gap: 0.5rem;
     flex-shrink: 0;
+    order: 1;
 }
 
 .brand-badge-icon {
@@ -112,6 +114,9 @@ body {
 .top-navigation-menu {
     display: flex;
     align-items: center;
+    order: 2;
+    margin-left: 2rem;
+    margin-right: auto;
 }
 
 .top-nav-list {
@@ -160,6 +165,7 @@ body {
     align-items: center;
     gap: 1rem;
     flex-shrink: 0;
+    order: 3;
 }
 
 .user-info-pill {
@@ -1302,67 +1308,101 @@ body {
     /* Header Superior Adaptativo en Móvil */
     .top-navbar-header {
         height: auto;
-        padding: 0.75rem 1rem;
+        padding: 0.6rem 0.85rem;
         flex-direction: column;
         align-items: stretch;
-        gap: 0.65rem;
+        gap: 0.5rem;
     }
 
-    .navbar-left-section {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
+    .navbar-header-main-row {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
         width: 100%;
-        gap: 0.6rem;
     }
 
     .top-brand {
+        order: unset;
         display: flex;
         align-items: center;
-        width: 100%;
+        gap: 0.45rem;
+        flex-shrink: 0;
     }
 
-    .brand-clinic-name {
-        display: none !important;
+    .brand-title-top {
+        font-size: 1.2rem;
     }
 
+    .brand-clinic-name,
     .brand-divider {
         display: none !important;
     }
 
+    .navbar-right-section {
+        order: unset;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-shrink: 0;
+        width: auto !important;
+        border-top: none !important;
+        padding-top: 0 !important;
+    }
+
+    .user-info-pill {
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .user-avatar-circle {
+        width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
+    }
+
+    .btn-logout {
+        padding: 0.25rem 0.6rem !important;
+        font-size: 0.78rem !important;
+        min-height: 32px !important;
+    }
+
     .top-navigation-menu {
+        order: unset;
         width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 2px;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: 0;
     }
 
     .top-nav-list {
         display: flex;
         flex-direction: row;
-        flex-wrap: nowrap !important;
-        width: max-content;
+        width: 100%;
         gap: 0.35rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .top-nav-item {
+        flex: 1 1 0;
+        min-width: 0;
+        text-align: center;
     }
 
     .top-nav-link {
-        white-space: nowrap !important;
-        padding: 0.45rem 0.85rem;
-        font-size: 0.84rem;
-        flex-shrink: 0;
-    }
-
-    .navbar-right-section {
         width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding-top: 0.4rem;
-        border-top: 1px solid var(--border-color);
+        justify-content: center;
+        padding: 0.4rem 0.25rem;
+        font-size: 0.82rem;
+        white-space: nowrap !important;
+        border-radius: 0.5rem;
     }
 
-    .user-info-pill {
-        padding: 0.2rem 0.5rem;
+    .top-nav-link .nav-icon {
+        font-size: 0.95rem;
     }
 
     .top-main-content {
@@ -1513,4 +1553,40 @@ body {
     padding: 0.4rem 0.5rem;
     font-size: 0.8rem;
     line-height: 1.2;
+}
+
+/* Blazor Error Notification UI (Oculto por defecto para evitar mostrarse en el DOM sin error) */
+#blazor-error-ui {
+    background: #FEF3C7;
+    color: #92400E;
+    border-top: 1px solid #F59E0B;
+    bottom: 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.15);
+    display: none;
+    left: 0;
+    padding: 0.75rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 100000;
+    font-weight: 500;
+    font-size: 0.88rem;
+}
+
+#blazor-error-ui .reload {
+    color: #1E40AF;
+    margin-left: 0.5rem;
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.35rem;
+    color: #92400E;
+    padding: 0.25rem 0.5rem;
+    line-height: 1;
 }
