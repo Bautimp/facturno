@@ -292,7 +292,7 @@ migrate((db) => {
     { id: 3, pac: 8, prof: idLaura, fecha: fLunes, hora: "12:00:00", estado: "Activo", obs: "Seguimiento quincenal", online: false, mod: "Presencial", enlace: "" },
     { id: 4, pac: 9, prof: idCarlos, fecha: fLunes, hora: "16:00:00", estado: "Activo", obs: "Evaluación psiquiátrica inicial", online: false, mod: "Presencial", enlace: "" },
 
-    // MARTES (HOY)
+    // MARTES
     { id: 5, pac: 10, prof: idLaura, fecha: fMartes, hora: "09:00:00", estado: "Activo", obs: "Consulta online con enlace Zoom", online: true, mod: "Online", enlace: "https://zoom.us/j/1234567890" },
     { id: 6, pac: 11, prof: idLaura, fecha: fMartes, hora: "10:00:00", estado: "Completo", obs: "Control clínico y emisión de certificado", online: false, mod: "Presencial", enlace: "" },
     { id: 7, pac: 12, prof: idLaura, fecha: fMartes, hora: "11:30:00", estado: "Falta", obs: "Paciente avisó falta a último momento", online: false, mod: "Presencial", enlace: "" },
@@ -316,12 +316,11 @@ migrate((db) => {
     { id: 19, pac: 13, prof: idLaura, fecha: fViernes, hora: "11:00:00", estado: "Activo", obs: "Atención remota", online: true, mod: "Online", enlace: "https://meet.jit.si/facturno-viernes" },
     { id: 20, pac: 10, prof: idLaura, fecha: fViernes, hora: "14:30:00", estado: "Completo", obs: "Cierre de tratamiento", online: false, mod: "Presencial", enlace: "" },
 
-    // SÁBADO (Sub-tarjeta superior Fin de Semana)
+    // SÁBADO
     { id: 21, pac: 8, prof: idLaura, fecha: fSabado, hora: "09:30:00", estado: "Activo", obs: "Guardia programada de fin de semana", online: false, mod: "Presencial", enlace: "" },
-    { id: 22, pac: 9, prof: idLaura, fecha: fSabado, hora: "11:00:00", estado: "Activo", obs: "Teleconsulta sabatina", online: true, mod: "Online", enlace: "https://meet.google.com/sab-cons-11" },
     { id: 23, pac: 5, prof: idLaura, fecha: fSabado, hora: "12:30:00", estado: "Completo", obs: "Urgencia menor ambulatoria", online: false, mod: "Presencial", enlace: "" },
 
-    // DOMINGO (Sub-tarjeta inferior Fin de Semana)
+    // DOMINGO
     { id: 24, pac: 11, prof: idLaura, fecha: fDomingo, hora: "10:00:00", estado: "Activo", obs: "Control médico dominical a distancia", online: true, mod: "Online", enlace: "https://meet.jit.si/facturno-domingo-10" },
     { id: 25, pac: 12, prof: idLaura, fecha: fDomingo, hora: "11:30:00", estado: "Activo", obs: "Atención de soporte emocional", online: false, mod: "Presencial", enlace: "" }
   ];
