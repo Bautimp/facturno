@@ -46,9 +46,6 @@ public class PocketBaseUserRecord
     [JsonPropertyName("rol")]
     public string Rol { get; set; } = string.Empty;
 
-    [JsonPropertyName("activo")]
-    public bool Activo { get; set; } = true;
-
     [JsonPropertyName("id_persona")]
     public long IdPersona { get; set; }
 
@@ -78,6 +75,9 @@ public class PersonaPbRecord
 
     [JsonPropertyName("telefono")]
     public long? Telefono { get; set; }
+
+    [JsonPropertyName("activo")]
+    public bool Activo { get; set; } = true;
 
     [JsonPropertyName("created")]
     public DateTime Created { get; set; }
@@ -155,7 +155,7 @@ public class PocketBaseClient
         _baseUrl = (configuration["PocketBase:BaseUrl"] ?? "http://127.0.0.1:8090").TrimEnd('/');
     }
 
-    public async Task<List<T>> GetList<T>(string collection, string filter = "", string sort = "")
+    public async Task<List<T>> GetList<T>(string collection, string filter = "", string sort = "", string expand = "")
     {
         var url = $"{_baseUrl}/api/collections/{collection}/records?perPage=500";
         if (!string.IsNullOrWhiteSpace(filter))
@@ -165,6 +165,10 @@ public class PocketBaseClient
         if (!string.IsNullOrWhiteSpace(sort))
         {
             url += $"&sort={Uri.EscapeDataString(sort)}";
+        }
+        if (!string.IsNullOrWhiteSpace(expand))
+        {
+            url += $"&expand={Uri.EscapeDataString(expand)}";
         }
 
         var response = await _httpClient.GetAsync(url);
@@ -177,9 +181,9 @@ public class PocketBaseClient
         return result?.Items ?? new List<T>();
     }
 
-    public async Task<T?> GetFirst<T>(string collection, string filter)
+    public async Task<T?> GetFirst<T>(string collection, string filter, string expand = "")
     {
-        var items = await GetList<T>(collection, filter);
+        var items = await GetList<T>(collection, filter, expand: expand);
         return items.FirstOrDefault();
     }
 
@@ -260,7 +264,6 @@ public class PocketBaseClient
             passwordConfirm = password,
             username = username,
             rol = rol,
-            activo = true,
             id_persona = idPersona,
             id_usuario = idUsuario
         };

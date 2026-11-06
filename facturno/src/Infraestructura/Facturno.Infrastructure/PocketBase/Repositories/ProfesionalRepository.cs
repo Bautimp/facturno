@@ -102,7 +102,8 @@ public class ProfesionalRepository : IProfesionalRepository
                 nombre = persona.Nombre ?? string.Empty,
                 apellido = persona.Apellido ?? string.Empty,
                 correo = persona.Correo,
-                telefono = persona.Telefono
+                telefono = persona.Telefono,
+                activo = persona.Activo
             };
             await _client.Create<PersonaPbRecord>("personas", personaPayload);
         }
@@ -225,14 +226,14 @@ public class ProfesionalRepository : IProfesionalRepository
                 IdUsuario = Guid.TryParse(user.IdUsuario, out var uGuid) ? uGuid : Guid.Empty,
                 IdPersona = user.IdPersona,
                 Rol = Enum.TryParse<RolUsuario>(user.Rol, out var rol) ? rol : RolUsuario.Profesional,
-                Activo = user.Activo,
                 Persona = persona == null ? null : new Persona
                 {
                     IdPersona = persona.IdPersona,
                     Nombre = persona.Nombre,
                     Apellido = persona.Apellido,
                     Correo = persona.Correo,
-                    Telefono = persona.Telefono
+                    Telefono = persona.Telefono,
+                    Activo = persona.Activo
                 }
             }
         };

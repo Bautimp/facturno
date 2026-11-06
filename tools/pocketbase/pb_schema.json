@@ -71,16 +71,6 @@
       },
       {
         "system": false,
-        "id": "fsgnsyif",
-        "name": "activo",
-        "type": "bool",
-        "required": false,
-        "presentable": false,
-        "unique": false,
-        "options": {}
-      },
-      {
-        "system": false,
         "id": "nqj6b62k",
         "name": "id_persona",
         "type": "number",
@@ -186,6 +176,16 @@
           "max": null,
           "noDecimal": false
         }
+      },
+      {
+        "system": false,
+        "id": "actv_per001",
+        "name": "activo",
+        "type": "bool",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {}
       }
     ],
     "indexes": [],
@@ -451,16 +451,6 @@
           "max": null,
           "pattern": ""
         }
-      },
-      {
-        "system": false,
-        "id": "actv_pac001",
-        "name": "activo",
-        "type": "bool",
-        "required": false,
-        "presentable": false,
-        "unique": false,
-        "options": {}
       }
     ],
     "indexes": [],

@@ -46,7 +46,8 @@ public class PacientesController : ControllerBase
                 Nombre = dto.Nombre,
                 Apellido = dto.Apellido,
                 Correo = dto.Correo,
-                Telefono = dto.Telefono
+                Telefono = dto.Telefono,
+                Activo = dto.Activo
             };
 
             var paciente = new Paciente
@@ -78,7 +79,8 @@ public class PacientesController : ControllerBase
                 Nombre = dto.Nombre,
                 Apellido = dto.Apellido,
                 Correo = dto.Correo,
-                Telefono = dto.Telefono
+                Telefono = dto.Telefono,
+                Activo = dto.Activo
             };
 
             var paciente = new Paciente
@@ -89,7 +91,7 @@ public class PacientesController : ControllerBase
                 IdObraSocial = dto.IdObraSocial,
                 NumObraSocial = dto.NumObraSocial,
                 PorcentajeIva = dto.PorcentajeIva,
-                Activo = dto.Activo
+                Persona = persona
             };
 
             var pacienteActualizado = await _pacienteRepository.Actualizar(paciente, persona);

@@ -34,11 +34,11 @@ public partial class Pacientes : ComponentBase
 
             if (FiltroEstado == "activos")
             {
-                query = query.Where(p => p.Activo);
+                query = query.Where(p => p.Persona?.Activo == true);
             }
             else if (FiltroEstado == "inactivos")
             {
-                query = query.Where(p => !p.Activo);
+                query = query.Where(p => p.Persona?.Activo != true);
             }
 
             if (!string.IsNullOrWhiteSpace(FiltroBusqueda))
@@ -191,7 +191,7 @@ public partial class Pacientes : ComponentBase
             IdObraSocial = paciente.IdObraSocial,
             NumObraSocial = paciente.NumObraSocial,
             PorcentajeIva = paciente.PorcentajeIva,
-            Activo = paciente.Activo
+            Activo = paciente.Persona?.Activo ?? true
         };
         MostrarModal = true;
     }

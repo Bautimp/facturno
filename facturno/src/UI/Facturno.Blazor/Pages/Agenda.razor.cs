@@ -86,15 +86,15 @@ public partial class Agenda : ComponentBase
     protected bool MostrarDropdownPacientesNuevo = false;
     protected Paciente? PacienteSeleccionadoNuevo => ListaPacientes.FirstOrDefault(p => p.IdPaciente == nuevoTurnoDto.IdPaciente);
     protected List<Paciente> PacientesFiltradosNuevo => string.IsNullOrWhiteSpace(TextoBusquedaPacienteNuevo)
-        ? ListaPacientes.Where(p => p.Activo).Take(25).ToList()
-        : ListaPacientes.Where(p => p.Activo && FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteNuevo)).ToList();
+        ? ListaPacientes.Where(p => p.Persona?.Activo == true).Take(25).ToList()
+        : ListaPacientes.Where(p => p.Persona?.Activo == true && FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteNuevo)).ToList();
 
     protected string TextoBusquedaPacienteRecurrente = string.Empty;
     protected bool MostrarDropdownPacientesRecurrente = false;
     protected Paciente? PacienteSeleccionadoRecurrente => ListaPacientes.FirstOrDefault(p => p.IdPaciente == recurrenteDto.IdPaciente);
     protected List<Paciente> PacientesFiltradosRecurrente => string.IsNullOrWhiteSpace(TextoBusquedaPacienteRecurrente)
-        ? ListaPacientes.Where(p => p.Activo).Take(25).ToList()
-        : ListaPacientes.Where(p => p.Activo && FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteRecurrente)).ToList();
+        ? ListaPacientes.Where(p => p.Persona?.Activo == true).Take(25).ToList()
+        : ListaPacientes.Where(p => p.Persona?.Activo == true && FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteRecurrente)).ToList();
 
     protected void OnBusquedaPacienteNuevoInput(ChangeEventArgs e)
     {

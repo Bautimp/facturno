@@ -71,7 +71,8 @@ public class UsuarioRepository : IUsuarioRepository
                 nombre = persona.Nombre ?? string.Empty,
                 apellido = persona.Apellido ?? string.Empty,
                 correo = persona.Correo,
-                telefono = persona.Telefono
+                telefono = persona.Telefono,
+                activo = persona.Activo
             };
             await _client.Create<PersonaPbRecord>("personas", personaPayload);
         }
@@ -110,27 +111,38 @@ public class UsuarioRepository : IUsuarioRepository
         var userRecord = await _client.GetFirst<PocketBaseUserRecord>("users", $"id_usuario='{idStr}'");
         if (userRecord == null) return false;
 
-        await _client.Update<PocketBaseUserRecord>("users", userRecord.Id, new { activo = activo });
-        return true;
+        if (userRecord.IdPersona > 0)
+        {
+            var persona = await _client.GetFirst<PersonaPbRecord>("personas", $"id_persona={userRecord.IdPersona}");
+            if (persona != null)
+            {
+                await _client.Update<PersonaPbRecord>("personas", persona.Id, new { activo = activo });
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static Usuario MapearAUsuario(PocketBaseUserRecord record, PersonaPbRecord? persona)
     {
+        var per = persona == null ? null : new Persona
+        {
+            IdPersona = persona.IdPersona,
+            Nombre = persona.Nombre,
+            Apellido = persona.Apellido,
+            Correo = persona.Correo,
+            Telefono = persona.Telefono,
+            Activo = persona.Activo
+        };
+
         return new Usuario
         {
             IdUsuario = Guid.TryParse(record.IdUsuario, out var guid) ? guid : Guid.Empty,
             CreatedAt = record.Created,
             IdPersona = record.IdPersona,
             Rol = Enum.TryParse<RolUsuario>(record.Rol, out var rol) ? rol : RolUsuario.Profesional,
-            Activo = record.Activo,
-            Persona = persona == null ? null : new Persona
-            {
-                IdPersona = persona.IdPersona,
-                Nombre = persona.Nombre,
-                Apellido = persona.Apellido,
-                Correo = persona.Correo,
-                Telefono = persona.Telefono
-            }
+            Persona = per
         };
     }
 }

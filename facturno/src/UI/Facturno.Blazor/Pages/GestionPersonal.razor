@@ -74,7 +74,7 @@
                     @foreach (var prof in ProfesionalesPaginados)
                     {
                         var nombreCompleto = prof.Usuario?.Persona != null ? $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido}" : "Sin nombre";
-                        var esActivo = prof.Usuario?.Activo ?? true;
+                        var esActivo = prof.Usuario?.Persona?.Activo ?? true;
 
                         <tr>
                             <td>

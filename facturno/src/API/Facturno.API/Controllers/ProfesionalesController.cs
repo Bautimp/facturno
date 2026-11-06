@@ -111,7 +111,8 @@ public class ProfesionalesController : ControllerBase
                 Nombre = dto.Nombre,
                 Apellido = dto.Apellido,
                 Correo = dto.Correo,
-                Telefono = dto.Telefono
+                Telefono = dto.Telefono,
+                Activo = true
             };
 
             var usuario = new Usuario
@@ -119,7 +120,6 @@ public class ProfesionalesController : ControllerBase
                 IdUsuario = nuevoIdUsuario,
                 IdPersona = nuevoIdPersona,
                 Rol = RolUsuario.Profesional,
-                Activo = true,
                 Persona = persona
             };
 
@@ -227,14 +227,14 @@ public class ProfesionalesController : ControllerBase
                     IdUsuario = Guid.TryParse(u.IdUsuario, out var g) ? g : Guid.Empty,
                     IdPersona = u.IdPersona,
                     Rol = Enum.TryParse<RolUsuario>(u.Rol, out var r) ? r : RolUsuario.Administrativo,
-                    Activo = u.Activo,
                     Persona = personasDict.TryGetValue(u.IdPersona, out var p) ? new Persona
                     {
                         IdPersona = p.IdPersona,
                         Nombre = p.Nombre,
                         Apellido = p.Apellido,
                         Correo = p.Correo,
-                        Telefono = p.Telefono
+                        Telefono = p.Telefono,
+                        Activo = p.Activo
                     } : null
                 })
                 .ToList();
@@ -457,7 +457,8 @@ public class ProfesionalesController : ControllerBase
                 Nombre = dto.Nombre,
                 Apellido = dto.Apellido,
                 Correo = dto.Correo,
-                Telefono = dto.Telefono
+                Telefono = dto.Telefono,
+                Activo = true
             };
 
             var usuario = new Usuario
@@ -465,7 +466,6 @@ public class ProfesionalesController : ControllerBase
                 IdUsuario = nuevoIdUsuario,
                 IdPersona = nuevoIdPersona,
                 Rol = RolUsuario.Administrativo,
-                Activo = true,
                 Persona = persona
             };
 
