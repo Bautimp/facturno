@@ -305,6 +305,15 @@ public partial class Agenda : ComponentBase
         return TurnosPorFecha.Values.Sum(list => list.Count(t => t.Estado == FiltroEstado.Value));
     }
 
+    protected bool ProfesionalSeleccionadoEstaDadoDeBaja
+    {
+        get
+        {
+            var prof = ListaProfesionales.FirstOrDefault(p => p.IdProfesional == SelectedProfesionalId);
+            return prof != null && prof.Usuario?.Persona != null && !prof.Usuario.Persona.Activo;
+        }
+    }
+
     protected async Task CargarProfesionales()
     {
         try
@@ -315,7 +324,9 @@ public partial class Agenda : ComponentBase
                 ListaProfesionales = res.Datos;
                 if (!EsProfesionalLogueado && ListaProfesionales.Any() && SelectedProfesionalId == Guid.Empty)
                 {
-                    SelectedProfesionalId = ListaProfesionales.First().IdProfesional;
+                    var primerActivo = ListaProfesionales.FirstOrDefault(p => p.Usuario?.Persona?.Activo == true) 
+                                    ?? ListaProfesionales.First();
+                    SelectedProfesionalId = primerActivo.IdProfesional;
                 }
             }
         }
@@ -525,6 +536,13 @@ public partial class Agenda : ComponentBase
 
         try
         {
+            if (estadoSeleccionado != EstadoTurno.Cancelado && ProfesionalSeleccionadoEstaDadoDeBaja)
+            {
+                MensajeAlerta = "No se pueden modificar o reactivar turnos para un profesional que se encuentra dado de baja.";
+                TipoAlerta = "warning";
+                return;
+            }
+
             if (editHora < ConfigActual.HoraInicio || editHora > ConfigActual.HoraFin)
             {
                 MensajeAlerta = $"El horario del turno debe estar comprendido entre las {ConfigActual.HoraInicioTurnos} y las {ConfigActual.HoraFinTurnos} hs.";
@@ -609,6 +627,13 @@ public partial class Agenda : ComponentBase
     {
         try
         {
+            if (nuevoEstado != EstadoTurno.Cancelado && ProfesionalSeleccionadoEstaDadoDeBaja)
+            {
+                MensajeAlerta = "No se pueden reactivar o modificar turnos para un profesional que se encuentra dado de baja.";
+                TipoAlerta = "warning";
+                return;
+            }
+
             var updateDto = new TurnoUpdateDto
             {
                 IdTurno = turno.IdTurno,
@@ -651,6 +676,13 @@ public partial class Agenda : ComponentBase
 
     protected void AbrirModalNuevoTurno()
     {
+        if (ProfesionalSeleccionadoEstaDadoDeBaja)
+        {
+            MensajeAlerta = "No se pueden agendar turnos para un profesional que se encuentra dado de baja.";
+            TipoAlerta = "warning";
+            return;
+        }
+
         nuevoTurnoDto = new TurnoCreateDto
         {
             IdProfesional = SelectedProfesionalId,
@@ -664,6 +696,13 @@ public partial class Agenda : ComponentBase
 
     protected void AbrirModalNuevoTurnoConFecha(DateOnly fecha)
     {
+        if (ProfesionalSeleccionadoEstaDadoDeBaja)
+        {
+            MensajeAlerta = "No se pueden agendar turnos para un profesional que se encuentra dado de baja.";
+            TipoAlerta = "warning";
+            return;
+        }
+
         nuevoTurnoDto = new TurnoCreateDto
         {
             IdProfesional = SelectedProfesionalId,
@@ -677,6 +716,13 @@ public partial class Agenda : ComponentBase
 
     protected void AgendarSlotEspecifico(TimeOnly slot, DateOnly? fecha = null)
     {
+        if (ProfesionalSeleccionadoEstaDadoDeBaja)
+        {
+            MensajeAlerta = "No se pueden agendar turnos para un profesional que se encuentra dado de baja.";
+            TipoAlerta = "warning";
+            return;
+        }
+
         nuevoTurnoDto = new TurnoCreateDto
         {
             IdProfesional = SelectedProfesionalId,
@@ -690,6 +736,13 @@ public partial class Agenda : ComponentBase
 
     protected async Task GuardarNuevoTurno()
     {
+        if (ProfesionalSeleccionadoEstaDadoDeBaja)
+        {
+            MensajeAlerta = "No se pueden agendar turnos para un profesional que se encuentra dado de baja.";
+            TipoAlerta = "warning";
+            return;
+        }
+
         if (nuevoTurnoDto.IdPaciente == 0)
         {
             MensajeAlerta = "Debe seleccionar un paciente.";
@@ -732,6 +785,13 @@ public partial class Agenda : ComponentBase
 
     protected void AbrirModalTurnoRecurrente()
     {
+        if (ProfesionalSeleccionadoEstaDadoDeBaja)
+        {
+            MensajeAlerta = "No se pueden agendar turnos para un profesional que se encuentra dado de baja.";
+            TipoAlerta = "warning";
+            return;
+        }
+
         recurrenteDto = new TurnoRecurrenteCreateDto
         {
             IdProfesional = SelectedProfesionalId,
@@ -747,6 +807,13 @@ public partial class Agenda : ComponentBase
 
     protected async Task GuardarTurnosRecurrentes()
     {
+        if (ProfesionalSeleccionadoEstaDadoDeBaja)
+        {
+            MensajeAlerta = "No se pueden agendar turnos para un profesional que se encuentra dado de baja.";
+            TipoAlerta = "warning";
+            return;
+        }
+
         if (recurrenteDto.IdPaciente == 0)
         {
             MensajeAlerta = "Debe seleccionar un paciente.";

@@ -15,16 +15,32 @@
             <p class="text-muted m-0 small">Gestión clínica y control asistencial de citas</p>
         </div>
         <div class="agenda-header-actions">
-            <button class="btn btn-primary-custom btn-sm agenda-action-btn" @onclick="AbrirModalNuevoTurno">
+            <button class="btn btn-primary-custom btn-sm agenda-action-btn" 
+                    @onclick="AbrirModalNuevoTurno" 
+                    disabled="@ProfesionalSeleccionadoEstaDadoDeBaja"
+                    title="@(ProfesionalSeleccionadoEstaDadoDeBaja ? "Profesional dado de baja: no es posible agendarle nuevos turnos" : "Agendar nuevo turno")">
                 + Nuevo Turno
             </button>
 
-            <button class="btn btn-outline-primary btn-sm agenda-action-btn d-inline-flex align-items-center justify-content-center gap-1" @onclick="AbrirModalTurnoRecurrente">
+            <button class="btn btn-outline-primary btn-sm agenda-action-btn d-inline-flex align-items-center justify-content-center gap-1" 
+                    @onclick="AbrirModalTurnoRecurrente" 
+                    disabled="@ProfesionalSeleccionadoEstaDadoDeBaja"
+                    title="@(ProfesionalSeleccionadoEstaDadoDeBaja ? "Profesional dado de baja: no es posible agendarle nuevos turnos" : "Agendar serie recurrente")">
                 <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
                 <span>Turno Recurrente</span>
             </button>
         </div>
     </div>
+
+    @if (ProfesionalSeleccionadoEstaDadoDeBaja)
+    {
+        <div class="alert alert-warning d-flex align-items-center gap-2 mb-3 shadow-sm py-2 px-3 mx-3 mt-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0 text-warning" style="font-size: 1.25rem;"></i>
+            <div>
+                <strong>Profesional dado de baja:</strong> El profesional seleccionado se encuentra inactivo. Los controles de asignación de turnos han sido deshabilitados.
+            </div>
+        </div>
+    }
 
     <!-- Barra Unificada y Organizada de Navegación y Filtros -->
     <div class="semana-nav-bar mb-3 p-3 bg-white rounded border shadow-sm">
@@ -59,7 +75,11 @@
                     <select class="form-select form-select-sm" @onchange="OnProfesionalChanged">
                         @foreach (var prof in ListaProfesionales)
                         {
-                            var nombre = prof.Usuario?.Persona != null ? $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido} ({prof.Especialidad})" : "Profesional";
+                            var esActivo = prof.Usuario?.Persona?.Activo ?? true;
+                            var sufijoInactivo = esActivo ? "" : " (Inactivo / Dado de baja)";
+                            var nombre = prof.Usuario?.Persona != null 
+                                ? $"{prof.Usuario.Persona.Nombre} {prof.Usuario.Persona.Apellido} ({prof.Especialidad}){sufijoInactivo}" 
+                                : $"Profesional{sufijoInactivo}";
                             <option value="@prof.IdProfesional" selected="@(prof.IdProfesional == SelectedProfesionalId)">@nombre</option>
                         }
                     </select>
@@ -153,9 +173,12 @@
                             {
                                 <span class="badge @(esHoy ? "bg-white text-primary" : "bg-primary") badge-pill">@turnosDelDia.Count</span>
                             }
-                            <button class="btn btn-xs @(esHoy ? "btn-light text-primary" : "btn-outline-primary")" @onclick="() => AbrirModalNuevoTurnoConFecha(dia)" title="Agregar turno este día">
-                                + Turno
-                            </button>
+                            @if (!ProfesionalSeleccionadoEstaDadoDeBaja)
+                            {
+                                <button class="btn btn-xs @(esHoy ? "btn-light text-primary" : "btn-outline-primary")" @onclick="() => AbrirModalNuevoTurnoConFecha(dia)" title="Agregar turno este día">
+                                    + Turno
+                                </button>
+                            }
                         </div>
                     </div>
                     <div class="card-body-semana p-2">
@@ -170,9 +193,12 @@
                         {
                             <div class="text-muted small text-center py-4 empty-turnos-slot">
                                 <div>Sin turnos agendados</div>
-                                <button class="btn btn-xs btn-outline-primary mt-2" @onclick="() => AbrirModalNuevoTurnoConFecha(dia)">
-                                    + Agendar cita
-                                </button>
+                                @if (!ProfesionalSeleccionadoEstaDadoDeBaja)
+                                {
+                                    <button class="btn btn-xs btn-outline-primary mt-2" @onclick="() => AbrirModalNuevoTurnoConFecha(dia)">
+                                        + Agendar cita
+                                    </button>
+                                }
                             </div>
                         }
                     </div>
@@ -209,9 +235,12 @@
                             {
                                 <span class="badge @(esSabadoHoy ? "bg-white text-primary" : "bg-primary") badge-pill">@turnosSabado.Count</span>
                             }
-                            <button class="btn btn-xs @(esSabadoHoy ? "btn-light text-primary" : "btn-outline-primary")" @onclick="() => AbrirModalNuevoTurnoConFecha(sabado)" title="Agregar turno para Sábado">
-                                + Turno
-                            </button>
+                            @if (!ProfesionalSeleccionadoEstaDadoDeBaja)
+                            {
+                                <button class="btn btn-xs @(esSabadoHoy ? "btn-light text-primary" : "btn-outline-primary")" @onclick="() => AbrirModalNuevoTurnoConFecha(sabado)" title="Agregar turno para Sábado">
+                                    + Turno
+                                </button>
+                            }
                         </div>
                     </div>
                     <div class="card-body-semana card-body-finde p-2">
@@ -226,9 +255,12 @@
                         {
                             <div class="text-muted small text-center py-2 empty-turnos-slot">
                                 <div>Sin turnos</div>
-                                <button class="btn btn-xs btn-outline-primary mt-1" @onclick="() => AbrirModalNuevoTurnoConFecha(sabado)">
-                                    + Agendar
-                                </button>
+                                @if (!ProfesionalSeleccionadoEstaDadoDeBaja)
+                                {
+                                    <button class="btn btn-xs btn-outline-primary mt-1" @onclick="() => AbrirModalNuevoTurnoConFecha(sabado)">
+                                        + Agendar
+                                    </button>
+                                }
                             </div>
                         }
                     </div>
@@ -252,9 +284,12 @@
                             {
                                 <span class="badge @(esDomingoHoy ? "bg-white text-primary" : "bg-primary") badge-pill">@turnosDomingo.Count</span>
                             }
-                            <button class="btn btn-xs @(esDomingoHoy ? "btn-light text-primary" : "btn-outline-primary")" @onclick="() => AbrirModalNuevoTurnoConFecha(domingo)" title="Agregar turno para Domingo">
-                                + Turno
-                            </button>
+                            @if (!ProfesionalSeleccionadoEstaDadoDeBaja)
+                            {
+                                <button class="btn btn-xs @(esDomingoHoy ? "btn-light text-primary" : "btn-outline-primary")" @onclick="() => AbrirModalNuevoTurnoConFecha(domingo)" title="Agregar turno para Domingo">
+                                    + Turno
+                                </button>
+                            }
                         </div>
                     </div>
                     <div class="card-body-semana card-body-finde p-2">
@@ -269,9 +304,12 @@
                         {
                             <div class="text-muted small text-center py-2 empty-turnos-slot">
                                 <div>Sin turnos</div>
-                                <button class="btn btn-xs btn-outline-primary mt-1" @onclick="() => AbrirModalNuevoTurnoConFecha(domingo)">
-                                    + Agendar
-                                </button>
+                                @if (!ProfesionalSeleccionadoEstaDadoDeBaja)
+                                {
+                                    <button class="btn btn-xs btn-outline-primary mt-1" @onclick="() => AbrirModalNuevoTurnoConFecha(domingo)">
+                                        + Agendar
+                                    </button>
+                                }
                             </div>
                         }
                     </div>
