@@ -3,7 +3,7 @@
 
 <SystemPopupMessage Message="@MensajeAlerta" Tipo="@TipoAlerta" OnClose="() => { MensajeAlerta = null; TipoAlerta = null; }" />
 
-<div class="facturno-card agenda-card" style="position: relative;">
+<div class="facturno-card" style="position: relative;">
     <LoadingOverlay IsLoading="IsLoading" Text="Cargando agenda de turnos..." />
     @if (PopoverTurnoId != null)
     {

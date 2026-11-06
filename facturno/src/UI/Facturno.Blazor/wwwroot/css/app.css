@@ -258,11 +258,6 @@ body {
     box-sizing: border-box;
 }
 
-/* Agenda médica: permite mayor amplitud horizontal (hasta 1350px) para desplegar armónicamente las columnas de la semana */
-.facturno-card.agenda-card {
-    max-width: 1350px;
-}
-
 /* Paneles de edición de datos personales, vínculo de agendas y tablas */
 .panel-datos-personales,
 .panel-vinculacion-agendas {
