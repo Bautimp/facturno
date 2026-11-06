@@ -16,6 +16,7 @@ public partial class Pacientes : ComponentBase
     protected string FiltroBusqueda = string.Empty;
     protected string FiltroEstado = "todos"; // "todos", "activos", "inactivos"
     protected string? MensajeAlerta;
+    protected string? TipoAlerta;
 
     protected bool MostrarModal = false;
     protected bool EsEdicion = false;
@@ -112,6 +113,7 @@ public partial class Pacientes : ComponentBase
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al cargar pacientes: {ex.Message}";
+            TipoAlerta = "danger";
         }
         finally
         {
@@ -206,16 +208,19 @@ public partial class Pacientes : ComponentBase
             if (exito)
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "success";
                 await CargarPacientes();
             }
             else
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "warning";
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error de comunicación: {ex.Message}";
+            TipoAlerta = "danger";
         }
     }
 
@@ -223,28 +228,32 @@ public partial class Pacientes : ComponentBase
     {
         try
         {
-            // Validaciones con Expresiones Regulares
+            // Validaciones con Expresiones Regulares (Controles del sistema -> Warning)
             if (string.IsNullOrWhiteSpace(pacienteDto.Nombre) || string.IsNullOrWhiteSpace(pacienteDto.Apellido))
             {
                 MensajeAlerta = "El nombre y apellido son obligatorios.";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (!FormValidators.EsCorreoValido(pacienteDto.Correo))
             {
                 MensajeAlerta = "El correo electrónico no tiene un formato válido (ej: usuario@correo.com).";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (!FormValidators.EsTelefonoValido(pacienteDto.Telefono))
             {
                 MensajeAlerta = "El teléfono debe contener entre 7 y 15 dígitos numéricos.";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (!FormValidators.EsDocumentoValido(pacienteDto.NumDocumento))
             {
                 MensajeAlerta = "El número de documento debe contener entre 7 y 11 dígitos numéricos sin puntos ni espacios.";
+                TipoAlerta = "warning";
                 return;
             }
 
@@ -258,12 +267,14 @@ public partial class Pacientes : ComponentBase
                 if (string.IsNullOrWhiteSpace(pacienteDto.NumObraSocial))
                 {
                     MensajeAlerta = "El número de afiliado de obra social es obligatorio cuando la cobertura no es 'Particular'.";
+                    TipoAlerta = "warning";
                     return;
                 }
 
                 if (!FormValidators.EsNumObraSocialValido(pacienteDto.NumObraSocial))
                 {
                     MensajeAlerta = "El número de obra social solo puede contener caracteres alfanuméricos, guiones y barras (3 a 30 caracteres).";
+                    TipoAlerta = "warning";
                     return;
                 }
             }
@@ -284,16 +295,19 @@ public partial class Pacientes : ComponentBase
             {
                 MostrarModal = false;
                 MensajeAlerta = EsEdicion ? "Paciente actualizado con éxito." : "Paciente registrado con éxito.";
+                TipoAlerta = "success";
                 await CargarPacientes();
             }
             else
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "warning";
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al guardar paciente: {ex.Message}";
+            TipoAlerta = "danger";
         }
     }
 }

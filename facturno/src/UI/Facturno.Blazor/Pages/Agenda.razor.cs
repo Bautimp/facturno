@@ -41,6 +41,7 @@ public partial class Agenda : ComponentBase
     protected string FechaMinimaPermitidaIso => DateOnly.FromDateTime(DateTime.Today.AddDays(-30)).ToString("yyyy-MM-dd");
 
     protected string? MensajeAlerta;
+    protected string? TipoAlerta;
     protected bool MostrarModalNuevo = false;
     protected bool MostrarModalRecurrente = false;
 
@@ -323,6 +324,7 @@ public partial class Agenda : ComponentBase
             if (!EsProfesionalLogueado)
             {
                 MensajeAlerta = $"Error al cargar profesionales: {ex.Message}";
+                TipoAlerta = "danger";
             }
         }
     }
@@ -391,6 +393,7 @@ public partial class Agenda : ComponentBase
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al obtener turnos: {ex.Message}";
+            TipoAlerta = "danger";
         }
         finally
         {
@@ -525,6 +528,7 @@ public partial class Agenda : ComponentBase
             if (editHora < ConfigActual.HoraInicio || editHora > ConfigActual.HoraFin)
             {
                 MensajeAlerta = $"El horario del turno debe estar comprendido entre las {ConfigActual.HoraInicioTurnos} y las {ConfigActual.HoraFinTurnos} hs.";
+                TipoAlerta = "warning";
                 return;
             }
 
@@ -532,6 +536,7 @@ public partial class Agenda : ComponentBase
             if (editFecha < fechaMinima)
             {
                 MensajeAlerta = "No se pueden agendar turnos con más de 30 días de antigüedad respecto al día de hoy.";
+                TipoAlerta = "warning";
                 return;
             }
 
@@ -560,17 +565,20 @@ public partial class Agenda : ComponentBase
 
                 var nombrePaciente = GetNombrePaciente(turnoSeleccionado.IdPaciente);
                 MensajeAlerta = $"Turno de {nombrePaciente} actualizado correctamente.";
+                TipoAlerta = "success";
                 CerrarModalEstado();
                 await CargarTurnos();
             }
             else
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "warning";
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al guardar cambios del turno: {ex.Message}";
+            TipoAlerta = "danger";
         }
         finally
         {
@@ -621,16 +629,19 @@ public partial class Agenda : ComponentBase
                 PopoverTurnoId = null;
                 var nombrePaciente = GetNombrePaciente(turno.IdPaciente);
                 MensajeAlerta = $"Estado del turno de {nombrePaciente} actualizado a {nuevoEstado}.";
+                TipoAlerta = "success";
                 await CargarTurnos();
             }
             else
             {
                 MensajeAlerta = apiResult?.Mensaje ?? "No se pudo actualizar el estado del turno.";
+                TipoAlerta = "warning";
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al cambiar estado: {ex.Message}";
+            TipoAlerta = "danger";
         }
         finally
         {
@@ -682,12 +693,14 @@ public partial class Agenda : ComponentBase
         if (nuevoTurnoDto.IdPaciente == 0)
         {
             MensajeAlerta = "Debe seleccionar un paciente.";
+            TipoAlerta = "warning";
             return;
         }
 
         if (nuevoTurnoDto.Hora < ConfigActual.HoraInicio || nuevoTurnoDto.Hora > ConfigActual.HoraFin)
         {
             MensajeAlerta = $"El horario del turno debe estar comprendido entre las {ConfigActual.HoraInicioTurnos} y las {ConfigActual.HoraFinTurnos} hs.";
+            TipoAlerta = "warning";
             return;
         }
 
@@ -695,6 +708,7 @@ public partial class Agenda : ComponentBase
         if (nuevoTurnoDto.Fecha < fechaMinima)
         {
             MensajeAlerta = "No se pueden agendar turnos con más de 30 días de antigüedad respecto al día de hoy.";
+            TipoAlerta = "warning";
             return;
         }
 
@@ -706,11 +720,13 @@ public partial class Agenda : ComponentBase
         {
             MostrarModalNuevo = false;
             MensajeAlerta = "Turno agendado correctamente.";
+            TipoAlerta = "success";
             await CargarTurnos();
         }
         else
         {
             MensajeAlerta = mensaje;
+            TipoAlerta = "warning";
         }
     }
 
@@ -734,12 +750,14 @@ public partial class Agenda : ComponentBase
         if (recurrenteDto.IdPaciente == 0)
         {
             MensajeAlerta = "Debe seleccionar un paciente.";
+            TipoAlerta = "warning";
             return;
         }
 
         if (recurrenteDto.Hora < ConfigActual.HoraInicio || recurrenteDto.Hora > ConfigActual.HoraFin)
         {
             MensajeAlerta = $"El horario del turno debe estar comprendido entre las {ConfigActual.HoraInicioTurnos} y las {ConfigActual.HoraFinTurnos} hs.";
+            TipoAlerta = "warning";
             return;
         }
 
@@ -747,6 +765,7 @@ public partial class Agenda : ComponentBase
         if (recurrenteDto.FechaInicio < fechaMinima)
         {
             MensajeAlerta = "La fecha de inicio de la serie recurrente no puede superar los 30 días de antigüedad.";
+            TipoAlerta = "warning";
             return;
         }
 
@@ -758,11 +777,13 @@ public partial class Agenda : ComponentBase
         {
             MostrarModalRecurrente = false;
             MensajeAlerta = !string.IsNullOrWhiteSpace(mensaje) ? mensaje : "Serie de turnos recurrentes agendada correctamente.";
+            TipoAlerta = "success";
             await CargarTurnos();
         }
         else
         {
             MensajeAlerta = mensaje;
+            TipoAlerta = "warning";
         }
     }
 

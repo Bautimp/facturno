@@ -2,21 +2,34 @@
 
 @if (!string.IsNullOrWhiteSpace(Message))
 {
+    var visualType = ResolverTipoVisual();
+    var cardClass = visualType switch
+    {
+        "warning" => "popup-card-warning",
+        "danger" or "error" => "popup-card-danger",
+        _ => "popup-card-success"
+    };
+    var iconClass = visualType switch
+    {
+        "warning" => "bi bi-exclamation-triangle-fill",
+        "danger" or "error" => "bi bi-exclamation-octagon-fill",
+        _ => "bi bi-check-circle-fill"
+    };
+    var titleText = visualType switch
+    {
+        "warning" => "Control del Sistema",
+        "danger" or "error" => "Error del Sistema",
+        _ => "Operación Exitosa"
+    };
+
     <div class="system-popup-wrapper" role="alert">
-        <div class="system-popup-card @(IsError ? "popup-card-error" : "popup-card-success") shadow-lg">
+        <div class="system-popup-card @cardClass shadow-lg">
             <div class="popup-card-icon">
-                @if (IsError)
-                {
-                    <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
-                }
-                else
-                {
-                    <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
-                }
+                <i class="@iconClass" aria-hidden="true"></i>
             </div>
             <div class="popup-card-body">
                 <div class="popup-card-title">
-                    @(IsError ? "Aviso del Sistema" : "Operación Exitosa")
+                    @titleText
                 </div>
                 <div class="popup-card-text">
                     @Message
@@ -32,27 +45,131 @@
     public string? Message { get; set; }
 
     [Parameter]
+    public string? Tipo { get; set; }
+
+    [Parameter]
     public EventCallback OnClose { get; set; }
 
     [Parameter]
     public int AutoDismissSeconds { get; set; } = 6;
 
     private string? _lastMessage;
+    private string? _lastTipo;
     private CancellationTokenSource? _cts;
 
-    protected bool IsError => !string.IsNullOrWhiteSpace(Message) && 
-        (Message.Contains("error", StringComparison.OrdinalIgnoreCase) ||
-         Message.Contains("no se pudo", StringComparison.OrdinalIgnoreCase) ||
-         Message.Contains("debe ", StringComparison.OrdinalIgnoreCase) ||
-         Message.Contains("falló", StringComparison.OrdinalIgnoreCase) ||
-         Message.Contains("inválid", StringComparison.OrdinalIgnoreCase) ||
-         Message.Contains("solapamiento", StringComparison.OrdinalIgnoreCase));
+    private string ResolverTipoVisual()
+    {
+        if (!string.IsNullOrWhiteSpace(Tipo))
+        {
+            var t = Tipo.Trim().ToLowerInvariant();
+            if (t is "warn" or "warning" or "alerta" or "control") return "warning";
+            if (t is "error" or "danger" or "fallo" or "critico") return "danger";
+            if (t is "success" or "exito" or "ok" or "afirmativo") return "success";
+        }
+
+        if (string.IsNullOrWhiteSpace(Message)) return "success";
+
+        var msg = Message.Trim();
+
+        // 1. Controles del sistema / Reglas de negocio / Validaciones operativas -> WARNING (Amarillo)
+        string[] palabrasClaveControl = new[]
+        {
+            "solapamiento",
+            "dentro del rango",
+            "fuera del horario",
+            "horario de atención",
+            "límite máximo",
+            "límite configurado",
+            "pacientes por día",
+            "más de 30 días",
+            "antigüedad",
+            "precio de consulta",
+            "precio máximo",
+            "supera el máximo",
+            "supera el precio",
+            "debe seleccionar",
+            "es obligatorio",
+            "son obligatorios",
+            "obligatorio cuando",
+            "formato válido",
+            "formato de hora inválido",
+            "debe contener",
+            "solo puede contener",
+            "debe tener el formato",
+            "debe asignar",
+            "debe ingresar",
+            "ya cuenta con",
+            "ya existe",
+            "ya está vinculado",
+            "ya se encuentra",
+            "no se permiten",
+            "no se pueden agendar",
+            "no se pudo agendar el turno",
+            "verifique los solapamientos",
+            "datos de entrada inválidos",
+            "datos de solicitud inválidos",
+            "debe especificar",
+            "identificador del profesional no especificado",
+            "no se puede agendar"
+        };
+
+        foreach (var clave in palabrasClaveControl)
+        {
+            if (msg.Contains(clave, StringComparison.OrdinalIgnoreCase))
+            {
+                return "warning";
+            }
+        }
+
+        // Si empieza con "Debe " suele ser un control de validación
+        if (msg.StartsWith("debe ", StringComparison.OrdinalIgnoreCase))
+        {
+            return "warning";
+        }
+
+        // 2. Errores técnicos / Fallos de servidor o de red -> DANGER (Rojo)
+        string[] palabrasClaveError = new[]
+        {
+            "error al",
+            "error de comunicación",
+            "error de red",
+            "error inesperado",
+            "error al conectar",
+            "excepción",
+            "exception",
+            "falló",
+            "fallo al",
+            "código: 5",
+            "código: 4",
+            "internal server error",
+            "statuscode",
+            "no se pudo conectar",
+            "fallaron las peticiones"
+        };
+
+        foreach (var clave in palabrasClaveError)
+        {
+            if (msg.Contains(clave, StringComparison.OrdinalIgnoreCase))
+            {
+                return "danger";
+            }
+        }
+
+        if (msg.StartsWith("error", StringComparison.OrdinalIgnoreCase))
+        {
+            return "danger";
+        }
+
+        // 3. Afirmativo / Éxito -> SUCCESS (Verde)
+        return "success";
+    }
 
     protected override void OnParametersSet()
     {
-        if (Message != _lastMessage)
+        if (Message != _lastMessage || Tipo != _lastTipo)
         {
             _lastMessage = Message;
+            _lastTipo = Tipo;
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
@@ -83,10 +200,10 @@
         _cts?.Dispose();
         _cts = null;
         _lastMessage = null;
+        _lastTipo = null;
         if (OnClose.HasDelegate)
         {
             await OnClose.InvokeAsync();
         }
     }
 }
-

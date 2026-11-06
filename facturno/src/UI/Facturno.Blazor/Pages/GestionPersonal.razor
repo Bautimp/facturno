@@ -1,7 +1,7 @@
 @page "/gestion-personal"
 @attribute [Authorize(Roles = "Operador,Administrativo,Profesional")]
 
-<SystemPopupMessage Message="@MensajeAlerta" OnClose="() => MensajeAlerta = null" />
+<SystemPopupMessage Message="@MensajeAlerta" Tipo="@TipoAlerta" OnClose="() => { MensajeAlerta = null; TipoAlerta = null; }" />
 
 <div class="facturno-card" style="position: relative;">
     <LoadingOverlay IsLoading="IsLoading" Text="Cargando información..." />

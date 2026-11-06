@@ -14,7 +14,7 @@ public partial class Configuracion : ComponentBase
     protected ConfiguracionSistemaDto Model = new();
     protected bool IsLoading = false;
     protected string? MensajeAlerta;
-    protected string? MensajeExito;
+    protected string? TipoAlerta;
 
     protected TimeOnly HoraInicioInput
     {
@@ -59,6 +59,7 @@ public partial class Configuracion : ComponentBase
         catch (Exception ex)
         {
             MensajeAlerta = $"Error de comunicación al obtener configuración: {ex.Message}";
+            TipoAlerta = "danger";
         }
         finally
         {
@@ -68,40 +69,45 @@ public partial class Configuracion : ComponentBase
 
     protected async Task GuardarConfiguracion()
     {
-        // Validaciones en cliente
+        // Validaciones en cliente (Controles del sistema -> Warning)
         if (!TimeOnly.TryParse(Model.HoraInicioTurnos, out var inicio) || !TimeOnly.TryParse(Model.HoraFinTurnos, out var fin))
         {
             MensajeAlerta = "El formato de los horarios debe ser válido (HH:mm).";
+            TipoAlerta = "warning";
             return;
         }
 
         if (inicio >= fin)
         {
             MensajeAlerta = "La hora de inicio de turnos debe ser anterior a la hora de fin.";
+            TipoAlerta = "warning";
             return;
         }
 
         if (Model.MaxPacientesPorDiaPorProfesional <= 0)
         {
             MensajeAlerta = "La cantidad máxima de pacientes por día debe ser al menos 1.";
+            TipoAlerta = "warning";
             return;
         }
 
         if (Model.PrecioMaximoConsulta < 0)
         {
             MensajeAlerta = "El precio máximo de consulta no puede ser negativo.";
+            TipoAlerta = "warning";
             return;
         }
 
         if (Model.MinutosEntreTurnos < 5 || Model.MinutosEntreTurnos > 240)
         {
             MensajeAlerta = "El intervalo entre turnos debe situarse entre 5 y 240 minutos.";
+            TipoAlerta = "warning";
             return;
         }
 
         IsLoading = true;
         MensajeAlerta = null;
-        MensajeExito = null;
+        TipoAlerta = null;
 
         try
         {
@@ -110,7 +116,8 @@ public partial class Configuracion : ComponentBase
 
             if (exito && datos != null)
             {
-                MensajeExito = mensaje ?? "Configuración del sistema y variables de entorno actualizadas con éxito.";
+                MensajeAlerta = mensaje ?? "Configuración del sistema y variables actualizadas con éxito.";
+                TipoAlerta = "success";
                 Model = new ConfiguracionSistemaDto
                 {
                     HoraInicioTurnos = datos.HoraInicioTurnos,
@@ -123,11 +130,13 @@ public partial class Configuracion : ComponentBase
             else
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "warning";
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error inesperado al guardar la configuración: {ex.Message}";
+            TipoAlerta = "danger";
         }
         finally
         {
@@ -142,6 +151,7 @@ public partial class Configuracion : ComponentBase
         Model.MaxPacientesPorDiaPorProfesional = 10;
         Model.PrecioMaximoConsulta = 100000m;
         Model.MinutosEntreTurnos = 45;
-        MensajeExito = "Valores predeterminados cargados en el formulario. Haz clic en 'Guardar Cambios' para aplicarlos.";
+        MensajeAlerta = "Valores predeterminados cargados en el formulario. Haz clic en 'Guardar Cambios' para aplicarlos.";
+        TipoAlerta = "success";
     }
 }

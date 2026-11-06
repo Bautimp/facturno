@@ -81,7 +81,7 @@ public class ConfiguracionService : IConfiguracionService
             nuevaConfig = ObtenerConfiguracion();
         }
 
-        // Actualizar variables de entorno de proceso
+        // Actualizar variables de proceso
         ActualizarVariablesDeEntorno(nuevaConfig);
 
         // Persistir en archivo JSON
@@ -89,14 +89,14 @@ public class ConfiguracionService : IConfiguracionService
         {
             var json = JsonSerializer.Serialize(nuevaConfig, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(_storageFilePath, json);
-            _logger.LogInformation("Variables de entorno y configuración del sistema guardadas en {Path}", _storageFilePath);
+            _logger.LogInformation("Variables de configuración del sistema guardadas en {Path}", _storageFilePath);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "No se pudo guardar la configuración en disco en {Path}", _storageFilePath);
         }
 
-        return ApiResponse<ConfiguracionSistema>.Ok(nuevaConfig, "Configuración del sistema y variables de entorno actualizadas exitosamente.");
+        return ApiResponse<ConfiguracionSistema>.Ok(nuevaConfig, "Configuración del sistema y variables actualizadas exitosamente.");
     }
 
     private ConfiguracionSistema CargarConfiguracionInicial()

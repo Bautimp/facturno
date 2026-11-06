@@ -29,6 +29,7 @@ public partial class GestionPersonal : ComponentBase
     protected List<AgendaCompartidaDetalleDto> ListaVinculosAgendas = new();
 
     protected string? MensajeAlerta;
+    protected string? TipoAlerta;
 
     protected bool MostrarModal = false;
     protected bool MostrarModalAdmin = false;
@@ -159,6 +160,7 @@ public partial class GestionPersonal : ComponentBase
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al cargar profesionales: {ex.Message}";
+            TipoAlerta = "danger";
         }
         finally
         {
@@ -193,45 +195,53 @@ public partial class GestionPersonal : ComponentBase
     {
         try
         {
+            // Validaciones (Controles del sistema -> Warning)
             if (string.IsNullOrWhiteSpace(profesionalDto.Nombre) || string.IsNullOrWhiteSpace(profesionalDto.Apellido))
             {
                 MensajeAlerta = "El nombre y apellido del profesional son obligatorios.";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(profesionalDto.Correo) || !FormValidators.EsCorreoValido(profesionalDto.Correo))
             {
                 MensajeAlerta = "Debe ingresar un correo electrónico con formato válido (ej: medico@facturno.com).";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (!FormValidators.EsTelefonoValido(profesionalDto.Telefono))
             {
                 MensajeAlerta = "El teléfono debe contener entre 7 y 15 dígitos numéricos.";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (!FormValidators.EsCuitValido(profesionalDto.Cuit))
             {
                 MensajeAlerta = "El CUIT debe tener el formato 20-12345678-9 o 11 dígitos continuos.";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (!FormValidators.EsMatriculaValida(profesionalDto.Matricula))
             {
                 MensajeAlerta = "La matrícula profesional solo puede contener letras, números y guiones.";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(profesionalDto.Password))
             {
                 MensajeAlerta = "Debe asignar una contraseña inicial para el acceso al sistema.";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (profesionalDto.PrecioConsulta.HasValue && profesionalDto.PrecioConsulta.Value > ConfigSistema.PrecioMaximoConsulta)
             {
                 MensajeAlerta = $"El precio de consulta ($ {profesionalDto.PrecioConsulta.Value:N2}) supera el máximo permitido en el consultorio ($ {ConfigSistema.PrecioMaximoConsulta:N2}).";
+                TipoAlerta = "warning";
                 return;
             }
 
@@ -242,16 +252,19 @@ public partial class GestionPersonal : ComponentBase
             {
                 MostrarModal = false;
                 MensajeAlerta = "Profesional registrado correctamente.";
+                TipoAlerta = "success";
                 await CargarProfesionales();
             }
             else
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "warning";
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al guardar profesional: {ex.Message}";
+            TipoAlerta = "danger";
         }
     }
 
@@ -281,36 +294,42 @@ public partial class GestionPersonal : ComponentBase
             if (string.IsNullOrWhiteSpace(profesionalEditarDto.Nombre) || string.IsNullOrWhiteSpace(profesionalEditarDto.Apellido))
             {
                 MensajeAlerta = "El nombre y apellido son obligatorios.";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (!FormValidators.EsCorreoValido(profesionalEditarDto.Correo))
             {
                 MensajeAlerta = "El correo electrónico no tiene un formato válido.";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (!FormValidators.EsTelefonoValido(profesionalEditarDto.Telefono))
             {
                 MensajeAlerta = "El teléfono debe contener entre 7 y 15 dígitos numéricos.";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (!FormValidators.EsCuitValido(profesionalEditarDto.Cuit))
             {
                 MensajeAlerta = "El CUIT debe tener el formato 20-12345678-9 o 11 dígitos continuos.";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (!FormValidators.EsMatriculaValida(profesionalEditarDto.Matricula))
             {
                 MensajeAlerta = "La matrícula profesional solo puede contener letras, números y guiones.";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (profesionalEditarDto.PrecioConsulta.HasValue && profesionalEditarDto.PrecioConsulta.Value > ConfigSistema.PrecioMaximoConsulta)
             {
                 MensajeAlerta = $"El precio de consulta ($ {profesionalEditarDto.PrecioConsulta.Value:N2}) supera el máximo permitido en el consultorio ($ {ConfigSistema.PrecioMaximoConsulta:N2}).";
+                TipoAlerta = "warning";
                 return;
             }
 
@@ -321,16 +340,19 @@ public partial class GestionPersonal : ComponentBase
             {
                 MostrarModalEditar = false;
                 MensajeAlerta = $"Profesional {profesionalEditarDto.Nombre} {profesionalEditarDto.Apellido} actualizado correctamente.";
+                TipoAlerta = "success";
                 await CargarProfesionales();
             }
             else
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "warning";
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al actualizar profesional: {ex.Message}";
+            TipoAlerta = "danger";
         }
     }
 
@@ -347,24 +369,28 @@ public partial class GestionPersonal : ComponentBase
             if (string.IsNullOrWhiteSpace(adminDto.Nombre) || string.IsNullOrWhiteSpace(adminDto.Apellido))
             {
                 MensajeAlerta = "El nombre y apellido son obligatorios.";
+                TipoAlerta = "warning";
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(adminDto.Correo) || !FormValidators.EsCorreoValido(adminDto.Correo))
+            if (!FormValidators.EsCorreoValido(adminDto.Correo))
             {
                 MensajeAlerta = "Debe ingresar un correo electrónico válido.";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (!FormValidators.EsTelefonoValido(adminDto.Telefono))
             {
                 MensajeAlerta = "El teléfono debe contener entre 7 y 15 dígitos numéricos.";
+                TipoAlerta = "warning";
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(adminDto.Password))
             {
                 MensajeAlerta = "Debe asignar una contraseña para el administrativo.";
+                TipoAlerta = "warning";
                 return;
             }
 
@@ -375,16 +401,19 @@ public partial class GestionPersonal : ComponentBase
             {
                 MostrarModalAdmin = false;
                 MensajeAlerta = "Usuario Administrativo registrado correctamente.";
+                TipoAlerta = "success";
                 await CargarAdministrativos();
             }
             else
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "warning";
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al guardar usuario administrativo: {ex.Message}";
+            TipoAlerta = "danger";
         }
     }
 
@@ -400,16 +429,19 @@ public partial class GestionPersonal : ComponentBase
             if (exito)
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "success";
                 await CargarProfesionales();
             }
             else
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "warning";
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error de comunicación: {ex.Message}";
+            TipoAlerta = "danger";
         }
     }
 
@@ -440,16 +472,19 @@ public partial class GestionPersonal : ComponentBase
             if (exito)
             {
                 MensajeAlerta = "Agenda desvinculada exitosamente.";
+                TipoAlerta = "success";
                 await CargarVinculosAgendas();
             }
             else
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "warning";
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al desvincular agenda: {ex.Message}";
+            TipoAlerta = "danger";
         }
     }
 
@@ -458,6 +493,7 @@ public partial class GestionPersonal : ComponentBase
         if (IdProfesionalVinculo == Guid.Empty || string.IsNullOrWhiteSpace(IdAdministrativoVinculoStr))
         {
             MensajeAlerta = "Debe seleccionar un profesional y un usuario administrativo.";
+            TipoAlerta = "warning";
             return;
         }
 
@@ -470,6 +506,7 @@ public partial class GestionPersonal : ComponentBase
             if (exito)
             {
                 MensajeAlerta = "Agenda del profesional vinculada correctamente al administrativo seleccionado.";
+                TipoAlerta = "success";
                 if (!EsProfesional || EsOperador)
                 {
                     IdProfesionalVinculo = Guid.Empty;
@@ -480,11 +517,13 @@ public partial class GestionPersonal : ComponentBase
             else
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "warning";
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al vincular agenda: {ex.Message}";
+            TipoAlerta = "danger";
         }
     }
 
@@ -555,6 +594,7 @@ public partial class GestionPersonal : ComponentBase
             if (!FormValidators.EsObraSocialValida(ObraSocialModelo.Nombre))
             {
                 MensajeAlerta = "El nombre de la obra social debe tener entre 2 y 60 caracteres alfanuméricos válidos.";
+                TipoAlerta = "warning";
                 return;
             }
 
@@ -596,6 +636,7 @@ public partial class GestionPersonal : ComponentBase
                     MensajeAlerta = EsEdicionObraSocial 
                         ? "Obra social actualizada." 
                         : "Obra social agregada correctamente.";
+                    TipoAlerta = "success";
                     return;
                 }
             }
@@ -605,16 +646,19 @@ public partial class GestionPersonal : ComponentBase
             {
                 MostrarModalObraSocial = false;
                 MensajeAlerta = EsEdicionObraSocial ? "Obra social actualizada con éxito." : "Obra social registrada con éxito.";
+                TipoAlerta = "success";
                 await CargarObrasSociales();
             }
             else
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "warning";
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al guardar obra social: {ex.Message}";
+            TipoAlerta = "danger";
         }
     }
 
@@ -630,6 +674,7 @@ public partial class GestionPersonal : ComponentBase
             {
                 os.Activo = nuevoEstado;
                 MensajeAlerta = nuevoEstado ? "Obra Social activada." : "Obra Social dada de baja.";
+                TipoAlerta = "success";
                 return;
             }
 
@@ -637,16 +682,19 @@ public partial class GestionPersonal : ComponentBase
             if (exito)
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "success";
                 await CargarObrasSociales();
             }
             else
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "warning";
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error de comunicación: {ex.Message}";
+            TipoAlerta = "danger";
         }
     }
 }
