@@ -51,7 +51,7 @@ public class ObrasSocialesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Operador,Administrativo")]
+    [Authorize(Roles = "Operador,Administrativo,Profesional")]
     public async Task<ActionResult<ApiResponse<ObraSocial>>> Crear([FromBody] ObraSocial obraSocial)
     {
         try
@@ -71,7 +71,7 @@ public class ObrasSocialesController : ControllerBase
     }
 
     [HttpPut("{idObraSocial:long}")]
-    [Authorize(Roles = "Operador,Administrativo")]
+    [Authorize(Roles = "Operador,Administrativo,Profesional")]
     public async Task<ActionResult<ApiResponse<ObraSocial>>> Actualizar(long idObraSocial, [FromBody] ObraSocial obraSocial)
     {
         try
@@ -96,7 +96,7 @@ public class ObrasSocialesController : ControllerBase
     }
 
     [HttpPatch("{idObraSocial:long}/activo")]
-    [Authorize(Roles = "Operador,Administrativo")]
+    [Authorize(Roles = "Operador,Administrativo,Profesional")]
     public async Task<ActionResult<ApiResponse<bool>>> CambiarEstadoActivo(long idObraSocial, [FromQuery] bool activo)
     {
         try

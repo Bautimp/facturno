@@ -190,12 +190,12 @@ public class ProfesionalesController : ControllerBase
             var profesional = new Profesional
             {
                 IdProfesional = targetId,
-                Especialidad = dto.Especialidad ?? existente.Especialidad,
+                Especialidad = esOperador ? (dto.Especialidad ?? existente.Especialidad) : existente.Especialidad,
                 Matricula = dto.Matricula ?? existente.Matricula,
                 Cuit = dto.Cuit ?? existente.Cuit,
                 PrecioConsulta = dto.PrecioConsulta ?? existente.PrecioConsulta,
                 TipoComprobante = dto.TipoComprobante ?? existente.TipoComprobante,
-                CondicionIva = dto.CondicionIva ?? existente.CondicionIva
+                CondicionIva = esOperador ? (dto.CondicionIva ?? existente.CondicionIva) : existente.CondicionIva
             };
 
             var actualizado = await _profesionalRepository.Actualizar(profesional, persona);
@@ -271,7 +271,11 @@ public class ProfesionalesController : ControllerBase
             Guid.TryParse(userIdClaim, out var currentUserId);
 
             string filter = "";
-            if (idProfesional.HasValue && idProfesional.Value != Guid.Empty)
+            if (esProfesional && !esOperador)
+            {
+                filter = $"id_profesional='{currentUserId}'";
+            }
+            else if (idProfesional.HasValue && idProfesional.Value != Guid.Empty)
             {
                 filter = $"id_profesional='{idProfesional.Value}'";
             }
