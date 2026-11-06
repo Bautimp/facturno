@@ -15,10 +15,6 @@ migrate((db) => {
     required: false
   }));
   usersColl.schema.addField(new SchemaField({
-    name: "activo",
-    type: "bool"
-  }));
-  usersColl.schema.addField(new SchemaField({
     name: "id_persona",
     type: "number"
   }));
@@ -38,7 +34,8 @@ migrate((db) => {
       new SchemaField({ name: "nombre", type: "text", required: true }),
       new SchemaField({ name: "apellido", type: "text", required: true }),
       new SchemaField({ name: "correo", type: "email" }),
-      new SchemaField({ name: "telefono", type: "number" })
+      new SchemaField({ name: "telefono", type: "number" }),
+      new SchemaField({ name: "activo", type: "bool" })
     ],
     listRule: "", viewRule: "", createRule: "", updateRule: "", deleteRule: ""
   });
@@ -84,8 +81,7 @@ migrate((db) => {
       new SchemaField({ name: "tipo_documento", type: "text" }),
       new SchemaField({ name: "id_obra_social", type: "number" }),
       new SchemaField({ name: "num_obra_social", type: "text" }),
-      new SchemaField({ name: "porcentaje_iva", type: "text" }),
-      new SchemaField({ name: "activo", type: "bool" })
+      new SchemaField({ name: "porcentaje_iva", type: "text" })
     ],
     listRule: "", viewRule: "", createRule: "", updateRule: "", deleteRule: ""
   });
@@ -156,13 +152,13 @@ migrate((db) => {
     { id: 6, nombre: "María", apellido: "Fernández", correo: "maria.f@hotmail.com", tel: 1177889900 },
     { id: 7, nombre: "Lucas", apellido: "Gómez", correo: "lucas.gomez@yahoo.com", tel: 1188990011 },
     { id: 8, nombre: "Sofía", apellido: "Martínez", correo: "sofia.martinez@gmail.com", tel: 1199887766 },
-    { id: 9, nombre: "Martín", apellido: "Rodríguez", correo: "martin.rodriguez@outlook.com", tel: 1123456789 },
-    { id: 10, nombre: "Camila", apellido: "López", correo: "camila.lopez@gmail.com", tel: 1134567890 },
-    { id: 11, nombre: "Diego", apellido: "Morales", correo: "diego.morales@yahoo.com", tel: 1145678901 },
-    { id: 12, nombre: "Valentina", apellido: "Herrera", correo: "valen.herrera@hotmail.com", tel: 1156789012 },
-    { id: 13, nombre: "Agustín", apellido: "Castro", correo: "agustin.castro@gmail.com", tel: 1167890123 },
-    { id: 14, nombre: "Lucía", apellido: "Romero", correo: "lucia.romero@gmail.com", tel: 1178901234 },
-    { id: 15, nombre: "Esteban", apellido: "Díaz", correo: "esteban.diaz@outlook.com", tel: 1189012345 }
+    { id: 9, nombre: "Martín", apellido: "Rodríguez", correo: "martin.rodriguez@outlook.com", tel: 1123456789, activo: true },
+    { id: 10, nombre: "Camila", apellido: "López", correo: "camila.lopez@gmail.com", tel: 1134567890, activo: false },
+    { id: 11, nombre: "Diego", apellido: "Morales", correo: "diego.morales@yahoo.com", tel: 1145678901, activo: true },
+    { id: 12, nombre: "Valentina", apellido: "Herrera", correo: "valen.herrera@hotmail.com", tel: 1156789012, activo: true },
+    { id: 13, nombre: "Agustín", apellido: "Castro", correo: "agustin.castro@gmail.com", tel: 1167890123, activo: true },
+    { id: 14, nombre: "Lucía", apellido: "Romero", correo: "lucia.romero@gmail.com", tel: 1178901234, activo: false },
+    { id: 15, nombre: "Esteban", apellido: "Díaz", correo: "esteban.diaz@outlook.com", tel: 1189012345, activo: true }
   ];
 
   for (const p of personasData) {
@@ -172,6 +168,7 @@ migrate((db) => {
     pRec.set("apellido", p.apellido);
     pRec.set("correo", p.correo);
     pRec.set("telefono", p.tel);
+    pRec.set("activo", p.activo !== undefined ? p.activo : true);
     dao.saveRecord(pRec);
   }
 
@@ -196,7 +193,6 @@ migrate((db) => {
     uRec.setPassword(u.pass);
     uRec.set("id_usuario", u.guid);
     uRec.set("rol", u.rol);
-    uRec.set("activo", true);
     uRec.set("id_persona", u.idPersona);
     dao.saveRecord(uRec);
   }
@@ -246,15 +242,27 @@ migrate((db) => {
     pacRec.set("id_obra_social", pac.os);
     pacRec.set("num_obra_social", pac.numOs);
     pacRec.set("porcentaje_iva", pac.iva);
-    pacRec.set("activo", pac.activo !== undefined ? pac.activo : true);
     dao.saveRecord(pacRec);
   }
 
-  // --- Agendas Compartidas (Marcos Benítez vinculado a Dra. Laura Gómez) ---
+  // --- Agendas Compartidas ---
+  // 1. Marcos Benítez (Administrativo) vinculado a Dra. Laura Gómez
   const agenda1 = new Record(agendasCompartidas);
   agenda1.set("id_administrativo", idMarcos);
   agenda1.set("id_profesional", idLaura);
   dao.saveRecord(agenda1);
+
+  // 2. Operador del Sistema vinculado a Dra. Laura Gómez
+  const agenda2 = new Record(agendasCompartidas);
+  agenda2.set("id_administrativo", idAdmin);
+  agenda2.set("id_profesional", idLaura);
+  dao.saveRecord(agenda2);
+
+  // 3. Operador del Sistema vinculado a Dr. Carlos Rossi
+  const agenda3 = new Record(agendasCompartidas);
+  agenda3.set("id_administrativo", idAdmin);
+  agenda3.set("id_profesional", idCarlos);
+  dao.saveRecord(agenda3);
 
   // --- Generación de Turnos de Prueba hasta fines de Noviembre 2026 ---
   const diasNoviembre = [

@@ -51,7 +51,7 @@ public class AuthController : ControllerBase
             }
 
             var usuario = await _usuarioRepository.ObtenerPorCorreo(dto.Correo);
-            if (usuario == null || !usuario.Activo)
+            if (usuario == null || !(usuario.Persona?.Activo ?? true))
             {
                 return Unauthorized(ApiResponse<UsuarioAuthResponseDto>.Error("Usuario inactivo o no registrado en la clínica."));
             }

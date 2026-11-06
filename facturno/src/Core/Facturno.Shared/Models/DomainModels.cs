@@ -10,6 +10,7 @@ public class Persona
     public string? Apellido { get; set; }
     public string? Correo { get; set; }
     public long? Telefono { get; set; }
+    public bool Activo { get; set; } = true;
 }
 
 public class Usuario
@@ -19,7 +20,6 @@ public class Usuario
     public long IdPersona { get; set; }
     public Persona? Persona { get; set; }
     public RolUsuario Rol { get; set; }
-    public bool Activo { get; set; } = true;
 }
 
 public class Profesional
@@ -54,7 +54,6 @@ public class Paciente
     public ObraSocial? ObraSocial { get; set; }
     public string? NumObraSocial { get; set; }
     public string? PorcentajeIva { get; set; }
-    public bool Activo { get; set; } = true;
 }
 
 public class Turno

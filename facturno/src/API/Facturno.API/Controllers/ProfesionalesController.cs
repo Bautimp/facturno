@@ -111,7 +111,8 @@ public class ProfesionalesController : ControllerBase
                 Nombre = dto.Nombre,
                 Apellido = dto.Apellido,
                 Correo = dto.Correo,
-                Telefono = dto.Telefono
+                Telefono = dto.Telefono,
+                Activo = true
             };
 
             var usuario = new Usuario
@@ -119,7 +120,6 @@ public class ProfesionalesController : ControllerBase
                 IdUsuario = nuevoIdUsuario,
                 IdPersona = nuevoIdPersona,
                 Rol = RolUsuario.Profesional,
-                Activo = true,
                 Persona = persona
             };
 
@@ -153,6 +153,17 @@ public class ProfesionalesController : ControllerBase
             if (targetId == Guid.Empty)
             {
                 return BadRequest(ApiResponse<Profesional>.Error("Identificador del profesional no especificado."));
+            }
+
+            // Los profesionales solo pueden actualizar su propia información
+            var esOperador = User.IsInRole("Operador");
+            if (!esOperador)
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(userIdClaim, out var currentUserId) || currentUserId != targetId)
+                {
+                    return Forbid();
+                }
             }
 
             var config = _configuracionService.ObtenerConfiguracion();
@@ -227,14 +238,14 @@ public class ProfesionalesController : ControllerBase
                     IdUsuario = Guid.TryParse(u.IdUsuario, out var g) ? g : Guid.Empty,
                     IdPersona = u.IdPersona,
                     Rol = Enum.TryParse<RolUsuario>(u.Rol, out var r) ? r : RolUsuario.Administrativo,
-                    Activo = u.Activo,
                     Persona = personasDict.TryGetValue(u.IdPersona, out var p) ? new Persona
                     {
                         IdPersona = p.IdPersona,
                         Nombre = p.Nombre,
                         Apellido = p.Apellido,
                         Correo = p.Correo,
-                        Telefono = p.Telefono
+                        Telefono = p.Telefono,
+                        Activo = p.Activo
                     } : null
                 })
                 .ToList();
@@ -260,11 +271,7 @@ public class ProfesionalesController : ControllerBase
             Guid.TryParse(userIdClaim, out var currentUserId);
 
             string filter = "";
-            if (esProfesional && !esOperador)
-            {
-                filter = $"id_profesional='{currentUserId}'";
-            }
-            else if (idProfesional.HasValue && idProfesional.Value != Guid.Empty)
+            if (idProfesional.HasValue && idProfesional.Value != Guid.Empty)
             {
                 filter = $"id_profesional='{idProfesional.Value}'";
             }
@@ -288,13 +295,14 @@ public class ProfesionalesController : ControllerBase
                 var adminNom = "Administrativo";
                 if (usersDict.TryGetValue(v.IdAdministrativo, out var uAdmin))
                 {
+                    var rolStr = !string.IsNullOrEmpty(uAdmin.Rol) ? $" ({uAdmin.Rol})" : "";
                     if (personasDict.TryGetValue(uAdmin.IdPersona, out var pAdmin))
                     {
-                        adminNom = $"{pAdmin.Nombre} {pAdmin.Apellido}";
+                        adminNom = $"{pAdmin.Nombre} {pAdmin.Apellido}{rolStr}";
                     }
                     else
                     {
-                        adminNom = uAdmin.Email;
+                        adminNom = $"{uAdmin.Email}{rolStr}";
                     }
                 }
 
@@ -457,7 +465,8 @@ public class ProfesionalesController : ControllerBase
                 Nombre = dto.Nombre,
                 Apellido = dto.Apellido,
                 Correo = dto.Correo,
-                Telefono = dto.Telefono
+                Telefono = dto.Telefono,
+                Activo = true
             };
 
             var usuario = new Usuario
@@ -465,7 +474,6 @@ public class ProfesionalesController : ControllerBase
                 IdUsuario = nuevoIdUsuario,
                 IdPersona = nuevoIdPersona,
                 Rol = RolUsuario.Administrativo,
-                Activo = true,
                 Persona = persona
             };
 

@@ -10,15 +10,32 @@ public class TurnoService : ITurnoService
 {
     private readonly ITurnoRepository _turnoRepository;
     private readonly IConfiguracionService _configService;
+    private readonly IProfesionalRepository _profesionalRepository;
 
-    public TurnoService(ITurnoRepository turnoRepository, IConfiguracionService configService)
+    public TurnoService(
+        ITurnoRepository turnoRepository, 
+        IConfiguracionService configService,
+        IProfesionalRepository profesionalRepository)
     {
         _turnoRepository = turnoRepository;
         _configService = configService;
+        _profesionalRepository = profesionalRepository;
     }
 
     public async Task<ApiResponse<Turno>> AgendarTurno(TurnoCreateDto dto)
     {
+        // 0. Validar existencia y vigencia (baja lógica unificada en Persona) del profesional
+        var profesional = await _profesionalRepository.ObtenerPorId(dto.IdProfesional);
+        if (profesional == null)
+        {
+            return ApiResponse<Turno>.Error("El profesional seleccionado no existe en el sistema.");
+        }
+
+        if (profesional.Usuario?.Persona == null || !profesional.Usuario.Persona.Activo)
+        {
+            return ApiResponse<Turno>.Error("No se pueden agendar turnos para un profesional que se encuentra dado de baja.");
+        }
+
         var config = _configService.ObtenerConfiguracion();
 
         // 1. Validar rango horario de atención
@@ -77,6 +94,18 @@ public class TurnoService : ITurnoService
 
     public async Task<ApiResponse<List<Turno>>> AgendarTurnosRecurrentes(TurnoRecurrenteCreateDto dto)
     {
+        // Validar vigencia del profesional antes de procesar la serie recurrente
+        var profesional = await _profesionalRepository.ObtenerPorId(dto.IdProfesional);
+        if (profesional == null)
+        {
+            return ApiResponse<List<Turno>>.Error("El profesional seleccionado no existe en el sistema.");
+        }
+
+        if (profesional.Usuario?.Persona == null || !profesional.Usuario.Persona.Activo)
+        {
+            return ApiResponse<List<Turno>>.Error("No se pueden agendar turnos para un profesional que se encuentra dado de baja.");
+        }
+
         var turnosCreados = new List<Turno>();
         var erroresSolapamiento = new List<string>();
 
@@ -127,9 +156,15 @@ public class TurnoService : ITurnoService
             return ApiResponse<Turno>.Error("El turno especificado no existe.");
         }
 
-        // Si se modifica la fecha u hora y el nuevo estado no es Cancelado, validar solapamientos y límites
+        // Si se modifica la fecha u hora y el nuevo estado no es Cancelado, validar vigencia del profesional, solapamientos y límites
         if (dto.Estado != EstadoTurno.Cancelado)
         {
+            var profesional = await _profesionalRepository.ObtenerPorId(turnoExistente.IdProfesional);
+            if (profesional?.Usuario?.Persona == null || !profesional.Usuario.Persona.Activo)
+            {
+                return ApiResponse<Turno>.Error("No se pueden modificar ni reactivar turnos para un profesional que se encuentra dado de baja.");
+            }
+
             var config = _configService.ObtenerConfiguracion();
 
             var horaTurno = dto.Hora;

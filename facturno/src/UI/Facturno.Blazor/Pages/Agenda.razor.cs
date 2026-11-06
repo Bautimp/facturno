@@ -41,6 +41,7 @@ public partial class Agenda : ComponentBase
     protected string FechaMinimaPermitidaIso => DateOnly.FromDateTime(DateTime.Today.AddDays(-30)).ToString("yyyy-MM-dd");
 
     protected string? MensajeAlerta;
+    protected string? TipoAlerta;
     protected bool MostrarModalNuevo = false;
     protected bool MostrarModalRecurrente = false;
 
@@ -85,15 +86,15 @@ public partial class Agenda : ComponentBase
     protected bool MostrarDropdownPacientesNuevo = false;
     protected Paciente? PacienteSeleccionadoNuevo => ListaPacientes.FirstOrDefault(p => p.IdPaciente == nuevoTurnoDto.IdPaciente);
     protected List<Paciente> PacientesFiltradosNuevo => string.IsNullOrWhiteSpace(TextoBusquedaPacienteNuevo)
-        ? ListaPacientes.Where(p => p.Activo).Take(25).ToList()
-        : ListaPacientes.Where(p => p.Activo && FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteNuevo)).ToList();
+        ? ListaPacientes.Where(p => p.Persona?.Activo == true).Take(25).ToList()
+        : ListaPacientes.Where(p => p.Persona?.Activo == true && FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteNuevo)).ToList();
 
     protected string TextoBusquedaPacienteRecurrente = string.Empty;
     protected bool MostrarDropdownPacientesRecurrente = false;
     protected Paciente? PacienteSeleccionadoRecurrente => ListaPacientes.FirstOrDefault(p => p.IdPaciente == recurrenteDto.IdPaciente);
     protected List<Paciente> PacientesFiltradosRecurrente => string.IsNullOrWhiteSpace(TextoBusquedaPacienteRecurrente)
-        ? ListaPacientes.Where(p => p.Activo).Take(25).ToList()
-        : ListaPacientes.Where(p => p.Activo && FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteRecurrente)).ToList();
+        ? ListaPacientes.Where(p => p.Persona?.Activo == true).Take(25).ToList()
+        : ListaPacientes.Where(p => p.Persona?.Activo == true && FuzzyMatcher.EsCoincidenciaPaciente(p, TextoBusquedaPacienteRecurrente)).ToList();
 
     protected void OnBusquedaPacienteNuevoInput(ChangeEventArgs e)
     {
@@ -304,6 +305,15 @@ public partial class Agenda : ComponentBase
         return TurnosPorFecha.Values.Sum(list => list.Count(t => t.Estado == FiltroEstado.Value));
     }
 
+    protected bool ProfesionalSeleccionadoEstaDadoDeBaja
+    {
+        get
+        {
+            var prof = ListaProfesionales.FirstOrDefault(p => p.IdProfesional == SelectedProfesionalId);
+            return prof != null && prof.Usuario?.Persona != null && !prof.Usuario.Persona.Activo;
+        }
+    }
+
     protected async Task CargarProfesionales()
     {
         try
@@ -314,7 +324,9 @@ public partial class Agenda : ComponentBase
                 ListaProfesionales = res.Datos;
                 if (!EsProfesionalLogueado && ListaProfesionales.Any() && SelectedProfesionalId == Guid.Empty)
                 {
-                    SelectedProfesionalId = ListaProfesionales.First().IdProfesional;
+                    var primerActivo = ListaProfesionales.FirstOrDefault(p => p.Usuario?.Persona?.Activo == true) 
+                                    ?? ListaProfesionales.First();
+                    SelectedProfesionalId = primerActivo.IdProfesional;
                 }
             }
         }
@@ -323,6 +335,7 @@ public partial class Agenda : ComponentBase
             if (!EsProfesionalLogueado)
             {
                 MensajeAlerta = $"Error al cargar profesionales: {ex.Message}";
+                TipoAlerta = "danger";
             }
         }
     }
@@ -391,6 +404,7 @@ public partial class Agenda : ComponentBase
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al obtener turnos: {ex.Message}";
+            TipoAlerta = "danger";
         }
         finally
         {
@@ -522,9 +536,17 @@ public partial class Agenda : ComponentBase
 
         try
         {
+            if (estadoSeleccionado != EstadoTurno.Cancelado && ProfesionalSeleccionadoEstaDadoDeBaja)
+            {
+                MensajeAlerta = "No se pueden modificar o reactivar turnos para un profesional que se encuentra dado de baja.";
+                TipoAlerta = "warning";
+                return;
+            }
+
             if (editHora < ConfigActual.HoraInicio || editHora > ConfigActual.HoraFin)
             {
                 MensajeAlerta = $"El horario del turno debe estar comprendido entre las {ConfigActual.HoraInicioTurnos} y las {ConfigActual.HoraFinTurnos} hs.";
+                TipoAlerta = "warning";
                 return;
             }
 
@@ -532,6 +554,7 @@ public partial class Agenda : ComponentBase
             if (editFecha < fechaMinima)
             {
                 MensajeAlerta = "No se pueden agendar turnos con más de 30 días de antigüedad respecto al día de hoy.";
+                TipoAlerta = "warning";
                 return;
             }
 
@@ -560,17 +583,20 @@ public partial class Agenda : ComponentBase
 
                 var nombrePaciente = GetNombrePaciente(turnoSeleccionado.IdPaciente);
                 MensajeAlerta = $"Turno de {nombrePaciente} actualizado correctamente.";
+                TipoAlerta = "success";
                 CerrarModalEstado();
                 await CargarTurnos();
             }
             else
             {
                 MensajeAlerta = mensaje;
+                TipoAlerta = "warning";
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al guardar cambios del turno: {ex.Message}";
+            TipoAlerta = "danger";
         }
         finally
         {
@@ -601,6 +627,13 @@ public partial class Agenda : ComponentBase
     {
         try
         {
+            if (nuevoEstado != EstadoTurno.Cancelado && ProfesionalSeleccionadoEstaDadoDeBaja)
+            {
+                MensajeAlerta = "No se pueden reactivar o modificar turnos para un profesional que se encuentra dado de baja.";
+                TipoAlerta = "warning";
+                return;
+            }
+
             var updateDto = new TurnoUpdateDto
             {
                 IdTurno = turno.IdTurno,
@@ -621,16 +654,19 @@ public partial class Agenda : ComponentBase
                 PopoverTurnoId = null;
                 var nombrePaciente = GetNombrePaciente(turno.IdPaciente);
                 MensajeAlerta = $"Estado del turno de {nombrePaciente} actualizado a {nuevoEstado}.";
+                TipoAlerta = "success";
                 await CargarTurnos();
             }
             else
             {
                 MensajeAlerta = apiResult?.Mensaje ?? "No se pudo actualizar el estado del turno.";
+                TipoAlerta = "warning";
             }
         }
         catch (Exception ex)
         {
             MensajeAlerta = $"Error al cambiar estado: {ex.Message}";
+            TipoAlerta = "danger";
         }
         finally
         {
@@ -640,6 +676,13 @@ public partial class Agenda : ComponentBase
 
     protected void AbrirModalNuevoTurno()
     {
+        if (ProfesionalSeleccionadoEstaDadoDeBaja)
+        {
+            MensajeAlerta = "No se pueden agendar turnos para un profesional que se encuentra dado de baja.";
+            TipoAlerta = "warning";
+            return;
+        }
+
         nuevoTurnoDto = new TurnoCreateDto
         {
             IdProfesional = SelectedProfesionalId,
@@ -653,6 +696,13 @@ public partial class Agenda : ComponentBase
 
     protected void AbrirModalNuevoTurnoConFecha(DateOnly fecha)
     {
+        if (ProfesionalSeleccionadoEstaDadoDeBaja)
+        {
+            MensajeAlerta = "No se pueden agendar turnos para un profesional que se encuentra dado de baja.";
+            TipoAlerta = "warning";
+            return;
+        }
+
         nuevoTurnoDto = new TurnoCreateDto
         {
             IdProfesional = SelectedProfesionalId,
@@ -666,6 +716,13 @@ public partial class Agenda : ComponentBase
 
     protected void AgendarSlotEspecifico(TimeOnly slot, DateOnly? fecha = null)
     {
+        if (ProfesionalSeleccionadoEstaDadoDeBaja)
+        {
+            MensajeAlerta = "No se pueden agendar turnos para un profesional que se encuentra dado de baja.";
+            TipoAlerta = "warning";
+            return;
+        }
+
         nuevoTurnoDto = new TurnoCreateDto
         {
             IdProfesional = SelectedProfesionalId,
@@ -679,15 +736,24 @@ public partial class Agenda : ComponentBase
 
     protected async Task GuardarNuevoTurno()
     {
+        if (ProfesionalSeleccionadoEstaDadoDeBaja)
+        {
+            MensajeAlerta = "No se pueden agendar turnos para un profesional que se encuentra dado de baja.";
+            TipoAlerta = "warning";
+            return;
+        }
+
         if (nuevoTurnoDto.IdPaciente == 0)
         {
             MensajeAlerta = "Debe seleccionar un paciente.";
+            TipoAlerta = "warning";
             return;
         }
 
         if (nuevoTurnoDto.Hora < ConfigActual.HoraInicio || nuevoTurnoDto.Hora > ConfigActual.HoraFin)
         {
             MensajeAlerta = $"El horario del turno debe estar comprendido entre las {ConfigActual.HoraInicioTurnos} y las {ConfigActual.HoraFinTurnos} hs.";
+            TipoAlerta = "warning";
             return;
         }
 
@@ -695,6 +761,7 @@ public partial class Agenda : ComponentBase
         if (nuevoTurnoDto.Fecha < fechaMinima)
         {
             MensajeAlerta = "No se pueden agendar turnos con más de 30 días de antigüedad respecto al día de hoy.";
+            TipoAlerta = "warning";
             return;
         }
 
@@ -706,16 +773,25 @@ public partial class Agenda : ComponentBase
         {
             MostrarModalNuevo = false;
             MensajeAlerta = "Turno agendado correctamente.";
+            TipoAlerta = "success";
             await CargarTurnos();
         }
         else
         {
             MensajeAlerta = mensaje;
+            TipoAlerta = "warning";
         }
     }
 
     protected void AbrirModalTurnoRecurrente()
     {
+        if (ProfesionalSeleccionadoEstaDadoDeBaja)
+        {
+            MensajeAlerta = "No se pueden agendar turnos para un profesional que se encuentra dado de baja.";
+            TipoAlerta = "warning";
+            return;
+        }
+
         recurrenteDto = new TurnoRecurrenteCreateDto
         {
             IdProfesional = SelectedProfesionalId,
@@ -731,15 +807,24 @@ public partial class Agenda : ComponentBase
 
     protected async Task GuardarTurnosRecurrentes()
     {
+        if (ProfesionalSeleccionadoEstaDadoDeBaja)
+        {
+            MensajeAlerta = "No se pueden agendar turnos para un profesional que se encuentra dado de baja.";
+            TipoAlerta = "warning";
+            return;
+        }
+
         if (recurrenteDto.IdPaciente == 0)
         {
             MensajeAlerta = "Debe seleccionar un paciente.";
+            TipoAlerta = "warning";
             return;
         }
 
         if (recurrenteDto.Hora < ConfigActual.HoraInicio || recurrenteDto.Hora > ConfigActual.HoraFin)
         {
             MensajeAlerta = $"El horario del turno debe estar comprendido entre las {ConfigActual.HoraInicioTurnos} y las {ConfigActual.HoraFinTurnos} hs.";
+            TipoAlerta = "warning";
             return;
         }
 
@@ -747,6 +832,7 @@ public partial class Agenda : ComponentBase
         if (recurrenteDto.FechaInicio < fechaMinima)
         {
             MensajeAlerta = "La fecha de inicio de la serie recurrente no puede superar los 30 días de antigüedad.";
+            TipoAlerta = "warning";
             return;
         }
 
@@ -758,11 +844,13 @@ public partial class Agenda : ComponentBase
         {
             MostrarModalRecurrente = false;
             MensajeAlerta = !string.IsNullOrWhiteSpace(mensaje) ? mensaje : "Serie de turnos recurrentes agendada correctamente.";
+            TipoAlerta = "success";
             await CargarTurnos();
         }
         else
         {
             MensajeAlerta = mensaje;
+            TipoAlerta = "warning";
         }
     }
 

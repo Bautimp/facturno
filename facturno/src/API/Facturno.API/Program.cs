@@ -68,7 +68,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     {
                         var repo = context.HttpContext.RequestServices.GetRequiredService<IUsuarioRepository>();
                         var usuario = await repo.ObtenerPorCorreo(email);
-                        if (usuario != null && usuario.Activo)
+                        if (usuario != null && (usuario.Persona?.Activo ?? true))
                         {
                             rolString = usuario.Rol.ToString();
                             cache.Set(cacheKey, rolString, TimeSpan.FromMinutes(5));
@@ -115,6 +115,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowBlazorOrigin");
+app.UseMiddleware<Facturno.API.Middleware.GlobalExceptionMiddleware>();
 
 // Configurar tipos MIME completos y soporte para binarios de Blazor WebAssembly (.NET 10)
 var contentTypeProvider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();

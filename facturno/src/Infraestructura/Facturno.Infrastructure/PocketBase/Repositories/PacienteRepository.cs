@@ -28,9 +28,6 @@ internal class PacientePbRecord
     [JsonPropertyName("porcentaje_iva")]
     public string? PorcentajeIva { get; set; }
 
-    [JsonPropertyName("activo")]
-    public bool Activo { get; set; } = true;
-
     [JsonPropertyName("created")]
     public DateTime Created { get; set; }
 }
@@ -77,7 +74,8 @@ public class PacienteRepository : IPacienteRepository
             nombre = persona.Nombre,
             apellido = persona.Apellido,
             correo = persona.Correo,
-            telefono = persona.Telefono
+            telefono = persona.Telefono,
+            activo = persona.Activo
         };
 
         var personaCreated = await _client.Create<PersonaPbRecord>("personas", personaPayload);
@@ -90,8 +88,7 @@ public class PacienteRepository : IPacienteRepository
             tipo_documento = paciente.TipoDocumento?.ToString(),
             id_obra_social = paciente.IdObraSocial > 0 ? paciente.IdObraSocial : 1,
             num_obra_social = paciente.IdObraSocial == 1 ? null : paciente.NumObraSocial,
-            porcentaje_iva = paciente.PorcentajeIva,
-            activo = true
+            porcentaje_iva = paciente.PorcentajeIva
         };
 
         var pacienteCreated = await _client.Create<PacientePbRecord>("pacientes", pacientePayload);
@@ -109,7 +106,8 @@ public class PacienteRepository : IPacienteRepository
                 nombre = persona.Nombre,
                 apellido = persona.Apellido,
                 correo = persona.Correo,
-                telefono = persona.Telefono
+                telefono = persona.Telefono,
+                activo = persona.Activo
             };
             existingPersona = await _client.Update<PersonaPbRecord>("personas", existingPersona.Id, personaPayload);
         }
@@ -124,8 +122,7 @@ public class PacienteRepository : IPacienteRepository
                 tipo_documento = paciente.TipoDocumento?.ToString(),
                 id_obra_social = paciente.IdObraSocial > 0 ? paciente.IdObraSocial : 1,
                 num_obra_social = paciente.IdObraSocial == 1 ? null : paciente.NumObraSocial,
-                porcentaje_iva = paciente.PorcentajeIva,
-                activo = paciente.Activo
+                porcentaje_iva = paciente.PorcentajeIva
             };
             existingPaciente = await _client.Update<PacientePbRecord>("pacientes", existingPaciente.Id, pacientePayload);
         }
@@ -135,15 +132,28 @@ public class PacienteRepository : IPacienteRepository
 
     public async Task<bool> CambiarEstadoActivo(long idPaciente, bool activo)
     {
-        var existing = await _client.GetFirst<PacientePbRecord>("pacientes", $"id_paciente={idPaciente}");
-        if (existing == null) return false;
+        var existingPersona = await _client.GetFirst<PersonaPbRecord>("personas", $"id_persona={idPaciente}");
+        if (existingPersona != null)
+        {
+            await _client.Update<PersonaPbRecord>("personas", existingPersona.Id, new { activo = activo });
+            return true;
+        }
 
-        await _client.Update<PacientePbRecord>("pacientes", existing.Id, new { activo = activo });
-        return true;
+        return false;
     }
 
     private static Paciente MapearAPaciente(PacientePbRecord pac, PersonaPbRecord? per)
     {
+        var persona = per == null ? null : new Persona
+        {
+            IdPersona = per.IdPersona,
+            Nombre = per.Nombre,
+            Apellido = per.Apellido,
+            Correo = per.Correo,
+            Telefono = per.Telefono,
+            Activo = per.Activo
+        };
+
         return new Paciente
         {
             IdPaciente = pac.IdPaciente,
@@ -153,15 +163,7 @@ public class PacienteRepository : IPacienteRepository
             IdObraSocial = pac.IdObraSocial,
             NumObraSocial = pac.NumObraSocial,
             PorcentajeIva = pac.PorcentajeIva,
-            Activo = pac.Activo,
-            Persona = per == null ? null : new Persona
-            {
-                IdPersona = per.IdPersona,
-                Nombre = per.Nombre,
-                Apellido = per.Apellido,
-                Correo = per.Correo,
-                Telefono = per.Telefono
-            }
+            Persona = persona
         };
     }
 }
