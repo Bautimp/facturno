@@ -245,11 +245,24 @@ migrate((db) => {
     dao.saveRecord(pacRec);
   }
 
-  // --- Agendas Compartidas (Marcos Benítez vinculado a Dra. Laura Gómez) ---
+  // --- Agendas Compartidas ---
+  // 1. Marcos Benítez (Administrativo) vinculado a Dra. Laura Gómez
   const agenda1 = new Record(agendasCompartidas);
   agenda1.set("id_administrativo", idMarcos);
   agenda1.set("id_profesional", idLaura);
   dao.saveRecord(agenda1);
+
+  // 2. Operador del Sistema vinculado a Dra. Laura Gómez
+  const agenda2 = new Record(agendasCompartidas);
+  agenda2.set("id_administrativo", idAdmin);
+  agenda2.set("id_profesional", idLaura);
+  dao.saveRecord(agenda2);
+
+  // 3. Operador del Sistema vinculado a Dr. Carlos Rossi
+  const agenda3 = new Record(agendasCompartidas);
+  agenda3.set("id_administrativo", idAdmin);
+  agenda3.set("id_profesional", idCarlos);
+  dao.saveRecord(agenda3);
 
   // --- Generación de Turnos de Prueba hasta fines de Noviembre 2026 ---
   const diasNoviembre = [

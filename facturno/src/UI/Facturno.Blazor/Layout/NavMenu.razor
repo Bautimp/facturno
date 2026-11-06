@@ -18,8 +18,16 @@
             <li class="nav-item top-nav-item">
                 <NavLink class="top-nav-link" href="gestion-personal" Match="NavLinkMatch.Prefix">
                     <i class="bi bi-gear nav-icon me-1" aria-hidden="true"></i>
-                    <span class="d-none d-md-inline">Gestión de Personal</span>
-                    <span class="d-inline d-md-none">Personal</span>
+                    @if (context.User.IsInRole("Profesional"))
+                    {
+                        <span class="d-none d-md-inline">Mis Datos & Obras Soc.</span>
+                        <span class="d-inline d-md-none">Mis Datos</span>
+                    }
+                    else
+                    {
+                        <span class="d-none d-md-inline">Gestión de Personal</span>
+                        <span class="d-inline d-md-none">Personal</span>
+                    }
                 </NavLink>
             </li>
         </Authorized>

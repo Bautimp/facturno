@@ -155,6 +155,17 @@ public class ProfesionalesController : ControllerBase
                 return BadRequest(ApiResponse<Profesional>.Error("Identificador del profesional no especificado."));
             }
 
+            // Los profesionales solo pueden actualizar su propia información
+            var esOperador = User.IsInRole("Operador");
+            if (!esOperador)
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(userIdClaim, out var currentUserId) || currentUserId != targetId)
+                {
+                    return Forbid();
+                }
+            }
+
             var config = _configuracionService.ObtenerConfiguracion();
             if (dto.PrecioConsulta.HasValue && dto.PrecioConsulta.Value > config.PrecioMaximoConsulta)
             {
@@ -260,11 +271,7 @@ public class ProfesionalesController : ControllerBase
             Guid.TryParse(userIdClaim, out var currentUserId);
 
             string filter = "";
-            if (esProfesional && !esOperador)
-            {
-                filter = $"id_profesional='{currentUserId}'";
-            }
-            else if (idProfesional.HasValue && idProfesional.Value != Guid.Empty)
+            if (idProfesional.HasValue && idProfesional.Value != Guid.Empty)
             {
                 filter = $"id_profesional='{idProfesional.Value}'";
             }
@@ -288,13 +295,14 @@ public class ProfesionalesController : ControllerBase
                 var adminNom = "Administrativo";
                 if (usersDict.TryGetValue(v.IdAdministrativo, out var uAdmin))
                 {
+                    var rolStr = !string.IsNullOrEmpty(uAdmin.Rol) ? $" ({uAdmin.Rol})" : "";
                     if (personasDict.TryGetValue(uAdmin.IdPersona, out var pAdmin))
                     {
-                        adminNom = $"{pAdmin.Nombre} {pAdmin.Apellido}";
+                        adminNom = $"{pAdmin.Nombre} {pAdmin.Apellido}{rolStr}";
                     }
                     else
                     {
-                        adminNom = uAdmin.Email;
+                        adminNom = $"{uAdmin.Email}{rolStr}";
                     }
                 }
 

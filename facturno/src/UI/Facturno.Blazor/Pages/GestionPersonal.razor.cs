@@ -155,6 +155,28 @@ public partial class GestionPersonal : ComponentBase
                 {
                     PaginaPersonal = Math.Max(1, TotalPaginasPersonal);
                 }
+
+                if (EsProfesional && !EsOperador && IdProfesionalActual != Guid.Empty)
+                {
+                    var miPerfil = ListaProfesionales.FirstOrDefault(p => p.IdProfesional == IdProfesionalActual);
+                    if (miPerfil != null)
+                    {
+                        profesionalEditarDto = new ProfesionalUpdateDto
+                        {
+                            IdProfesional = miPerfil.IdProfesional,
+                            Nombre = miPerfil.Usuario?.Persona?.Nombre ?? string.Empty,
+                            Apellido = miPerfil.Usuario?.Persona?.Apellido ?? string.Empty,
+                            Correo = miPerfil.Usuario?.Persona?.Correo ?? string.Empty,
+                            Telefono = miPerfil.Usuario?.Persona?.Telefono,
+                            Especialidad = miPerfil.Especialidad,
+                            Matricula = miPerfil.Matricula,
+                            Cuit = miPerfil.Cuit,
+                            PrecioConsulta = miPerfil.PrecioConsulta,
+                            TipoComprobante = miPerfil.TipoComprobante,
+                            CondicionIva = miPerfil.CondicionIva
+                        };
+                    }
+                }
             }
         }
         catch (Exception ex)
@@ -270,6 +292,13 @@ public partial class GestionPersonal : ComponentBase
 
     protected void AbrirModalEditar(Profesional prof)
     {
+        if (!EsOperador && prof.IdProfesional != IdProfesionalActual)
+        {
+            MensajeAlerta = "No tienes permisos para modificar datos de otros profesionales.";
+            TipoAlerta = "warning";
+            return;
+        }
+
         profesionalEditarDto = new ProfesionalUpdateDto
         {
             IdProfesional = prof.IdProfesional,
@@ -339,7 +368,9 @@ public partial class GestionPersonal : ComponentBase
             if (exito)
             {
                 MostrarModalEditar = false;
-                MensajeAlerta = $"Profesional {profesionalEditarDto.Nombre} {profesionalEditarDto.Apellido} actualizado correctamente.";
+                MensajeAlerta = EsProfesional && !EsOperador
+                    ? "Tus datos personales han sido actualizados correctamente."
+                    : $"Profesional {profesionalEditarDto.Nombre} {profesionalEditarDto.Apellido} actualizado correctamente.";
                 TipoAlerta = "success";
                 await CargarProfesionales();
             }
@@ -419,6 +450,13 @@ public partial class GestionPersonal : ComponentBase
 
     protected async Task ToggleEstadoActivo(Profesional prof, bool nuevoEstado)
     {
+        if (!EsOperador)
+        {
+            MensajeAlerta = "Solo los usuarios con rol Operador pueden dar de alta o baja al personal médico.";
+            TipoAlerta = "warning";
+            return;
+        }
+
         try
         {
             var url = $"api/profesionales/{prof.IdProfesional}/activo?activo={nuevoEstado}";
