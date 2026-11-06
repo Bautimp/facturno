@@ -34,7 +34,7 @@
             }
             else
             {
-                @if (EsOperador)
+                @if (EsOperador || EsProfesional)
                 {
                     <button class="btn btn-primary-custom" @onclick="AbrirModalNuevaObraSocial">
                         + Nueva Obra Social
@@ -76,7 +76,7 @@
         @if (EsProfesional && !EsOperador)
         {
             <!-- Vista para Profesionales (Psicólogos y Psiquiatras): Modificar datos personales -->
-            <div class="card shadow-sm border-0 mb-4 bg-light">
+            <div class="card shadow-sm border-0 mb-4 bg-light panel-datos-personales">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
                         <div>
@@ -112,11 +112,8 @@
 
                             <div class="col-md-4">
                                 <label class="form-label font-semibold">Especialidad</label>
-                                <select class="form-select" @bind="profesionalEditarDto.Especialidad">
-                                    <option value="@TipoEspecialidad.Psicologo">Psicólogo</option>
-                                    <option value="@TipoEspecialidad.Psiquiatra">Psiquiatra</option>
-                                    <option value="@TipoEspecialidad.Otro">Otro</option>
-                                </select>
+                                <input type="text" class="form-control bg-light" value="@(profesionalEditarDto.Especialidad?.ToString() ?? "General")" readonly disabled />
+                                <div class="form-text small text-muted">Definida por el consultorio</div>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label font-semibold">Matrícula Habilitante</label>
@@ -127,7 +124,7 @@
                                 <input type="text" class="form-control" @bind="profesionalEditarDto.Cuit" placeholder="20-12345678-9" />
                             </div>
 
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <label class="form-label font-semibold">Precio Consulta ($)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
@@ -137,22 +134,12 @@
                                     Máximo permitido: $ @ConfigSistema.PrecioMaximoConsulta.ToString("N2")
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <label class="form-label font-semibold">Tipo Comprobante</label>
                                 <select class="form-select" @bind="profesionalEditarDto.TipoComprobante">
                                     <option value="">Seleccione tipo...</option>
                                     <option value="@TipoComprobante.FacturaA">Factura A</option>
                                     <option value="@TipoComprobante.FacturaB">Factura B</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label font-semibold">Condición ante IVA</label>
-                                <select class="form-select" @bind="profesionalEditarDto.CondicionIva">
-                                    <option value="">Seleccione condición...</option>
-                                    <option value="@CondicionIVA.Monotributo">Monotributo</option>
-                                    <option value="@CondicionIVA.ResponsableInscripto">Responsable Inscripto</option>
-                                    <option value="@CondicionIVA.Exento">Exento</option>
-                                    <option value="@CondicionIVA.ConsumidorFinal">Consumidor Final</option>
                                 </select>
                             </div>
 
@@ -263,7 +250,7 @@
 
             @if (EsOperador || EsProfesional)
             {
-                <div class="row g-3 mb-4 p-3 bg-light rounded border">
+                <div class="row g-3 mb-4 p-3 bg-light rounded border panel-vinculacion-agendas">
                     <div class="col-md-5">
                         <label class="form-label font-semibold">Profesional Médico</label>
                         @if (EsProfesional && !EsOperador)
@@ -308,7 +295,12 @@
             <!-- Listado de Vinculaciones Activas -->
             <div class="mt-3">
                 <h6 class="font-semibold text-secondary mb-2">Vínculos de Agenda Registrados:</h6>
-                @if (ListaVinculosAgendas.Any())
+                @{
+                    var vinculosAMostrar = (EsProfesional && !EsOperador)
+                        ? ListaVinculosAgendas.Where(v => v.IdProfesional == IdProfesionalActual).ToList()
+                        : ListaVinculosAgendas;
+                }
+                @if (vinculosAMostrar.Any())
                 {
                     <div class="table-responsive">
                         <table class="table table-hover table-bordered bg-white align-middle mb-0">
@@ -321,7 +313,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var vinculo in ListaVinculosAgendas)
+                                @foreach (var vinculo in vinculosAMostrar)
                                 {
                                     <tr>
                                         <td>
@@ -400,20 +392,13 @@
                                 </span>
                             </td>
                             <td class="text-end">
-                                @if (EsOperador)
-                                {
-                                    <button class="btn btn-sm btn-outline-primary me-2 d-inline-flex align-items-center" @onclick="() => AbrirModalEditarObraSocial(os)">
-                                        <i class="bi bi-pencil-square me-1" aria-hidden="true"></i> Editar
-                                    </button>
-                                    <button class="btn btn-sm @(os.Activo ? "btn-outline-danger" : "btn-outline-success")"
-                                            @onclick="() => ToggleEstadoObraSocial(os, !os.Activo)">
-                                        @(os.Activo ? "Dar de Baja" : "Activar")
-                                    </button>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-light text-secondary border font-normal py-1 px-2">Solo consulta</span>
-                                }
+                                <button class="btn btn-sm btn-outline-primary me-2 d-inline-flex align-items-center" @onclick="() => AbrirModalEditarObraSocial(os)">
+                                    <i class="bi bi-pencil-square me-1" aria-hidden="true"></i> Editar
+                                </button>
+                                <button class="btn btn-sm @(os.Activo ? "btn-outline-danger" : "btn-outline-success")"
+                                        @onclick="() => ToggleEstadoObraSocial(os, !os.Activo)">
+                                    @(os.Activo ? "Dar de Baja" : "Activar")
+                                </button>
                             </td>
                         </tr>
                     }
