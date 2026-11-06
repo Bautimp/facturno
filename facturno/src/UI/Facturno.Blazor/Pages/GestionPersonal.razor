@@ -76,7 +76,7 @@
         @if (EsProfesional && !EsOperador)
         {
             <!-- Vista para Profesionales (Psicólogos y Psiquiatras): Modificar datos personales -->
-            <div class="card shadow-sm border-0 mb-4 bg-light">
+            <div class="card shadow-sm border-0 mb-4 bg-light panel-datos-personales">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
                         <div>
@@ -250,7 +250,7 @@
 
             @if (EsOperador || EsProfesional)
             {
-                <div class="row g-3 mb-4 p-3 bg-light rounded border">
+                <div class="row g-3 mb-4 p-3 bg-light rounded border panel-vinculacion-agendas">
                     <div class="col-md-5">
                         <label class="form-label font-semibold">Profesional Médico</label>
                         @if (EsProfesional && !EsOperador)
