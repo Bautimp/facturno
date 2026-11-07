@@ -889,23 +889,25 @@ body {
 
 .card-body-semana {
     flex: 1 1 auto;
-    overflow: visible;
-    max-height: none;
-    min-height: 380px;
+    overflow-y: auto;
+    max-height: 65vh;
+    min-height: 520px;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    scrollbar-width: thin;
 }
 
 .card-dia-finde {
     flex: 1 1 50%;
-    min-height: 200px;
+    min-height: 250px;
 }
 
 .card-body-finde {
-    overflow: visible;
-    max-height: none;
-    min-height: 180px;
+    overflow-y: auto;
+    max-height: calc(32.5vh - 10px);
+    min-height: 200px;
+    scrollbar-width: thin;
 }
 
 .turno-box-semana {
