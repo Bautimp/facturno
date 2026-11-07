@@ -899,14 +899,17 @@ body {
 }
 
 .card-dia-finde {
-    flex: 1 1 50%;
-    min-height: 250px;
+    flex: 1 1 0px !important;
+    min-height: 0 !important;
+    height: 50% !important;
+    overflow: hidden;
 }
 
 .card-body-finde {
     overflow-y: auto;
-    max-height: calc(32.5vh - 10px);
-    min-height: 200px;
+    max-height: none;
+    min-height: 0 !important;
+    flex: 1 1 auto;
     scrollbar-width: thin;
 }
 
